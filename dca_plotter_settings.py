@@ -17,20 +17,32 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt5.QtCore import Qt#, QT_TRANSLATE_NOOP
+from PyQt5.QtWidgets import QVBoxLayout, QFormLayout, QSpinBox, QGroupBox
 
 from lisp.ui.settings.pages import ConfigurationPage
+from lisp.ui.ui_utils import translate
 
 class DcaPlotterSettings(ConfigurationPage):
     Name = "DCA Plotter"
 
     def __init__(self, config, **kwargs):
         super().__init__(config, **kwargs)
+        self.setLayout(QVBoxLayout())
+
+        self.settingsGroup = QGroupBox(self)
+        self.settingsGroup.setTitle("Plotter Defaults")
+        self.settingsGroup.setLayout(QFormLayout())
+        self.layout().addWidget(self.settingsGroup)
+
+        self.inputCount = QSpinBox(self.settingsGroup)
+        self.inputCount.setRange(1, 96)
+        self.settingsGroup.layout().addRow('Default Microphone Count', self.inputCount)
 
         self.loadConfiguration()
 
     def applySettings(self):
-        pass
+        self.config['input_channel_count'] = self.inputCount.value()
+        self.config.write()
 
     def loadConfiguration(self):
-        pass
+        self.inputCount.setValue(self.config['input_channel_count'])

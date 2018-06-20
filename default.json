@@ -1,4 +1,5 @@
 {
-	"_version_": "0",
-	"_enabled_": true
+	"_version_": "1",
+	"_enabled_": true,
+	"input_channel_count": 16
 }
