@@ -17,9 +17,13 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
+from PyQt5.QtWidgets import QAction#, QDialog
+
 from lisp.core.plugin import Plugin
+from lisp.plugins.dca_plotter.dca_plotter_mic_assign_ui import DcaPlotterMicAssignUi
 from lisp.plugins.dca_plotter.dca_plotter_settings import DcaPlotterSettings
 from lisp.ui.settings.app_configuration import AppConfigurationDialog
+from lisp.ui.ui_utils import translate
 
 class DcaPlotter(Plugin):
     """Provides the ability to plot DCA/VCA assignments"""
@@ -35,3 +39,15 @@ class DcaPlotter(Plugin):
         # Register the settings widget
         AppConfigurationDialog.registerSettingsPage(
             'plugins.dca_plotter', DcaPlotterSettings, DcaPlotter.Config)
+
+        # Entry in mainWindow menu
+        self.menuAction = QAction(
+            translate('DcaPlotter', 'DCA/VCA Plotter Mic Assignments'), self.app.window)
+        self.menuAction.triggered.connect(self.open_mic_assignment_tool)
+        self.app.window.menuTools.addAction(self.menuAction)
+
+    def open_mic_assignment_tool(self):
+        DcaPlotterMicAssignUi(self.app.window).exec_()
+
+    def get_config(self):
+        return self.Config
