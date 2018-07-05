@@ -20,6 +20,7 @@
 from PyQt5.QtWidgets import QAction#, QDialog
 
 from lisp.core.plugin import Plugin
+from lisp.plugins.dca_plotter.cue.change_cue import DcaChangeCue
 from lisp.plugins.dca_plotter.dca_plotter_mic_assign_ui import DcaPlotterMicAssignUi
 from lisp.plugins.dca_plotter.dca_plotter_settings import DcaPlotterSettings
 from lisp.ui.settings.app_configuration import AppConfigurationDialog
@@ -44,3 +45,6 @@ class DcaPlotter(Plugin):
         # Register the session-level mic assign ui
         SessionConfigurationDialog.registerSettingsPage(
             'mic_assign', DcaPlotterMicAssignUi, self)
+
+        # Register our cue types
+        app.register_cue_type(DcaChangeCue, translate("CueCategory", "DCA/VCA Manipulation"))
