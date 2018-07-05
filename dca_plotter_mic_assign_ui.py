@@ -72,12 +72,25 @@ class DcaPlotterMicAssignUi(ConfigurationPage):
         self.loadConfiguration()
 
     def applySettings(self):
-        pass
+        model = self.inputList.model()
+        self.config['inputs'] = []
+        for row_idx in range(model.rowCount()):
+            self.config['inputs'].append({
+                'name': model.data(model.createIndex(row_idx, 2)),
+                'in': model.data(model.createIndex(row_idx, 1))
+            })
+        get_plugin('DcaPlotter').WriteSessionConfig(self.config)
 
     def loadConfiguration(self):
-        plugin_config = get_plugin('DcaPlotter').get_config()
-        self.inputCount.setValue(plugin_config['input_channel_count'])
-        self.inputCount.editingFinished.emit()
+        plugin_config = get_plugin('DcaPlotter').Config
+
+        if 'inputs' in self.config and len(self.config['inputs']):
+            self.inputCount.setValue(len(self.config['inputs']))
+            for row_idx, row in enumerate(self.config['inputs']):
+                self.inputList.model().appendRow(row_idx + 1, row['in'], row['name'])
+        else:
+            self.inputCount.setValue(plugin_config['input_channel_count'])
+            self.inputCount.editingFinished.emit()
 
     def _inputCount_editingFinished(self):
         inputCount = self.inputList.model().rowCount()

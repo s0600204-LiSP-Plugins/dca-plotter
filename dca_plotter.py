@@ -44,6 +44,3 @@ class DcaPlotter(Plugin):
         # Register the session-level mic assign ui
         SessionConfigurationDialog.registerSettingsPage(
             'mic_assign', DcaPlotterMicAssignUi, self)
-
-    def get_config(self):
-        return self.Config
