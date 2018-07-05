@@ -23,6 +23,7 @@ from lisp.core.plugin import Plugin
 from lisp.plugins.dca_plotter.dca_plotter_mic_assign_ui import DcaPlotterMicAssignUi
 from lisp.plugins.dca_plotter.dca_plotter_settings import DcaPlotterSettings
 from lisp.ui.settings.app_configuration import AppConfigurationDialog
+from lisp.ui.settings.session_configuration import SessionConfigurationDialog
 from lisp.ui.ui_utils import translate
 
 class DcaPlotter(Plugin):
@@ -40,14 +41,9 @@ class DcaPlotter(Plugin):
         AppConfigurationDialog.registerSettingsPage(
             'plugins.dca_plotter', DcaPlotterSettings, DcaPlotter.Config)
 
-        # Entry in mainWindow menu
-        self.menuAction = QAction(
-            translate('DcaPlotter', 'DCA/VCA Plotter Mic Assignments'), self.app.window)
-        self.menuAction.triggered.connect(self.open_mic_assignment_tool)
-        self.app.window.menuTools.addAction(self.menuAction)
-
-    def open_mic_assignment_tool(self):
-        DcaPlotterMicAssignUi(self.app.window).exec_()
+        # Register the session-level mic assign ui
+        SessionConfigurationDialog.registerSettingsPage(
+            'mic_assign', DcaPlotterMicAssignUi, self)
 
     def get_config(self):
         return self.Config

@@ -18,38 +18,40 @@
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
 # pylint: disable=no-name-in-module
-from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QGridLayout, QFormLayout, QGroupBox, QSpinBox
+from PyQt5.QtWidgets import QFormLayout, QGroupBox, QSpinBox, QVBoxLayout, QWidget
 
 from lisp.plugins import get_plugin
 from lisp.plugins.dca_plotter.utilities import build_default_mic_name
 from lisp.ui.qdelegates import LabelDelegate, LineEditDelegate, SpinBoxDelegate
 from lisp.ui.qviews import SimpleTableView
 from lisp.ui.qmodels import SimpleTableModel
+from lisp.ui.settings.pages import ConfigurationPage
 from lisp.ui.ui_utils import translate
 
-class DcaPlotterMicAssignUi(QDialog):
+class DcaPlotterMicAssignUi(ConfigurationPage):
     '''Mic Assign UI'''
+    Name = "Mic Assignments"
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, config, **kwargs):
+        super().__init__(config, **kwargs)
+        self.setLayout(QVBoxLayout())
 
-        self.setWindowTitle(translate('DcaPlotter', 'DCA/VCA Plotter :: Microphone Assignments'))
-        self.setFixedWidth(800)
-        self.setMinimumHeight(500)
+        self.widgetGroup = QGroupBox(self)
+        self.widgetGroup.setTitle(translate("DcaPlotter", "Mic Assignments"))
+        self.widgetGroup.setLayout(QVBoxLayout())
+        self.layout().addWidget(self.widgetGroup)
 
-        self.setLayout(QGridLayout())
-
-        self.optionsGroup = QGroupBox(self)
-        self.optionsGroup.setTitle(translate("DcaPlotter", "Options"))
+        # Options at top
+        self.optionsGroup = QWidget(self)
         self.optionsGroup.setLayout(QFormLayout())
-        self.optionsGroup.setFixedWidth(250)
-        self.layout().addWidget(self.optionsGroup, 0, 0)
+        self.widgetGroup.layout().addWidget(self.optionsGroup)
 
         self.inputCount = QSpinBox(self)
         self.inputCount.setRange(1, 96)
         self.inputCount.editingFinished.connect(self._inputCount_editingFinished)
         self.optionsGroup.layout().addRow('# of Mics', self.inputCount)
 
+        # Table of mics
         model = SimpleTableModel([
             translate('DcaPlotterSettings', 'Mic #'),
             translate('DcaPlotterSettings', 'Input #'),
@@ -65,20 +67,12 @@ class DcaPlotterMicAssignUi(QDialog):
             'delegate': LineEditDelegate(max_length=16)
         }]
         self.inputList = SimpleTableView(model, columns, parent=self)
-        self.layout().addWidget(self.inputList, 0, 1)
-
-        self.buttons = QDialogButtonBox(self)
-        self.buttons.addButton(QDialogButtonBox.Cancel)
-        self.buttons.addButton(QDialogButtonBox.Ok)
-        self.layout().addWidget(self.buttons, 1, 0, 1, 2)
-
-        self.buttons.accepted.connect(self.applySettings)
-        self.buttons.rejected.connect(self.reject)
+        self.widgetGroup.layout().addWidget(self.inputList)
 
         self.loadConfiguration()
 
     def applySettings(self):
-        self.accept()
+        pass
 
     def loadConfiguration(self):
         plugin_config = get_plugin('DcaPlotter').get_config()
