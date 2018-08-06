@@ -27,7 +27,7 @@ from lisp.ui.settings.cue_settings import CueSettingsRegistry
 from lisp.ui.settings.pages import SettingsPage
 from lisp.ui.ui_utils import translate
 
-from lisp.plugins.dca_plotter.dca_plotter_models import DcaBlockModel
+from lisp.plugins.dca_plotter.dca_plotter_models import DcaBlockModel, DcaBlockActionDelegate
 
 class DcaChangeCue(Cue):
     Name = QT_TRANSLATE_NOOP('CueName', 'DCA/VCA Change Cue')
@@ -74,6 +74,8 @@ class DcaBlockView(QTreeView):
 
         # Set Model
         self.setModel(model)
+
+        self.setItemDelegateForColumn(1, DcaBlockActionDelegate())
 
         # Show all (can only be done after setting the model)
         self.expandAll()
