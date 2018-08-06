@@ -151,9 +151,10 @@ class DcaBlockModel(QAbstractItemModel):
         }
     }
 
-    def __init__(self):
+    def __init__(self, selection_dialog):
         super().__init__()
         self.root_node = DcaBlockBranch("Name")
+        self.selection_dialog = selection_dialog
 
         for defin in self.CATEGORIES.values():
             self.root_node.addChild(DcaBlockBranch(defin['caption'],
@@ -163,11 +164,6 @@ class DcaBlockModel(QAbstractItemModel):
 
         # debug / test
         self.append_assign(2)
-        self.append_assign(14)
-        self.append_assign(9)
-        self.append_assign(4)
-        self.append_assign(12)
-        self.append_assign(16)
 
         target = self.getCategoryNode('inherited')
         target.addChild(DcaBlockLeaf(10, model=self, parent_node=target, action='remove_inherited'))
@@ -193,7 +189,19 @@ class DcaBlockModel(QAbstractItemModel):
                                      action='remove_assign'))
 
     def add_assign(self):
-        logging.warn('Assign')
+        self.selection_dialog.set_entries([1, 2, 4, 9, 15])
+        if self.selection_dialog.exec_() == self.selection_dialog.Accepted:
+            selected = self.selection_dialog.selected_entries()
+            if selected:
+                dest_parent = self.getCategoryNode('assigns')
+                # TODO: A more elegant way of doing the following
+                # (instead of going in & out of insert status)
+                # Also, deal with selected entries that are inherited and removed
+                for mic_num in selected:
+                    dest_rownum = dest_parent.getInsertPoint(mic_num)
+                    self.beginInsertRows(self.createIndex(dest_parent.row(), 0, dest_parent), dest_rownum, dest_rownum)
+                    self.append_assign(mic_num)
+                    self.endInsertRows()
 
     def remove_entry(self, index):
         '''Remove an entry from one of the lists'''

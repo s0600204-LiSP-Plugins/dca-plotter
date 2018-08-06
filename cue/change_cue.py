@@ -27,6 +27,7 @@ from lisp.ui.settings.cue_settings import CueSettingsRegistry
 from lisp.ui.settings.pages import SettingsPage
 from lisp.ui.ui_utils import translate
 
+from lisp.plugins.dca_plotter.dca_plotter_input_select_dialog import InputSelectDialog
 from lisp.plugins.dca_plotter.dca_plotter_models import DcaBlockModel, DcaBlockActionDelegate
 
 class DcaChangeCue(Cue):
@@ -47,6 +48,7 @@ class DcaChangeCueSettings(SettingsPage):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.setLayout(QHBoxLayout())
+        self.inputSelectDialog = InputSelectDialog(parent=self)
 
         self.blockModel = DcaBlockModel()
         self.blockView = DcaBlockView(self.blockModel)
