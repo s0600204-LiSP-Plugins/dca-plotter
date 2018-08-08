@@ -55,9 +55,15 @@ class DcaChangeCueSettings(SettingsPage):
         self.layout().addWidget(self.blockView)
 
     def getSettings(self):
+        logging.warning(repr(self.blockModel.serialise()))
         return {'dca_change': {}}
 
     def loadSettings(self, settings):
+        self.blockModel.deserialise({
+            'add': [1, 4],
+            'inherit': [5, 6],
+            'rem': [5, 9]
+        })
         conf = settings.get('dca_change', {})
 
 class DcaBlockView(QTreeView):
