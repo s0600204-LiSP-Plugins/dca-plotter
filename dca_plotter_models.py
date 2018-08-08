@@ -4,28 +4,34 @@ from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex, QEvent, pyqtSignal
 from PyQt5.QtWidgets import QStyledItemDelegate
 from PyQt5.QtGui import QFont
 
+from lisp.plugins import get_plugin
 from lisp.plugins.dca_plotter.utilities import get_mic_assign_name
 from lisp.ui.icons import IconTheme
 
+ActionRole = Qt.UserRole + 1
+
 class DcaBlockNode():
 
-    def __init__(self, model=None, parent_node=None, action=None):
+    def __init__(self, model=None, parent_node=None, actions=[]):
         self.model = model
         self.parent_node = parent_node
-        self.action = action
-
-    def columnCount(self):
-        return 2
+        self.actions = actions
+        self.flags = Qt.ItemFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
 
     def data(self, col, role):
-        if col == 1 and self.action:
+        idx = self.model.columnCount(None) - col - 1
+        action = self.actions[idx] if idx < len(self.actions) else None
+        if action:
+            if role == ActionRole:
+                return action
             if role == Qt.ToolTipRole:
-                return self.model.ACTIONS[self.action]['tooltip']
+                return self.model.ACTIONS[action]['tooltip']
             if role == Qt.DecorationRole:
-                return IconTheme.get(self.model.ACTIONS[self.action]['icon'])
+                return IconTheme.get(self.model.ACTIONS[action]['icon'])
         return None
 
     def row(self):
+        '''Returns integer'''
         return self.parent_node.children.index(self)
 
 class DcaBlockBranch(DcaBlockNode):
@@ -66,17 +72,18 @@ class DcaBlockBranch(DcaBlockNode):
         curr_indexes.sort()
         return curr_indexes.index(mic_num)
 
-    def callAction(self, row):
-        if not self.action or not hasattr(self.model, self.action):
+    def callAction(self, index):
+        action = self.data(index.column(), ActionRole)
+        if not action or not hasattr(self.model, action):
             return False
 
-        getattr(self.model, self.action)()
+        getattr(self.model, action)()
         return True
 
     def data(self, col, role=Qt.DisplayRole):
         if col == 0:
             if role == Qt.DisplayRole:
-                return self.caption;
+                return self.caption
 
             if role == Qt.FontRole:
                 font = QFont()
@@ -89,12 +96,14 @@ class DcaBlockLeaf(DcaBlockNode):
     def __init__(self, value, **kwargs):
         super().__init__(**kwargs)
         self.value = value
+        self.flags |= Qt.ItemNeverHasChildren
 
     def callAction(self, index):
-        if 'dest' in self.model.ACTIONS[self.action]:
-            self.model.relocate_entry(index, self.action)
-        else:
-            self.model.remove_entry(index)
+        action = self.data(index.column(), ActionRole)
+        if not action:
+            return False
+
+        self.model.remove_or_relocate_entry(index, action)
         return True
 
     def data(self, col, role=Qt.DisplayRole):
@@ -110,34 +119,45 @@ class DcaBlockLeaf(DcaBlockNode):
         return None
 
     def childCount(self):
-        return 0;
+        return 0
 
 class DcaBlockModel(QAbstractItemModel):
 
     CATEGORIES = {
         'assigns': {
             'caption': 'New Assigns',
-            'action': 'add_assign',
-            'child_action': 'remove_assign'
+            'actions': ['add_new_assign'],
+            'child_actions': ['remove_assign']
         },
         'inherited': {
             'caption': 'Inherited',
-            'child_action': 'remove_inherited'
+            'child_actions': ['remove_inherited', 'pin_inherited']
         },
         'unassigns': {
             'caption': 'Removed Assigns',
-            'child_action': 'restore_inherited'
+            'actions': ['add_new_unassign'],
+            'child_actions': ['restore_inherited']
         }
     }
 
     ACTIONS = {
-        'add_assign': {
+        'add_new_assign': {
             'tooltip': 'Add a new Assign to this DCA',
             'icon': 'list-add'
         },
+        'add_new_unassign': {
+            'tooltip': 'Add a new Unassign to this DCA',
+            'icon': 'list-add'
+        },
         'remove_assign': {
-            'tooltip': 'Remove this Assignment',
-            'icon': 'list-remove'
+            'tooltip': 'Remove/Unpin this Assignment',
+            'icon': 'list-remove',
+            'dest': 'inherited'
+        },
+        'pin_inherited': {
+            'tooltip': 'Pin this Assignment',
+            'icon': 'linked',
+            'dest': 'assigns'
         },
         'remove_inherited': {
             'tooltip': 'Remove this Assignment',
@@ -155,26 +175,26 @@ class DcaBlockModel(QAbstractItemModel):
         super().__init__()
         self.root_node = DcaBlockBranch("Name")
         self.selection_dialog = selection_dialog
+        self.inherited = [3, 6, 7, 10, 11]
 
         for defin in self.CATEGORIES.values():
             self.root_node.addChild(DcaBlockBranch(defin['caption'],
                                                    model=self,
                                                    parent_node=self.root_node,
-                                                   action=defin.get('action', None)))
+                                                   actions=defin.get('actions', [])))
 
         # debug / test
         self.append_assign(2)
 
         target = self.getCategoryNode('inherited')
-        target.addChild(DcaBlockLeaf(10, model=self, parent_node=target, action='remove_inherited'))
+        target.addChild(DcaBlockLeaf(10, model=self, parent_node=target, actions=['remove_inherited', 'pin_inherited']))
 
         target = self.getCategoryNode('unassigns')
-        target.addChild(DcaBlockLeaf(7, model=self, parent_node=target, action='restore_inherited'))
-        target.addChild(DcaBlockLeaf(8, model=self, parent_node=target, action='restore_inherited'))
-        target.addChild(DcaBlockLeaf(11, model=self, parent_node=target, action='restore_inherited'))
-        target.addChild(DcaBlockLeaf(3, model=self, parent_node=target, action='restore_inherited'))
-        target.addChild(DcaBlockLeaf(6, model=self, parent_node=target, action='restore_inherited'))
-
+        target.addChild(DcaBlockLeaf(7, model=self, parent_node=target, actions=['restore_inherited']))
+        target.addChild(DcaBlockLeaf(8, model=self, parent_node=target, actions=['restore_inherited']))
+        target.addChild(DcaBlockLeaf(11, model=self, parent_node=target, actions=['restore_inherited']))
+        target.addChild(DcaBlockLeaf(3, model=self, parent_node=target, actions=['restore_inherited']))
+        target.addChild(DcaBlockLeaf(6, model=self, parent_node=target, actions=['restore_inherited']))
 
     def getCategoryNode(self, identifier):
         if identifier not in self.CATEGORIES:
@@ -182,14 +202,22 @@ class DcaBlockModel(QAbstractItemModel):
         return self.root_node.child(list(self.CATEGORIES).index(identifier))
 
     def append_assign(self, mic_num):
-        target = self.getCategoryNode('assigns')
-        target.addChild(DcaBlockLeaf(mic_num,
-                                     model=self,
-                                     parent_node=target,
-                                     action='remove_assign'))
+        pass
 
-    def add_assign(self):
-        self.selection_dialog.set_entries([1, 2, 4, 9, 15])
+    def get_values_not_used(self):
+        current_values = []
+        for cat in self.root_node.children:
+            for leaf in cat.children:
+                current_values.append(leaf.value)
+
+        possible_values = []
+        for num in range(1, get_plugin('DcaPlotter').get_microphone_count() + 1):
+            if num not in current_values:
+                possible_values.append(num)
+        return possible_values
+
+    def add_new_assign(self):
+        self.selection_dialog.set_entries(self.get_values_not_used())
         if self.selection_dialog.exec_() == self.selection_dialog.Accepted:
             selected = self.selection_dialog.selected_entries()
             if selected:
@@ -200,8 +228,35 @@ class DcaBlockModel(QAbstractItemModel):
                 for mic_num in selected:
                     dest_rownum = dest_parent.getInsertPoint(mic_num)
                     self.beginInsertRows(self.createIndex(dest_parent.row(), 0, dest_parent), dest_rownum, dest_rownum)
-                    self.append_assign(mic_num)
+                    dest_parent.addChild(DcaBlockLeaf(mic_num,
+                                                      model=self,
+                                                      parent_node=dest_parent,
+                                                      actions=self.CATEGORIES['assigns']['child_actions']))
                     self.endInsertRows()
+
+    def add_new_unassign(self):
+        self.selection_dialog.set_entries(self.get_values_not_used())
+        if self.selection_dialog.exec_() == self.selection_dialog.Accepted:
+            selected = self.selection_dialog.selected_entries()
+            if selected:
+                dest_parent = self.getCategoryNode('unassigns')
+                # TODO: A more elegant way of doing the following
+                # (instead of going in & out of insert status)
+                # Also, deal with selected entries that are inherited and removed
+                for mic_num in selected:
+                    dest_rownum = dest_parent.getInsertPoint(mic_num)
+                    self.beginInsertRows(self.createIndex(dest_parent.row(), 0, dest_parent), dest_rownum, dest_rownum)
+                    dest_parent.addChild(DcaBlockLeaf(mic_num,
+                                                      model=self,
+                                                      parent_node=dest_parent,
+                                                      actions=self.CATEGORIES['unassigns']['child_actions']))
+                    self.endInsertRows()
+
+    def remove_or_relocate_entry(self, index, action):
+        if index.internalPointer().value in self.inherited:
+            self.relocate_entry(index, self.ACTIONS[action]['dest'])
+        else:
+            self.remove_entry(index)
 
     def remove_entry(self, index):
         '''Remove an entry from one of the lists'''
@@ -209,10 +264,10 @@ class DcaBlockModel(QAbstractItemModel):
         self.root_node.child(index.parent().row()).removeChild(index.row())
         self.endRemoveRows()
 
-    def relocate_entry(self, index, action):
+    def relocate_entry(self, index, dest):
         '''Relocate an entry from one of the lists to another'''
         source_parent = self.root_node.child(index.parent().row())
-        dest_parent = self.getCategoryNode(self.ACTIONS[action]['dest'])
+        dest_parent = self.getCategoryNode(dest)
         dest_rownum = dest_parent.getInsertPoint(index.internalPointer().value)
 
         self.beginMoveRows(index.parent(),
@@ -222,12 +277,17 @@ class DcaBlockModel(QAbstractItemModel):
                            dest_rownum)
         child = source_parent.removeChild(index.row())
         child.parent_node = dest_parent
-        child.action = self.CATEGORIES[self.ACTIONS[action]['dest']]['child_action']
+        child.actions = self.CATEGORIES[dest]['child_actions']
         dest_parent.addChild(child)
         self.endMoveRows()
 
     def columnCount(self, parent_idx):
-        return 2
+        return 3
+
+    def flags(self, index):
+        if not index.isValid():
+            return None
+        return index.internalPointer().flags
 
     def index(self, row_num, col_num, parent_idx):
         if not self.hasIndex(row_num, col_num, parent_idx):

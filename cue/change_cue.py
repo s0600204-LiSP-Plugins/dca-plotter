@@ -50,7 +50,7 @@ class DcaChangeCueSettings(SettingsPage):
         self.setLayout(QHBoxLayout())
         self.inputSelectDialog = InputSelectDialog(parent=self)
 
-        self.blockModel = DcaBlockModel()
+        self.blockModel = DcaBlockModel(self.inputSelectDialog)
         self.blockView = DcaBlockView(self.blockModel)
         self.layout().addWidget(self.blockView)
 
@@ -61,6 +61,8 @@ class DcaChangeCueSettings(SettingsPage):
         conf = settings.get('dca_change', {})
 
 class DcaBlockView(QTreeView):
+
+    _delegates = []
 
     def __init__(self, model, **kwargs):
         super().__init__(**kwargs)
@@ -77,13 +79,17 @@ class DcaBlockView(QTreeView):
         # Set Model
         self.setModel(model)
 
-        self.setItemDelegateForColumn(1, DcaBlockActionDelegate())
+        # Set appropriate delegates for the action icon-buttons
+        for col in range(1, 3):
+            new_delegate = DcaBlockActionDelegate()
+            self._delegates.append(new_delegate)
+            self.setItemDelegateForColumn(col, new_delegate)
+            self.header().resizeSection(col, 24)
 
         # Show all (can only be done after setting the model)
         self.expandAll()
 
-        # Set width/stretch (can only be done after setting the model)
         self.header().setSectionResizeMode(0, QHeaderView.Stretch)
-        self.header().resizeSection(1, 32)
+        
 
 CueSettingsRegistry().add(DcaChangeCueSettings, DcaChangeCue)

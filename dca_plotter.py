@@ -48,3 +48,7 @@ class DcaPlotter(Plugin):
 
         # Register our cue types
         app.register_cue_type(DcaChangeCue, translate("CueCategory", "DCA/VCA Manipulation"))
+
+    def get_microphone_count(self):
+        count = len(self.SessionConfig['inputs'])
+        return count if count > 0 else self.Config['input_channel_count']
