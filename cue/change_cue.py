@@ -18,7 +18,7 @@
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
 from PyQt5.QtCore import Qt, QT_TRANSLATE_NOOP
-from PyQt5.QtWidgets import QFormLayout, QHBoxLayout, QTreeView, QHeaderView
+from PyQt5.QtWidgets import QHBoxLayout, QTreeView, QHeaderView, QScrollArea, QWidget
 
 from lisp.core.has_properties import Property
 from lisp.cues.cue import Cue
@@ -33,11 +33,13 @@ from lisp.plugins.dca_plotter.dca_plotter_models import DcaBlockModel, DcaBlockA
 class DcaChangeCue(Cue):
     Name = QT_TRANSLATE_NOOP('CueName', 'DCA/VCA Change Cue')
 
-    dca_change = Property()
+    dca_changes = Property([])
+    dca_names = Property([])
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = translate('CueName', self.Name)
+        dca_count = get_plugin('DcaPlotter').SessionConfig['dca_count']
 
     def __start__(self, fade=False):
         return False
@@ -47,24 +49,47 @@ class DcaChangeCueSettings(SettingsPage):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.setLayout(QHBoxLayout())
+        self.dca_count = get_plugin('DcaPlotter').SessionConfig['dca_count']
+        self.dca_blocks = []
         self.inputSelectDialog = InputSelectDialog(parent=self)
 
-        self.blockModel = DcaBlockModel(self.inputSelectDialog)
-        self.blockView = DcaBlockView(self.blockModel)
-        self.layout().addWidget(self.blockView)
+        self.setLayout(QHBoxLayout())
+
+        self.innerWidget = QWidget(self)
+        self.innerWidget.setLayout(QHBoxLayout())
+
+        for bl in range(self.dca_count):
+            m = DcaBlockModel(self.inputSelectDialog)
+            v = DcaBlockView(m)
+            # These two next lines shouldn't be needed
+            # However, I can't seem to determine the correct sizePolicy/sizeHint/whatevers needed to make it scale correctly,
+            # so after an hour+ spent on it, this is what you're getting(!)
+            # (Until I rewrite this all, of course.)
+            v.setMaximumWidth(210)
+            v.setMinimumHeight(350)
+            self.dca_blocks.append({ 'm': m, 'v': v })
+            self.innerWidget.layout().addWidget(v)
+        
+        self.scrollArea = QScrollArea(self)
+        self.scrollArea.setWidget(self.innerWidget)
+        self.layout().addWidget(self.scrollArea)
 
     def getSettings(self):
-        logging.warning(repr(self.blockModel.serialise()))
-        return {'dca_change': {}}
+        assigns = []
+        for a in range(self.dca_count):
+            assigns.append(self.dca_blocks[a]['m'].serialise())
+        return {'dca_changes': assigns}
 
     def loadSettings(self, settings):
-        self.blockModel.deserialise({
-            'add': [1, 4],
-            'inherit': [5, 6],
-            'rem': [5, 9]
-        })
-        conf = settings.get('dca_change', {})
+        assigns = settings.get('dca_changes', [])
+        for a in range(len(assigns), self.dca_count):
+            assigns.append({
+                'add': [],
+                'rem': []
+            })
+        for a in range(len(assigns)):
+            assigns[a]['inherit'] = []
+            self.dca_blocks[a]['m'].deserialise(assigns[a])
 
 class DcaBlockView(QTreeView):
 

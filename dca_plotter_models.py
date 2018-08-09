@@ -130,7 +130,7 @@ class DcaBlockModel(QAbstractItemModel):
             'child_actions': ['remove_assign']
         },
         'inherited': {
-            'caption': 'Inherited from Earlier Cues`',
+            'caption': 'Inherited Assigns',
             'child_actions': ['remove_inherited', 'pin_inherited']
         },
         'unassigns': {
