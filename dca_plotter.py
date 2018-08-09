@@ -25,6 +25,7 @@ from lisp.plugins.dca_plotter.cue.change_cue import DcaChangeCue
 from lisp.plugins.dca_plotter.dca_plotter_mic_assign_ui import DcaPlotterMicAssignUi
 from lisp.plugins.dca_plotter.dca_plotter_settings import DcaPlotterSettings
 from lisp.plugins.dca_plotter.dca_plotter_tracking_model import DcaPlotterTrackingModel
+from lisp.plugins.list_layout.layout import ListLayout
 from lisp.ui.settings.app_configuration import AppConfigurationDialog
 from lisp.ui.settings.session_configuration import SessionConfigurationDialog
 from lisp.ui.ui_utils import translate
@@ -62,6 +63,30 @@ class DcaPlotter(Plugin):
     def _on_session_init(self):
         """Post-session-creation init"""
         self.tracker.current_active = [[] for i in range(self.SessionConfig['dca_count'])]
+
+        # Register further listeners
+        Application().cue_model.item_added.connect(self._on_cue_added)
+        Application().cue_model.item_removed.connect(self._on_cue_removed)
+        if isinstance(Application().layout, ListLayout):
+            Application().layout.view().listView.currentItemChanged.connect(self._on_cue_selected)
+
+    def _on_cue_selected(self, prev, curr):
+        """Action to take when a cue is selected.
+
+        This function only gets called if the session is in the "List" layout.
+        With the "Cart" layout, selecting a cue calls the cue, and there are no other layouts currently.
+        """
+        # prev and curr are both of type
+        # -> lisp.plugins.list_layout.list_view.CueTreeWidgetItem
+        pass
+
+    def _on_cue_added(self):
+        """Action to take when a cue is added."""
+        pass
+
+    def _on_cue_removed(self):
+        """Action to take when a cue is removed."""
+        pass
 
     def get_microphone_count(self):
         count = len(self.SessionConfig['inputs'])
