@@ -19,10 +19,12 @@
 
 from PyQt5.QtWidgets import QAction#, QDialog
 
+from lisp.application import Application
 from lisp.core.plugin import Plugin
 from lisp.plugins.dca_plotter.cue.change_cue import DcaChangeCue
 from lisp.plugins.dca_plotter.dca_plotter_mic_assign_ui import DcaPlotterMicAssignUi
 from lisp.plugins.dca_plotter.dca_plotter_settings import DcaPlotterSettings
+from lisp.plugins.dca_plotter.dca_plotter_tracking_model import DcaPlotterTrackingModel
 from lisp.ui.settings.app_configuration import AppConfigurationDialog
 from lisp.ui.settings.session_configuration import SessionConfigurationDialog
 from lisp.ui.ui_utils import translate
@@ -48,6 +50,18 @@ class DcaPlotter(Plugin):
 
         # Register our cue types
         app.register_cue_type(DcaChangeCue, translate("CueCategory", "DCA/VCA Manipulation"))
+
+        # Create the session's dca-tracking model
+        # This model does not contain cues.
+        # Instead it tracks which mics are muted and are currently assigned where
+        self.tracker = DcaPlotterTrackingModel()
+
+        # Register a listener for when a session has been created.
+        Application().session_created.connect(self._on_session_init)
+
+    def _on_session_init(self):
+        """Post-session-creation init"""
+        self.tracker.current_active = [[] for i in range(self.SessionConfig['dca_count'])]
 
     def get_microphone_count(self):
         count = len(self.SessionConfig['inputs'])
