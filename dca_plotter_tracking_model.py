@@ -2,6 +2,8 @@
 import logging
 from lisp.plugins import get_plugin
 
+logger = logging.getLogger(__name__) # pylint: disable=invalid-name
+
 # This model does not contain cues.
 #
 # Instead it tracks:
@@ -20,6 +22,7 @@ class DcaPlotterTrackingModel():
         #super().__init__()
         self.current_active = []
         #self.current_names = [] # Coming in a future update ...
+        self._midi_out = get_plugin('Midi').output
 
     def call_cue(self, new_assigns):
         # In "List" layout, we would already have this pre-calculated.
@@ -28,10 +31,13 @@ class DcaPlotterTrackingModel():
         #   instead doing it every time.
         changes = self.calculate_diff(new_assigns)
         
-        # Here we'd have the MIDI sends...
+        # Here we have the MIDI sends...
         # Alternatively, as this is a *tracking* model, the diff change could be passed back
         #   and the calling cue handles sending the MIDI.
         # Then again, we don't want update the 'currently active' if sending fails... so...
+        midi_messages = self.determine_midi_messages(changes)
+        for dict_msg in midi_messages:
+             self._midi_out.send_from_dict(dict_msg)
 
         # Update the currently active
         for change in changes:
@@ -39,8 +45,51 @@ class DcaPlotterTrackingModel():
                 self.current_active[change[1]['dca']].append(change[1]['strip'][1])
             elif change[0] == 'unassign':
                 self.current_active[change[1]['dca']].remove(change[1]['strip'][1])
+            elif change[0] == 'rename':
+                self.current_names[change[1]['strip'][1]] = change[1]['name']
 
-        logging.warn(self.current_active)
+        # Until I build a proper UI:
+        logger.info("Updated DCA arrangement: " + repr(self.current_active))
+
+    def determine_midi_messages(self, changes):
+        midi_plugin_config = get_plugin('MidiFixtureControl').SessionConfig
+        if not midi_plugin_config['dca_device']:
+            logger.error("Please identify a device capable of remote VCA/DCA control.")
+            return []
+
+        library = get_plugin('MidiFixtureControl').get_library()
+
+        patch_details = None
+        for patch in midi_plugin_config['patches']:
+            if patch['patch_id'] == midi_plugin_config['dca_device']:
+                patch_details = patch
+                break
+        
+        messages = []
+        for change in changes:
+            action = ""
+            args = {
+                "channelType": change[1]['strip'][0],
+                "channelNum": change[1]['strip'][1]
+            }
+
+            if change[0] == 'assign' or change[0] == 'unassign':
+                action = "dcaAssign" if change[0] == 'assign' else "dcaUnAssign"
+                args['dcaNum'] = change[1]['dca'] + 1
+
+            elif change[0] == 'mute' or change[0] == "unmute":
+                action = "mute" if change[0] == 'mute' else "unmute"
+
+            elif change[0] == 'rename':
+                action = "setName"
+                args["arbitraryString"] = change[1]['name']
+
+            messages.extend(library.build_device_command(patch_details['fixture_id'],
+                                                         patch_details['midi_channel'],
+                                                         action,
+                                                         args))
+
+        return messages
 
     def calculate_diff(self, new_assigns):
 
