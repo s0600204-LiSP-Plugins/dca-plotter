@@ -25,6 +25,8 @@ from lisp.plugins.dca_plotter.cue.change_cue import DcaChangeCue
 from lisp.plugins.dca_plotter.dca_plotter_mic_assign_ui import DcaPlotterMicAssignUi
 from lisp.plugins.dca_plotter.dca_plotter_settings import DcaPlotterSettings
 from lisp.plugins.dca_plotter.dca_plotter_tracking_model import DcaPlotterTrackingModel
+from lisp.plugins.dca_plotter.v2.mapping_model import DcaMappingModel
+from lisp.plugins.dca_plotter.v2.temp_view import DcaPlotterTempDialog
 from lisp.plugins.list_layout.layout import ListLayout
 from lisp.ui.settings.app_configuration import AppConfigurationDialog
 from lisp.ui.settings.session_configuration import SessionConfigurationDialog
@@ -60,6 +62,19 @@ class DcaPlotter(Plugin):
         # Register a listener for when a session has been created.
         Application().session_created.connect(self._on_session_init)
 
+        # Create the mapping model
+        self.mapping_model = DcaMappingModel()
+
+        # DEVELOPMENT:
+        # Entry in mainWindow menu
+        self.menuActionDev = QAction('DCA Viewer - DEV', self.app.window)
+        self.menuActionDev.triggered.connect(self._open_dev_dca_thingie)
+        self.app.window.menuTools.addAction(self.menuActionDev)
+
+    def _open_dev_dca_thingie(self):
+        dca_viewer = DcaPlotterTempDialog()
+        dca_viewer.exec_()
+
     def _on_session_init(self):
         """Post-session-creation init"""
         self.tracker.current_active = [[] for i in range(self.SessionConfig['dca_count'])]
@@ -80,12 +95,15 @@ class DcaPlotter(Plugin):
         # -> lisp.plugins.list_layout.list_view.CueTreeWidgetItem
         pass
 
-    def _on_cue_added(self):
+    def _on_cue_added(self, cue):
         """Action to take when a cue is added."""
-        pass
+        if isinstance(cue, DcaChangeCue):
+            self.mapping_model.append_cue(cue.id)
 
-    def _on_cue_removed(self):
+    def _on_cue_removed(self, cue):
         """Action to take when a cue is removed."""
+        #if isinstance(cue, DcaChangeCue):
+        #    print(cue.id)
         pass
 
     def get_microphone_count(self):
