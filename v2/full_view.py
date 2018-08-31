@@ -6,6 +6,9 @@ from PyQt5.QtWidgets import QAbstractItemView, QApplication
 class PlotterView(QAbstractItemView):
 
     CUEROW_MARGIN = 8
+    CUEHEADER_PADDING = 2
+    BLOCK_PADDING = 2
+    BLOCKENTRY_PADDING = 1
 
     _cueid_width = 0
     _cuerow_height = []
@@ -76,11 +79,14 @@ class PlotterView(QAbstractItemView):
             row_y = viewport_y
             row_index = self.model().index(row_num, 0, self.rootIndex())
 
-            # Draw the Cue Number & Name (Haven't decided what I actually want here yet)
+            # Draw the Cue Number & Name
             row_viewoptions = self.viewOptions()
-            row_viewoptions.rect = QRect(0, row_y, self.viewport().width(), self._fontmetrics.height())
+            row_viewoptions.rect = QRect(self.CUEHEADER_PADDING,
+                                         row_y + self.CUEHEADER_PADDING,
+                                         self.viewport().width() - self.CUEHEADER_PADDING * 2,
+                                         self._fontmetrics.height())
             self.itemDelegate().paint(painter, row_viewoptions, row_index)
-            viewport_y += self._fontmetrics.height()
+            viewport_y += self._fontmetrics.height() + self.CUEHEADER_PADDING * 2
 
             # Draw the DCA blocks
             block_x = self._cueid_width
@@ -89,16 +95,37 @@ class PlotterView(QAbstractItemView):
                 block_y = viewport_y
                 block_index = self.model().index(block_num, 0, row_index)
 
+                # Draw the DCA name
+                # @todo: centre the text
+                dcaname_viewoptions = self.viewOptions()
+                dcaname_viewoptions.rect = QRect(block_x + self.BLOCK_PADDING,
+                                                 block_y + self.BLOCK_PADDING,
+                                                 block_width - self.BLOCK_PADDING * 2,
+                                                 self._fontmetrics.height())
+                self.itemDelegate().paint(painter, dcaname_viewoptions, block_index)
+                block_y += self._fontmetrics.height() + self.BLOCK_PADDING
+
+                # And a line under it
+                self._paint_line(painter, QRect(block_x + self.BLOCK_PADDING * 2,
+                                                block_y + self.BLOCK_PADDING,
+                                                block_width - self.BLOCK_PADDING * 4,
+                                                1))
+                block_y += self.BLOCK_PADDING
+
+                # Draw the assigns
                 for assign_num in range(self.model().childCount(block_index)):
                     assign_index = self.model().index(assign_num, 0, block_index)
                     assign_viewoptions = self.viewOptions()
-                    assign_viewoptions.rect = QRect(block_x, block_y, block_width, self._fontmetrics.height())
+                    assign_viewoptions.rect = QRect(block_x + self.BLOCKENTRY_PADDING,
+                                                    block_y + self.BLOCKENTRY_PADDING,
+                                                    block_width - self.BLOCKENTRY_PADDING * 2,
+                                                    self._fontmetrics.height())
                     self.itemDelegate().paint(painter, assign_viewoptions, assign_index)
-                    block_y += self._fontmetrics.height()
+                    block_y += self._fontmetrics.height() + self.BLOCKENTRY_PADDING
 
                 # Draw a rectangle round the block
-                block_outline_rect = QRect(block_x, viewport_y, block_width, self._cuerow_height[row_num])
-                self._paint_outline(painter, block_outline_rect)
+                #block_outline_rect = QRect(block_x, viewport_y, block_width, self._cuerow_height[row_num])
+                #self._paint_outline(painter, block_outline_rect)
                 block_x += block_width
 
             viewport_y += self._cuerow_height[row_num]
@@ -106,8 +133,8 @@ class PlotterView(QAbstractItemView):
             # Draw a rectangle around the entire cue
             # Temporary - probably will remove or replace this
             # However, for debugging, so we have a visual guide of where things are being drawn
-            outline_rect = QRect(row_x, row_y, self.viewport().width(), viewport_y - row_y)
-            self._paint_outline(painter, outline_rect)
+            #outline_rect = QRect(row_x, row_y, self.viewport().width(), viewport_y - row_y)
+            #self._paint_outline(painter, outline_rect)
 
             viewport_y += self.CUEROW_MARGIN
 
@@ -184,16 +211,19 @@ class PlotterView(QAbstractItemView):
         self._cuerow_height_dirty.append(rownum)
 
     def _recalculate_cuerow_heights(self):
+        entry_height = self._fontmetrics.height() + self.BLOCKENTRY_PADDING
         while len(self._cuerow_height_dirty):
             entry_count = 0
             row_num = self._cuerow_height_dirty[0]
             row_index = self.model().index(row_num, 0, self.rootIndex())
 
             for block_num in range(self.model().childCount(row_index)):
-                block_index = self.model().index(0, block_num, row_index)
+                block_index = self.model().index(block_num, 0, row_index)
                 entry_count = max(entry_count, self.model().childCount(block_index))
 
-            self._cuerow_height[row_num] = max(1, entry_count) * self._fontmetrics.height()
+            self._cuerow_height[row_num] = self._fontmetrics.height() + self.BLOCK_PADDING * 2
+            self._cuerow_height[row_num] += max(1, entry_count) * entry_height
+            self._cuerow_height[row_num] += self.BLOCKENTRY_PADDING
             self._cuerow_height_dirty.remove(row_num)
 
 
@@ -205,7 +235,7 @@ class PlotterView(QAbstractItemView):
         painter.restore();
 
     def _paint_line(self, painter, rect):
-        rect = rect.adjusted(0, 0, -1, -1);
+        #rect = rect.adjusted(0, 0, -1, -1);
         painter.save();
         painter.setPen(QPen(self.palette().dark().color(), 0.5));
         painter.drawLine(rect.topLeft(), rect.bottomRight());
