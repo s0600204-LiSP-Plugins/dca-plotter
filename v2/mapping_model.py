@@ -1,13 +1,19 @@
 
+import enum
+
 # pylint: disable=no-name-in-module
 from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QBrush, QFont
+from PyQt5.QtWidgets import QApplication
 
 from lisp.application import Application
 from lisp.plugins import get_plugin
 from lisp.plugins.dca_plotter.utilities import get_mic_assign_name
 
-#ActionRole = Qt.UserRole + 1
+class AssignStateEnum(enum.Enum):
+    ASSIGN = enum.auto()
+    UNASSIGN = enum.auto()
+    NONE = enum.auto()
 
 ### ABSTRACTS
 class DcaMapNode():
@@ -97,9 +103,9 @@ class DcaMapRow(DcaMapBranchNode):
             for dca in property_value:
                 block = self.children[dca_count]
                 for entry in dca['add']:
-                    block.addChild(DcaMapEntry(entry, parent=block))
+                    block.addChild(DcaMapEntry(entry, AssignStateEnum.ASSIGN, parent=block))
                 for entry in dca['rem']:
-                    block.addChild(DcaMapEntry(entry, parent=block))
+                    block.addChild(DcaMapEntry(entry, AssignStateEnum.UNASSIGN, parent=block))
                 dca_count += 1
 
     def data(self, role=Qt.DisplayRole):
@@ -130,15 +136,33 @@ class DcaMapBlock(DcaMapBranchNode):
 ### LEAVES
 class DcaMapEntry(DcaMapLeafNode):
     '''Entry class'''
-    def __init__(self, value, **kwargs):
+    def __init__(self, value, state=AssignStateEnum.NONE, **kwargs):
         super().__init__(**kwargs)
         self._value = value
+        self._assign_state = state
 
     def data(self, role=Qt.DisplayRole):
         if role == Qt.DisplayRole:
-            return get_mic_assign_name(self.value())
+            name = get_mic_assign_name(self.value())
+            if self._assign_state == AssignStateEnum.NONE:
+                return "({})".format(name)
+            return name
+
         if role == Qt.EditRole:
             return self.value
+
+        if role == Qt.ForegroundRole: # Text colour:
+            if self._assign_state == AssignStateEnum.ASSIGN:
+                return QBrush(Qt.green)
+            if self._assign_state == AssignStateEnum.UNASSIGN:
+                return QBrush(Qt.red)
+            if self._assign_state == AssignStateEnum.NONE:
+                return QBrush(QApplication.palette().dark().color())
+
+        if role == Qt.FontRole and self._assign_state == AssignStateEnum.UNASSIGN:
+            font = QFont()
+            font.setStrikeOut(True)
+            return font
 
         return super().data(role)
 
