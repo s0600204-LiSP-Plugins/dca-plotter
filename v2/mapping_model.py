@@ -6,7 +6,6 @@ from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex
 from PyQt5.QtGui import QBrush, QFont
 from PyQt5.QtWidgets import QApplication
 
-from lisp.application import Application
 from lisp.plugins import get_plugin
 from lisp.plugins.dca_plotter.utilities import get_mic_assign_name
 
@@ -84,39 +83,21 @@ class DcaMapRootNode(DcaMapBranchNode):
 
 class DcaMapRow(DcaMapBranchNode):
     '''Row class.'''
-    def __init__(self, cue_id, **kwargs):
+    def __init__(self, cue, **kwargs):
         super().__init__(**kwargs)
-        self.cue_id = cue_id
-
-        Application().cue_model.get(self.cue_id).property_changed.connect(self._on_property_changed)
+        self.cue = cue
 
         # pylint: disable=unused-variable
         for dca in range(get_plugin('DcaPlotter').SessionConfig['dca_count']):
             self.addChild(DcaMapBlock(parent=self))
 
-    # @todo:
-    #  - This method breaks the model/view paradigm by not alerting views that data is about/has been changed. For now, that doesn't really matter. However, it will later.
-    #  - We also need to handle cases where a cue has been edited, and we need to update our current store.
-    def _on_property_changed(self, cue, property_name, property_value):
-        if property_name == 'dca_changes':
-            dca_count = 0
-            for dca in property_value:
-                block = self.children[dca_count]
-                for entry in dca['add']:
-                    block.addChild(DcaMapEntry(entry, AssignStateEnum.ASSIGN, parent=block))
-                for entry in dca['rem']:
-                    block.addChild(DcaMapEntry(entry, AssignStateEnum.UNASSIGN, parent=block))
-                dca_count += 1
-
     def data(self, role=Qt.DisplayRole):
         if role == Qt.DisplayRole:
-            cue = Application().cue_model.get(self.cue_id)
-            return "{} : {}".format(cue.index+1, cue.name)
-
+            return "{} : {}".format(self.cue.index + 1, self.cue.name)
         return super().data(role)
 
     def value(self):
-        return Application().cue_model.get(self.cue_id).index
+        return self.cue.index
 
 class DcaMapBlock(DcaMapBranchNode):
     '''Block class'''
@@ -175,9 +156,38 @@ class DcaMappingModel(QAbstractItemModel):
         super().__init__()
         self.root = DcaMapRootNode(model=self)
 
-    def append_cue(self, cue_id):
-        new_row = DcaMapRow(cue_id, parent=self.root)
-        self._add_node(self.createIndex(self.root.childCount(), 0, self.root), new_row)
+    def amend_cuerow(self, cue, property_name, property_value):
+        if property_name != 'dca_changes':
+            return
+
+        cuerow = self._find_cuerow(cue.id)
+
+        # Clear each dca block and set the new children
+        for dca_num, assign_actions in enumerate(property_value):
+            block_node = cuerow.child(dca_num)
+            block_index = self.createIndex(block_node.rownum(), 0, block_node)
+            self._clear_node(block_index)
+
+            for entry in assign_actions['add']:
+                self._add_node(block_index,
+                               DcaMapEntry(entry, AssignStateEnum.ASSIGN, parent=block_node))
+
+            for entry in assign_actions['rem']:
+                self._add_node(block_index,
+                               DcaMapEntry(entry, AssignStateEnum.UNASSIGN, parent=block_node))
+
+    def append_cuerow(self, cue):
+        '''Append a cue-row to the model
+
+        Warning: If a cue is created between two other cues,
+                                            this function will not pick that fact up...
+                 Thankfully, creating a cue 'tween two others is not currently possible.
+        '''
+        new_cuerow = DcaMapRow(cue, parent=self.root)
+        self._add_node(self.createIndex(self.root.childCount(), 0, self.root), new_cuerow)
+
+        # Attach listener so we get cue property changes
+        cue.property_changed.connect(self.amend_cuerow)
 
     def childCount(self, index):
         node = index.internalPointer() if index.isValid() else self.root
@@ -208,6 +218,25 @@ class DcaMappingModel(QAbstractItemModel):
             return self.createIndex(row_num, col_num, child_node)
         return QModelIndex()
 
+    def move_cuerow(self, cue, new_cue_index):
+        '''Called when a cue is moved in the main cue list'''
+        cuerow = self._find_cuerow(cue.id)
+
+        old_index = cuerow.rownum()
+        new_index = sorted(self.root.getChildValues()).index(new_cue_index)
+
+        # If there's no change (for us):
+        if old_index == new_index:
+            return
+
+        # When moving down, all other things move up. In this case, the new index is one out.
+        if old_index < new_index:
+            new_index += 1
+
+        self.beginMoveRows(QModelIndex(), old_index, old_index, QModelIndex(), new_index)
+        self.root.children.sort(key=DcaMapRow.value)
+        self.endMoveRows()
+
     def parent(self, index):
         if not index.isValid():
             return QModelIndex()
@@ -217,6 +246,12 @@ class DcaMappingModel(QAbstractItemModel):
             return QModelIndex()
 
         return self.createIndex(parent.rownum(), 0, parent)
+
+    def remove_cuerow(self, cue):
+        '''Removes the cue-row from the model'''
+        cue.property_changed.disconnect(self.amend_cuerow)
+        cuerow = self._find_cuerow(cue.id)
+        self._remove_node(self.createIndex(cuerow.rownum(), 0, cuerow))
 
     def rowCount(self, index):
         return self.childCount(index)
@@ -232,8 +267,23 @@ class DcaMappingModel(QAbstractItemModel):
         parent_node.addChild(new_node)
         self.endInsertRows()
 
+    def _clear_node(self, node_index):
+        '''Clear a node of all its children'''
+        node = node_index.internalPointer()
+        self.beginRemoveRows(node_index, 0, node.childCount())
+        while node.childCount():
+            node.removeChild(0)
+        self.endRemoveRows()
+
+    def _find_cuerow(self, cue_id):
+        '''Find and return the cue-row that matches the given cue-id'''
+        for cuerow in self.root.children:
+            if cuerow.cue.id == cue_id:
+                return cuerow
+        return None
+
     def _relocate_node(self, node_index, destination):
-        '''Relocate a node from its parent node to another '''
+        '''Relocate a node from its parent node to the end of another '''
         old_parent_index = node_index.parent()
         old_parent_node = old_parent_index.internalPointer()
         old_parent_rownum = node_index.rownum()
@@ -258,6 +308,9 @@ class DcaMappingModel(QAbstractItemModel):
 
     def _remove_node(self, node_index):
         '''Remove a node from its parent'''
-        self.beginRemoveRows(node_index.parent(), node_index.rownum(), node_index.rownum())
-        self.root_node.child(node_index.parent().rownum()).removeChild(node_index.rownum())
+        if not node_index.isValid():
+            return
+
+        self.beginRemoveRows(self.parent(node_index), node_index.row(), node_index.row())
+        node_index.internalPointer().parent.removeChild(node_index.row())
         self.endRemoveRows()

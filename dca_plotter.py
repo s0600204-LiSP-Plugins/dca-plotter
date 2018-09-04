@@ -78,11 +78,16 @@ class DcaPlotter(Plugin):
         """Post-session-creation init"""
         self.tracker.current_active = [[] for i in range(self.SessionConfig['dca_count'])]
 
-        # Register further listeners
-        Application().cue_model.item_added.connect(self._on_cue_added)
-        Application().cue_model.item_removed.connect(self._on_cue_removed)
-        if isinstance(Application().layout, ListLayout):
-            Application().layout.view().listView.currentItemChanged.connect(self._on_cue_selected)
+        layout = Application().layout
+        if not isinstance(layout, ListLayout):
+            return
+
+        cuelist_model = layout.list_model()
+        cuelist_model.item_added.connect(self._on_cue_added)
+        cuelist_model.item_moved.connect(self._on_cue_moved)
+        cuelist_model.item_removed.connect(self._on_cue_removed)
+
+        layout.view().listView.currentItemChanged.connect(self._on_cue_selected)
 
     def _on_cue_selected(self, prev, curr):
         """Action to take when a cue is selected.
@@ -95,15 +100,20 @@ class DcaPlotter(Plugin):
         pass
 
     def _on_cue_added(self, cue):
-        """Action to take when a cue is added."""
+        """Action to take when a cue is added to the List Layout."""
         if isinstance(cue, DcaChangeCue):
-            self.mapping_model.append_cue(cue.id)
+            self.mapping_model.append_cuerow(cue)
+
+    def _on_cue_moved(self, old_index, new_index):
+        """Action to take when a cue is moved in the List Layout."""
+        cue = Application().layout._list_model.item(new_index)
+        if isinstance(cue, DcaChangeCue):
+            self.mapping_model.move_cuerow(cue, new_index)
 
     def _on_cue_removed(self, cue):
-        """Action to take when a cue is removed."""
-        #if isinstance(cue, DcaChangeCue):
-        #    print(cue.id)
-        pass
+        """Action to take when a cue is removed from the List Layout."""
+        if isinstance(cue, DcaChangeCue):
+            self.mapping_model.remove_cuerow(cue)
 
     def get_microphone_count(self):
         count = len(self.SessionConfig['inputs'])
