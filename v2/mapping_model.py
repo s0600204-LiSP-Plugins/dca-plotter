@@ -1,4 +1,5 @@
 
+import copy
 import enum
 
 # pylint: disable=no-name-in-module
@@ -25,8 +26,21 @@ class DcaMapNode():
         # pylint: disable=no-self-use, unused-argument
         return None
 
+    def index(self):
+        return self.model().createIndex(self.rownum(), 0, self)
+
     def model(self):
         return self.parent.model()
+
+    def next_sibling(self):
+        if self.rownum() < len(self.parent) - 1:
+            return self.parent.children[self.rownum() + 1]
+        return None
+
+    def prev_sibling(self):
+        if self.rownum():
+            return self.parent.children[self.rownum() - 1]
+        return None
 
     def rownum(self):
         return self.parent.children.index(self)
@@ -120,7 +134,7 @@ class DcaMapEntry(DcaMapLeafNode):
     def __init__(self, value, state=AssignStateEnum.NONE, **kwargs):
         super().__init__(**kwargs)
         self._value = value
-        self._is_inherited = False
+        self._is_inherited = state == AssignStateEnum.NONE
         self._assign_state = state
 
     def data(self, role=Qt.DisplayRole):
@@ -147,6 +161,9 @@ class DcaMapEntry(DcaMapLeafNode):
             return font
 
         return super().data(role)
+
+    def assign_state(self):
+        return self._assign_state
 
     def inherited(self):
         return self._is_inherited
@@ -183,6 +200,13 @@ class DcaMappingModel(QAbstractItemModel):
                 self._add_node(block_index,
                                DcaMapEntry(entry, AssignStateEnum.UNASSIGN, parent=block_node))
 
+        if cuerow.prev_sibling():
+            # Get inherits from previous cue row
+            changes = self._change_tuples_derive(cuerow.prev_sibling())
+            self._change_tuples_apply(cuerow, changes)
+
+        self._change_tuples_cascade_apply(cuerow)
+
     def append_cuerow(self, cue):
         '''Append a cue-row to the model
 
@@ -192,6 +216,11 @@ class DcaMappingModel(QAbstractItemModel):
         '''
         new_cuerow = DcaMapRow(cue, parent=self.root)
         self._add_node(self.createIndex(self.root.childCount(), 0, self.root), new_cuerow)
+
+        if new_cuerow.prev_sibling():
+            # Get inherits from previous cue row
+            changes = self._change_tuples_derive(new_cuerow.prev_sibling())
+            self._change_tuples_apply(new_cuerow, changes)
 
         # Attach listener so we get cue property changes
         cue.property_changed.connect(self.amend_cuerow)
@@ -236,6 +265,10 @@ class DcaMappingModel(QAbstractItemModel):
         if old_index == new_index:
             return
 
+        # Update assign entries at the leave point
+        changes = self._change_tuples_invert(self._change_tuples_derive(cuerow))
+        self._change_tuples_cascade_apply(cuerow, changes)
+
         # When moving down, all other things move up. In this case, the new index is one out.
         if old_index < new_index:
             new_index += 1
@@ -243,6 +276,22 @@ class DcaMappingModel(QAbstractItemModel):
         self.beginMoveRows(QModelIndex(), old_index, old_index, QModelIndex(), new_index)
         self.root.children.sort(key=DcaMapRow.value)
         self.endMoveRows()
+
+        # Update assign entries at the entry point
+        # First, cleanup the moved cue down to its basic assign/unassigns
+        for dca_node in cuerow.children:
+            for entry in copy.copy(dca_node.children):
+                entry.setInherited(False)
+                if entry.assign_state() == AssignStateEnum.NONE:
+                    self._remove_node(entry.index())
+
+        # Then, update from the new previous cue row
+        if cuerow.prev_sibling():
+            changes = self._change_tuples_derive(cuerow.prev_sibling())
+            self._change_tuples_apply(cuerow, changes)
+
+        # Finally, cascade changes.
+        self._change_tuples_cascade_apply(cuerow)
 
     def parent(self, index):
         if not index.isValid():
@@ -258,7 +307,13 @@ class DcaMappingModel(QAbstractItemModel):
         '''Removes the cue-row from the model'''
         cue.property_changed.disconnect(self.amend_cuerow)
         cuerow = self._find_cuerow(cue.id)
-        self._remove_node(self.createIndex(cuerow.rownum(), 0, cuerow))
+
+        # Update assign entries
+        changes = self._change_tuples_invert(self._change_tuples_derive(cuerow))
+        self._change_tuples_cascade_apply(cuerow, changes)
+
+        # And remove the cuerow from the model
+        self._remove_node(cuerow.index())
 
     def rowCount(self, index):
         return self.childCount(index)
@@ -273,6 +328,53 @@ class DcaMappingModel(QAbstractItemModel):
         self.beginInsertRows(parent_index, rownum, rownum)
         parent_node.addChild(new_node)
         self.endInsertRows()
+
+    def _change_tuples_apply(self, cuerow, changes):
+        for change in copy.copy(changes):
+            block_node = cuerow.child(change[0])
+            block_index = block_node.index()
+            block_entry_values = block_node.getChildValues()
+
+            if change[1] not in block_entry_values:
+                if change[2] != AssignStateEnum.UNASSIGN:
+                    self._add_node(block_index, DcaMapEntry(change[1], parent=block_node))
+            else:
+                entry_node = block_node.child(block_entry_values.index(change[1]))
+                if entry_node.assign_state() != AssignStateEnum.NONE:
+                    changes.remove(change)
+                    entry_node.setInherited(change[2] != AssignStateEnum.UNASSIGN)
+                elif change[2] == AssignStateEnum.UNASSIGN:
+                    self._remove_node(entry_node.index())
+
+    def _change_tuples_cascade_apply(self, cuerow, changes=None):
+        if not changes:
+            changes = self._change_tuples_derive(cuerow)
+        next_rownum = cuerow.rownum() + 1
+
+        while changes and next_rownum < self.root.childCount():
+            self._change_tuples_apply(self.root.child(next_rownum), changes)
+            next_rownum += 1
+
+    def _change_tuples_derive(self, cuerow):
+        changes = []
+        for dca_num, dca_node in enumerate(cuerow.children):
+            for entry in dca_node.children:
+                changes.append((dca_num, entry.value(), entry.assign_state()))
+        return changes
+
+    def _change_tuples_invert(self, old_changes):
+        new_changes = []
+        for change in old_changes:
+            new_state = change[2]
+            if new_state == AssignStateEnum.ASSIGN:
+                new_state = AssignStateEnum.UNASSIGN
+            elif new_state == AssignStateEnum.UNASSIGN:
+                new_state = AssignStateEnum.ASSIGN
+
+            new_changes.append((change[0],
+                                change[1],
+                                new_state))
+        return new_changes
 
     def _clear_node(self, node_index):
         '''Clear a node of all its children'''
