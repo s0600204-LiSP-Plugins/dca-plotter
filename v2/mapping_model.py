@@ -186,25 +186,10 @@ class DcaMappingModel(QAbstractItemModel):
 
         cuerow = self._find_cuerow(cue.id)
 
-        # Clear each dca block and set the new children
-        for dca_num, assign_actions in enumerate(property_value):
-            block_node = cuerow.child(dca_num)
-            block_index = self.createIndex(block_node.rownum(), 0, block_node)
-            self._clear_node(block_index)
+        # Update assigns for this cuerow
+        self._set_inital_assigns(cuerow, property_value, True)
 
-            for entry in assign_actions['add']:
-                self._add_node(block_index,
-                               DcaMapEntry(entry, AssignStateEnum.ASSIGN, parent=block_node))
-
-            for entry in assign_actions['rem']:
-                self._add_node(block_index,
-                               DcaMapEntry(entry, AssignStateEnum.UNASSIGN, parent=block_node))
-
-        if cuerow.prev_sibling():
-            # Get inherits from previous cue row
-            changes = self._change_tuples_derive(cuerow.prev_sibling())
-            self._change_tuples_apply(cuerow, changes)
-
+        # Update the cuerows beyond it
         self._change_tuples_cascade_apply(cuerow)
 
     def append_cuerow(self, cue):
@@ -217,10 +202,8 @@ class DcaMappingModel(QAbstractItemModel):
         new_cuerow = DcaMapRow(cue, parent=self.root)
         self._add_node(self.createIndex(self.root.childCount(), 0, self.root), new_cuerow)
 
-        if new_cuerow.prev_sibling():
-            # Get inherits from previous cue row
-            changes = self._change_tuples_derive(new_cuerow.prev_sibling())
-            self._change_tuples_apply(new_cuerow, changes)
+        # Set assigns for this cuerow
+        self._set_inital_assigns(new_cuerow, cue.dca_changes, False)
 
         # Attach listener so we get cue property changes
         cue.property_changed.connect(self.amend_cuerow)
@@ -423,3 +406,25 @@ class DcaMappingModel(QAbstractItemModel):
         self.beginRemoveRows(self.parent(node_index), node_index.row(), node_index.row())
         node_index.internalPointer().parent.removeChild(node_index.row())
         self.endRemoveRows()
+
+    def _set_inital_assigns(self, cuerow, cue_defined_assigns, clear_first):
+        # Set base add and remove assigns
+        for dca_num, assign_actions in enumerate(cue_defined_assigns):
+            block_node = cuerow.child(dca_num)
+            block_index = block_node.index()
+
+            if clear_first:
+                self._clear_node(block_index)
+
+            for entry in assign_actions['add']:
+                self._add_node(block_index,
+                               DcaMapEntry(entry, AssignStateEnum.ASSIGN, parent=block_node))
+
+            for entry in assign_actions['rem']:
+                self._add_node(block_index,
+                               DcaMapEntry(entry, AssignStateEnum.UNASSIGN, parent=block_node))
+
+        # Get inherits from previous cue row
+        if cuerow.prev_sibling():
+            changes = self._change_tuples_derive(cuerow.prev_sibling())
+            self._change_tuples_apply(cuerow, changes)
