@@ -120,6 +120,7 @@ class DcaMapEntry(DcaMapLeafNode):
     def __init__(self, value, state=AssignStateEnum.NONE, **kwargs):
         super().__init__(**kwargs)
         self._value = value
+        self._is_inherited = False
         self._assign_state = state
 
     def data(self, role=Qt.DisplayRole):
@@ -146,6 +147,12 @@ class DcaMapEntry(DcaMapLeafNode):
             return font
 
         return super().data(role)
+
+    def inherited(self):
+        return self._is_inherited
+
+    def setInherited(self, is_inherited):
+        self._is_inherited = is_inherited
 
     def value(self):
         return self._value
