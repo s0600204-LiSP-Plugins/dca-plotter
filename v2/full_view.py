@@ -3,16 +3,20 @@ from PyQt5.QtCore import Qt, QModelIndex, QRect
 from PyQt5.QtGui import QFontMetrics, QPainter, QPen # QMouseEvent
 from PyQt5.QtWidgets import QAbstractItemView, QApplication
 
+from lisp.plugins import get_plugin
+
 class PlotterView(QAbstractItemView):
 
     CUEROW_MARGIN = 8
-    CUEHEADER_PADDING = 2
-    BLOCK_PADDING = 2
-    BLOCKENTRY_PADDING = 1
+    CUEHEADER_MARGIN = 2
+    BLOCK_MARGIN = 2
+    BLOCKENTRY_MARGIN = 1
 
+    _ideal_height = 0
     _cueid_width = 0
-    _cuerow_height = []
-    _cuerow_height_dirty = []
+
+    _cell_sizes = []
+    _cell_sizes_dirty = False
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -66,78 +70,36 @@ class PlotterView(QAbstractItemView):
         '''
         painter = QPainter(self.viewport())
 
-        # @todo: calculate (and set) this elsewhere
-        self._cueid_width = self._fontmetrics.height() * 3
-
         # Update/Recalculate dimensions
-        self._recalculate_cuerow_heights()
+        self._recalulate_cell_size()
 
-        viewport_y = 0
-
-        for row_num in range(self.model().childCount(self.rootIndex())):
-            row_x = 0
-            row_y = viewport_y
+        for row_num, row_dimensions in enumerate(self._cell_sizes):
             row_index = self.model().index(row_num, 0, self.rootIndex())
 
             # Draw the Cue Number & Name
             row_viewoptions = self.viewOptions()
-            row_viewoptions.rect = QRect(self.CUEHEADER_PADDING,
-                                         row_y + self.CUEHEADER_PADDING,
-                                         self.viewport().width() - self.CUEHEADER_PADDING * 2,
-                                         self._fontmetrics.height())
+            row_viewoptions.rect = row_dimensions['header_rect']
             self.itemDelegate().paint(painter, row_viewoptions, row_index)
-            viewport_y += self._fontmetrics.height() + self.CUEHEADER_PADDING * 2
 
-            # Draw the DCA blocks
-            block_x = self._cueid_width
-            block_width = (self.viewport().width() - self._cueid_width) / self.model().childCount(row_index)
-            for block_num in range(self.model().childCount(row_index)):
-                block_y = viewport_y
+            # Then each DCA block
+            for block_num, block_dimensions in enumerate(row_dimensions['blocks']):
                 block_index = self.model().index(block_num, 0, row_index)
 
                 # Draw the DCA name
                 # @todo: centre the text
                 dcaname_viewoptions = self.viewOptions()
-                dcaname_viewoptions.rect = QRect(block_x + self.BLOCK_PADDING,
-                                                 block_y + self.BLOCK_PADDING,
-                                                 block_width - self.BLOCK_PADDING * 2,
-                                                 self._fontmetrics.height())
+                dcaname_viewoptions.rect = block_dimensions['header_rect']
                 self.itemDelegate().paint(painter, dcaname_viewoptions, block_index)
-                block_y += self._fontmetrics.height() + self.BLOCK_PADDING
 
                 # And a line under it
-                self._paint_line(painter, QRect(block_x + self.BLOCK_PADDING * 2,
-                                                block_y + self.BLOCK_PADDING,
-                                                block_width - self.BLOCK_PADDING * 4,
-                                                1))
-                block_y += self.BLOCK_PADDING
+                self._paint_line(painter, block_dimensions['line_rect'])
 
                 # Draw the assigns
-                for assign_num in range(self.model().childCount(block_index)):
+                for assign_num, assign_dimensions in enumerate(block_dimensions['entries']):
                     assign_index = self.model().index(assign_num, 0, block_index)
                     assign_viewoptions = self.viewOptions()
-                    assign_viewoptions.rect = QRect(block_x + self.BLOCKENTRY_PADDING,
-                                                    block_y + self.BLOCKENTRY_PADDING,
-                                                    block_width - self.BLOCKENTRY_PADDING * 2,
-                                                    self._fontmetrics.height())
+                    assign_viewoptions.rect = assign_dimensions
                     self.itemDelegate().paint(painter, assign_viewoptions, assign_index)
-                    block_y += self._fontmetrics.height() + self.BLOCKENTRY_PADDING
-
-                # Draw a rectangle round the block
-                #block_outline_rect = QRect(block_x, viewport_y, block_width, self._cuerow_height[row_num])
-                #self._paint_outline(painter, block_outline_rect)
-                block_x += block_width
-
-            viewport_y += self._cuerow_height[row_num]
-
-            # Draw a rectangle around the entire cue
-            # Temporary - probably will remove or replace this
-            # However, for debugging, so we have a visual guide of where things are being drawn
-            #outline_rect = QRect(row_x, row_y, self.viewport().width(), viewport_y - row_y)
-            #self._paint_outline(painter, outline_rect)
-
-            viewport_y += self.CUEROW_MARGIN
-
 
     #def resizeEvent(self, event):
     #    '''Typically used to update the scrollbars
@@ -175,8 +137,7 @@ class PlotterView(QAbstractItemView):
         @arg model QAbstractItemModel
         '''
         super().setModel(model)
-        self._cuerow_height_dirty = [rownum for rownum in range(self.model().childCount(self.rootIndex()))]
-        self._cuerow_height = [0 for rownum in range(self.model().childCount(self.rootIndex()))]
+        self._cell_sizes_dirty = True
 
     #def setSelection(self, rect, flags): # REQUIRED
     #    '''Applies the selection flags to all of the items in or touching the rectangle rect
@@ -207,25 +168,88 @@ class PlotterView(QAbstractItemView):
     #    @return QRegion
     #    '''
 
-    def _mark_rowheight_dirty(self, rownum):
-        self._cuerow_height_dirty.append(rownum)
+    def _recalulate_cell_size(self):
 
-    def _recalculate_cuerow_heights(self):
-        entry_height = self._fontmetrics.height() + self.BLOCKENTRY_PADDING
-        while len(self._cuerow_height_dirty):
-            entry_count = 0
-            row_num = self._cuerow_height_dirty[0]
+        if not self._cell_sizes_dirty:
+            return
+        self._cell_sizes = []
+
+        FONT_HEIGHT = self._fontmetrics.height()
+        CUEROW_WIDTH = self.viewport().width()
+        CUEROW_HEADER_WIDTH = CUEROW_WIDTH - self.CUEHEADER_MARGIN * 2
+        BLOCK_INDENT = FONT_HEIGHT * 3
+        BLOCK_WIDTH = (CUEROW_WIDTH - BLOCK_INDENT) / get_plugin('DcaPlotter').SessionConfig['dca_count']
+        BLOCK_HEADER_WIDTH = BLOCK_WIDTH - self.BLOCK_MARGIN * 2
+        BLOCK_LINE_LENGTH = BLOCK_WIDTH - self.BLOCK_MARGIN * 4
+        BLOCK_LINE_BREADTH = 1
+        ENTRY_WIDTH = BLOCK_WIDTH - self.BLOCKENTRY_MARGIN * 2
+        ENTRY_MARGINED_HEIGHT = FONT_HEIGHT + self.BLOCKENTRY_MARGIN
+
+        running_y = 0
+        for row_num in range(self.model().childCount(self.rootIndex())):
             row_index = self.model().index(row_num, 0, self.rootIndex())
+            row_height = 0
+            row_dict = {}
 
+            # Rect for Cue Number & Name
+            row_dict['header_rect'] = QRect(self.CUEHEADER_MARGIN,
+                                            running_y + self.CUEHEADER_MARGIN,
+                                            CUEROW_HEADER_WIDTH,
+                                            FONT_HEIGHT)
+            row_height += row_dict['header_rect'].height() + self.CUEHEADER_MARGIN * 2
+
+            # Calculate the DCA blocks
+            row_dict['blocks'] = []
+            block_max_height = 0
             for block_num in range(self.model().childCount(row_index)):
+                block_dict = {}
+                block_x = BLOCK_INDENT + block_num * BLOCK_WIDTH
+                block_y = running_y + row_height
                 block_index = self.model().index(block_num, 0, row_index)
-                entry_count = max(entry_count, self.model().childCount(block_index))
 
-            self._cuerow_height[row_num] = self._fontmetrics.height() + self.BLOCK_PADDING * 2
-            self._cuerow_height[row_num] += max(1, entry_count) * entry_height
-            self._cuerow_height[row_num] += self.BLOCKENTRY_PADDING
-            self._cuerow_height_dirty.remove(row_num)
+                # The DCA name
+                block_dict['header_rect'] = QRect(block_x + self.BLOCK_MARGIN,
+                                                  block_y + self.BLOCK_MARGIN,
+                                                  BLOCK_HEADER_WIDTH,
+                                                  FONT_HEIGHT)
+                block_y += block_dict['header_rect'].height() + self.BLOCK_MARGIN
 
+                # And a line under it
+                block_dict['line_rect'] = QRect(block_x + self.BLOCK_MARGIN * 2,
+                                                block_y + self.BLOCK_MARGIN,
+                                                BLOCK_LINE_LENGTH,
+                                                BLOCK_LINE_BREADTH)
+                block_y += block_dict['line_rect'].height()
+
+                # And the assign entries
+                entry_rects = []
+                for assign_num in range(self.model().childCount(block_index)):
+                    entry_rects.append(QRect(block_x + self.BLOCKENTRY_MARGIN,
+                                             block_y + self.BLOCKENTRY_MARGIN,
+                                             ENTRY_WIDTH,
+                                             FONT_HEIGHT))
+                    block_y += ENTRY_MARGINED_HEIGHT
+
+                block_dict['entries'] = entry_rects
+                block_max_height = max(block_max_height, block_y - running_y)
+                row_dict['blocks'].append(block_dict)
+
+            # Set the basic rect of the blocks
+            # (Can only be done once we have the max height of all the blocks)
+            for block_num, block_dict in enumerate(row_dict['blocks']):
+                block_dict['rect'] = QRect(BLOCK_INDENT + block_num * BLOCK_WIDTH,
+                                           running_y + row_height,
+                                           BLOCK_WIDTH,
+                                           block_max_height)
+
+            row_height += block_max_height
+
+            row_dict['rect'] = QRect(0, running_y, CUEROW_WIDTH, row_height)
+            self._cell_sizes.append(row_dict)
+            running_y += row_height
+
+        self._cell_sizes_dirty = False
+        self._ideal_height = running_y
 
     def _paint_outline(self, painter, rect):
         rect = rect.adjusted(0, 0, -1, -1);
