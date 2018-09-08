@@ -82,15 +82,26 @@ class DcaChangeCueSettings(SettingsPage):
         return {'dca_changes': assigns}
 
     def loadSettings(self, settings):
+        plotter_plugin = get_plugin('DcaPlotter')
+        if plotter_plugin.mapper_enabled():
+            cuerow = plotter_plugin.mapper()._find_cuerow(settings['id'])
+
         assigns = settings.get('dca_changes', [])
         for a in range(len(assigns), self.dca_count):
             assigns.append({
                 'add': [],
                 'rem': []
             })
-        for a in range(len(assigns)):
-            assigns[a]['inherit'] = []
-            self.dca_blocks[a]['m'].deserialise(assigns[a])
+
+        for dca_num, entries in enumerate(assigns):
+            inh = []
+            if plotter_plugin.mapper_enabled():
+                for entry in cuerow.child(dca_num).children:
+                    if entry.inherited():
+                        inh.append(entry.value())
+
+            entries['inherit'] = inh
+            self.dca_blocks[dca_num]['m'].deserialise(entries)
 
 class DcaBlockView(QTreeView):
 
