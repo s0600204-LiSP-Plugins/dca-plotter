@@ -22,6 +22,7 @@ class PlotterView(QAbstractItemView):
         super().__init__(**kwargs)
         self.setFont(QApplication.font("QTreeView"));
         self._fontmetrics = QFontMetrics(self.font())
+        self.verticalScrollBar().setRange(0, 0)
 
     #def dataChanged(topLeft, bottomRight):
     #    '''This slot is called when the items with model indexes in the rectangle from topLeft to bottomRight change
@@ -78,7 +79,7 @@ class PlotterView(QAbstractItemView):
 
             # Draw the Cue Number & Name
             row_viewoptions = self.viewOptions()
-            row_viewoptions.rect = row_dimensions['header_rect']
+            row_viewoptions.rect = self._viewport_rect_for_item(row_index)
             self.itemDelegate().paint(painter, row_viewoptions, row_index)
 
             # Then each DCA block
@@ -88,23 +89,28 @@ class PlotterView(QAbstractItemView):
                 # Draw the DCA name
                 # @todo: centre the text
                 dcaname_viewoptions = self.viewOptions()
-                dcaname_viewoptions.rect = block_dimensions['header_rect']
+                dcaname_viewoptions.rect = self._viewport_rect_for_item(block_index)
                 self.itemDelegate().paint(painter, dcaname_viewoptions, block_index)
 
                 # And a line under it
-                self._paint_line(painter, block_dimensions['line_rect'])
+                self._paint_line(painter,
+                                 block_dimensions['line_rect'].adjusted(0, -self.verticalScrollBar().value(),
+                                                                        0, -self.verticalScrollBar().value()))
 
                 # Draw the assigns
                 for assign_num, assign_dimensions in enumerate(block_dimensions['entries']):
                     assign_index = self.model().index(assign_num, 0, block_index)
                     assign_viewoptions = self.viewOptions()
-                    assign_viewoptions.rect = assign_dimensions
+                    assign_viewoptions.rect = self._viewport_rect_for_item(assign_index)
                     self.itemDelegate().paint(painter, assign_viewoptions, assign_index)
 
-    #def resizeEvent(self, event):
-    #    '''Typically used to update the scrollbars
-    #    @arg event QResizeEvent
-    #    '''
+    def resizeEvent(self, event):
+        '''Typically used to update the scrollbars
+        @arg event QResizeEvent
+        '''
+        self._cell_size_dirty = True
+        self._recalulate_cell_size()
+        self.updateGeometries()
 
     #def rowsAboutToBeRemoved(self, parent, start, end):
     #    '''This slot is called when rows from start to end under parent are about to be removed
@@ -120,11 +126,13 @@ class PlotterView(QAbstractItemView):
     #    @arg end int
     #    '''
 
-    #def scrollContentsBy(self, dx, dy):
-    #    '''Scrolls the view's viewport by dx and dy pixels
-    #    @arg dx int
-    #    @arg dy int
-    #    '''
+    def scrollContentsBy(self, dx, dy):
+        '''Scrolls the view's viewport by dx and dy pixels
+        @arg dx int
+        @arg dy int
+        '''
+        self.viewport().scroll(dx, dy)
+        self.viewport().update()
 
     #def scrollTo(self, index, hint): # REQUIRED
     #    '''Scrolls the view to ensure that the item at the given model index is visible, and respecting the scroll hint as it scrolls
@@ -145,10 +153,11 @@ class PlotterView(QAbstractItemView):
     #    @arg flags QItemSelectionModel::SelectionFlags
     #    '''
 
-    #def updateGeometries(self):
-    #    '''Typically used to update the geometries of the view's child widgets, e.g., the scrollbars
-    #    (no args or return)
-    #    '''
+    def updateGeometries(self):
+        '''Typically used to update the geometries of the view's child widgets, e.g., the scrollbars
+        (no args or return)
+        '''
+        self.verticalScrollBar().setRange(0, max(0, self._ideal_height - self.viewport().height()))
 
     def verticalOffset(self): # REQUESTED
         '''Returns the view's vertical offset
@@ -156,11 +165,14 @@ class PlotterView(QAbstractItemView):
         '''
         return self.verticalScrollBar().value()
 
-    #def visualRect(self, index): # REQUIRED REQUESTED
-    #    '''Returns the rectangle occupied by the item at the given model index
-    #    @arg index QModelIndex
-    #    @return QRect
-    #    '''
+    def visualRect(self, index): # REQUIRED REQUESTED
+        '''Returns the rectangle occupied by the item at the given model index
+        @arg index QModelIndex
+        @return QRect
+        '''
+        if index.isValid():
+            return self._viewport_rect_for_item(index)
+        return QRect()
 
     #def visualRegionForSelection(self, selection): # REQUIRED
     #    '''Returns the viewport region for the items in the selection
@@ -250,6 +262,7 @@ class PlotterView(QAbstractItemView):
 
         self._cell_sizes_dirty = False
         self._ideal_height = running_y
+        self.viewport().update()
 
     def _paint_outline(self, painter, rect):
         rect = rect.adjusted(0, 0, -1, -1);
@@ -264,3 +277,30 @@ class PlotterView(QAbstractItemView):
         painter.setPen(QPen(self.palette().dark().color(), 0.5));
         painter.drawLine(rect.topLeft(), rect.bottomRight());
         painter.restore();
+
+    def _viewport_rect_for_item(self, index):
+        self._recalulate_cell_size()
+        rect = self._widget_rect_for_item(index)
+        if not rect.isValid():
+            return rect
+        return QRect(rect.x() - self.horizontalScrollBar().value(),
+                     rect.y() - self.verticalScrollBar().value(),
+                     rect.width(), rect.height())
+
+    def _widget_rect_for_item(self, index):
+        self._recalulate_cell_size()
+        walk = []
+        while index.isValid():
+            walk.append(index.row())
+            index = index.parent()
+        walk.reverse()
+
+        # This if...elif... is awkward
+        # @todo: Replace with something better
+        if len(walk) == 3:
+            return self._cell_sizes[walk[0]]['blocks'][walk[1]]['entries'][walk[2]]
+        elif len(walk) == 2:
+            return self._cell_sizes[walk[0]]['blocks'][walk[1]]['header_rect']
+        elif len(walk) == 1:
+            return self._cell_sizes[walk[0]]['header_rect']
+        return QRect()
