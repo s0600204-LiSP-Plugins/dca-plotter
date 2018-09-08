@@ -40,6 +40,10 @@ class DcaPlotter(Plugin):
     Depends = ('Midi', 'MidiFixtureControl')
     Description = 'Provides the ability to plot DCA/VCA assignments'
 
+    _mapper_enabled = False
+    _mapping_menu_action = None
+    _mapping_model = None
+
     def __init__(self, app):
         super().__init__(app)
 
@@ -62,31 +66,40 @@ class DcaPlotter(Plugin):
         # Register a listener for when a session has been created.
         Application().session_created.connect(self._on_session_init)
 
-        # Create the mapping model
-        self.mapping_model = DcaMappingModel()
-
-        # Create an entry in the "Tools" menu
-        self.menuAction = QAction('DCA Mapper', self.app.window)
-        self.menuAction.triggered.connect(self._open_dca_mapper)
-        self.app.window.menuTools.addAction(self.menuAction)
-
-    def _open_dca_mapper(self):
-        dca_mapper = DcaMappingDialog()
-        dca_mapper.exec_()
+    def _open_mapper_dialog(self):
+        if self._mapper_enabled:
+            dca_mapper = DcaMappingDialog()
+            dca_mapper.exec_()
 
     def _on_session_init(self):
         """Post-session-creation init"""
         self.tracker.current_active = [[] for i in range(self.SessionConfig['dca_count'])]
 
         layout = Application().layout
-        if not isinstance(layout, ListLayout):
+        self._mapper_enabled = isinstance(layout, ListLayout)
+        if not self._mapper_enabled:
+            if self._mapping_menu_action:
+                self.app.window.menuTools.removeAction(self._mapping_menu_action)
+            self._mapping_menu_action = None
+            self._mapping_model = None
             return
 
+        # Create the mapping model.
+        # This model *does* contain cues - or references to them - and with the
+        # aid of the listeners below gets updated when certain cues are updated.
+        self._mapping_model = DcaMappingModel()
+
+        # Create an entry in the "Tools" menu
+        if not self._mapping_menu_action:
+            self._mapping_menu_action = QAction('DCA Mapper', self.app.window)
+            self._mapping_menu_action.triggered.connect(self._open_mapper_dialog)
+            self.app.window.menuTools.addAction(self._mapping_menu_action)
+
+        # Listeners for cue actions
         cuelist_model = layout.list_model()
         cuelist_model.item_added.connect(self._on_cue_added)
         cuelist_model.item_moved.connect(self._on_cue_moved)
         cuelist_model.item_removed.connect(self._on_cue_removed)
-
         layout.view().listView.currentItemChanged.connect(self._on_cue_selected)
 
     def _on_cue_selected(self, prev, curr):
@@ -102,19 +115,25 @@ class DcaPlotter(Plugin):
     def _on_cue_added(self, cue):
         """Action to take when a cue is added to the List Layout."""
         if isinstance(cue, DcaChangeCue):
-            self.mapping_model.append_cuerow(cue)
+            self._mapping_model.append_cuerow(cue)
 
     def _on_cue_moved(self, old_index, new_index):
         """Action to take when a cue is moved in the List Layout."""
         cue = Application().layout._list_model.item(new_index)
         if isinstance(cue, DcaChangeCue):
-            self.mapping_model.move_cuerow(cue, new_index)
+            self._mapping_model.move_cuerow(cue, new_index)
 
     def _on_cue_removed(self, cue):
         """Action to take when a cue is removed from the List Layout."""
         if isinstance(cue, DcaChangeCue):
-            self.mapping_model.remove_cuerow(cue)
+            self._mapping_model.remove_cuerow(cue)
 
     def get_microphone_count(self):
         count = len(self.SessionConfig['inputs'])
         return count if count > 0 else self.Config['input_channel_count']
+
+    def mapper_enabled(self):
+        return self._mapper_enabled
+
+    def mapper(self):
+        return self._mapping_model

@@ -13,7 +13,7 @@ class DcaMappingDialog(QDialog):
         self.setMinimumSize(1080, 800)
         self.setLayout(QVBoxLayout())
 
-        self.model = get_plugin('DcaPlotter').mapping_model
+        self.model = get_plugin('DcaPlotter').mapper()
 
         self.view = PlotterView()
         self.view.setModel(self.model)
