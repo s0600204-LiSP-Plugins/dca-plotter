@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QAbstractItemView, QApplication
 
 from lisp.plugins import get_plugin
 
-class PlotterView(QAbstractItemView):
+class DcaMappingView(QAbstractItemView):
 
     CUEROW_MARGIN = 8
     CUEHEADER_MARGIN = 2

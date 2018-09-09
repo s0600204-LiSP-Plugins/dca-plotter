@@ -25,8 +25,8 @@ from lisp.plugins.dca_plotter.cue.change_cue import DcaChangeCue
 from lisp.plugins.dca_plotter.dca_plotter_mic_assign_ui import DcaPlotterMicAssignUi
 from lisp.plugins.dca_plotter.dca_plotter_settings import DcaPlotterSettings
 from lisp.plugins.dca_plotter.dca_plotter_tracking_model import DcaPlotterTrackingModel
-from lisp.plugins.dca_plotter.v2.mapping_dialog import DcaMappingDialog
-from lisp.plugins.dca_plotter.v2.mapping_model import DcaMappingModel
+from lisp.plugins.dca_plotter.mapper.dialog import DcaMappingDialog
+from lisp.plugins.dca_plotter.mapper.model import DcaMappingModel
 from lisp.plugins.list_layout.layout import ListLayout
 from lisp.ui.settings.app_configuration import AppConfigurationDialog
 from lisp.ui.settings.session_configuration import SessionConfigurationDialog
