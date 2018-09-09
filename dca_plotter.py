@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import QAction#, QDialog
 
 from lisp.application import Application
 from lisp.core.plugin import Plugin
+from lisp.core.signal import Signal
 from lisp.plugins.dca_plotter.cue.change_cue import DcaChangeCue
 from lisp.plugins.dca_plotter.dca_plotter_mic_assign_ui import DcaPlotterMicAssignUi
 from lisp.plugins.dca_plotter.dca_plotter_settings import DcaPlotterSettings
@@ -44,6 +45,9 @@ class DcaPlotter(Plugin):
     _mapping_menu_action = None
     _mapping_model = None
     _tracking_model = None
+    _tracker_view = None
+
+    initialised = Signal()
 
     def __init__(self, app):
         super().__init__(app)
@@ -70,19 +74,26 @@ class DcaPlotter(Plugin):
     def _on_session_init(self):
         """Post-session-creation init"""
 
+        layout = Application().layout
+        self._mapper_enabled = isinstance(layout, ListLayout)
+
         # Create the session's dca-tracking model
         # This model does not contain cues.
         # Instead it tracks which mics are muted and are currently assigned where
-        self._tracking_model = DcaTrackingModel()
+        self._tracking_model = DcaTrackingModel(self._mapper_enabled)
 
-        layout = Application().layout
-        self._mapper_enabled = isinstance(layout, ListLayout)
+        # If the mapper is not to be used we don't need to have it or its menu option in existence
         if not self._mapper_enabled:
             if self._mapping_menu_action:
                 self.app.window.menuTools.removeAction(self._mapping_menu_action)
             self._mapping_menu_action = None
             self._mapping_model = None
+            self.initialised.emit()
             return
+
+        # Draw the tracker
+        self._tracker_view = DcaTrackingView(parent=layout.view().parent())
+        layout.view().layout().addWidget(self._tracker_view, 2, 0, 1, 3)
 
         # Create the mapping model.
         # This model *does* contain cues - or references to them - and with the
@@ -101,6 +112,8 @@ class DcaPlotter(Plugin):
         cuelist_model.item_moved.connect(self._on_cue_moved)
         cuelist_model.item_removed.connect(self._on_cue_removed)
         layout.view().listView.currentItemChanged.connect(self._on_cue_selected)
+
+        self.initialised.emit()
 
     def _on_cue_selected(self, prev, curr):
         """Action to take when a cue is selected.

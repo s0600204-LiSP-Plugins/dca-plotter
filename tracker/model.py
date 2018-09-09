@@ -19,7 +19,7 @@ class DcaTrackingModel(DcaModelTemplate):
 
     _midi_out = None
 
-    def __init__(self):
+    def __init__(self, show_go_row):
         super().__init__()
         self._midi_out = get_plugin('Midi').output
 
@@ -27,7 +27,7 @@ class DcaTrackingModel(DcaModelTemplate):
         self._add_node(self.createIndex(0, 0, self.root), ModelsRow(parent=self.root))
 
         # Next 'Go' (ListLayout only)
-        if get_plugin('DcaPlotter').mapper_enabled():
+        if show_go_row:
             self._add_node(self.createIndex(1, 0, self.root), ModelsRow(parent=self.root))
 
     def call_cue(self, cue):
@@ -57,10 +57,6 @@ class DcaTrackingModel(DcaModelTemplate):
                 entry_num = block_node.getChildValues().index(change[1]['strip'][1])
                 entry_node = block_node.child(entry_num)
                 self._remove_node(entry_node.index())
-
-        # Until I build a proper UI:
-        for dca_num, dca_block in enumerate(current_assigns):
-            logging.info("DCA {} : {}".format(dca_num, repr(dca_block.getChildValues())))
 
     def determine_midi_messages(self, changes):
         midi_plugin_config = get_plugin('MidiFixtureControl').SessionConfig

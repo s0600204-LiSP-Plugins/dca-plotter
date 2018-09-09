@@ -24,12 +24,15 @@ class DcaModelViewTemplate(QAbstractItemView):
         self.horizontalScrollBar().setRange(0, 0)
         self.verticalScrollBar().setRange(0, 0)
 
-    #def dataChanged(topLeft, bottomRight):
-    #    '''This slot is called when the items with model indexes in the rectangle from topLeft to bottomRight change
-    #    @arg topLeft QModelIndex
-    #    @arg bottomRight QModelIndex
-    #    @arg roles QVector<int> - optional
-    #    '''
+    def dataChanged(topLeft, bottomRight):
+        '''This slot is called when the items with model indexes in the rectangle from topLeft to bottomRight change
+        @arg topLeft QModelIndex
+        @arg bottomRight QModelIndex
+        @arg roles QVector<int> - optional
+        '''
+        self._cell_sizes_dirty = True
+        super().dataChanged(topLeft, bottomRight)
+        self.viewport().update()
 
     def horizontalOffset(self): # REQUIRED REQUESTED
         '''Returns the view's horizontal offset.
@@ -114,19 +117,25 @@ class DcaModelViewTemplate(QAbstractItemView):
         self._recalculate_cell_size()
         self.updateGeometries()
 
-    #def rowsAboutToBeRemoved(self, parent, start, end):
-    #    '''This slot is called when rows from start to end under parent are about to be removed
-    #    @arg parent QModelIndex
-    #    @arg start int
-    #    @arg end int
-    #    '''
+    def rowsAboutToBeRemoved(self, parent, start, end):
+        '''This slot is called when rows from start to end under parent are about to be removed
+        @arg parent QModelIndex
+        @arg start int
+        @arg end int
+        '''
+        self._cell_sizes_dirty = True
+        super().rowsAboutToBeRemoved(parent, start, end)
+        self.viewport().update()
 
-    #def rowsInserted(self, parent, start, end):
-    #    '''This slot is called when rows from start to end are inserted under the parent model index
-    #    @arg parent QModelIndex
-    #    @arg start int
-    #    @arg end int
-    #    '''
+    def rowsInserted(self, parent, start, end):
+        '''This slot is called when rows from start to end are inserted under the parent model index
+        @arg parent QModelIndex
+        @arg start int
+        @arg end int
+        '''
+        self._cell_sizes_dirty = True
+        super().rowsInserted(parent, start, end)
+        self.viewport().update()
 
     def scrollContentsBy(self, dx, dy):
         '''Scrolls the view's viewport by dx and dy pixels
