@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__) # pylint: disable=invalid-name
 #
 # We do not explicitly track mute-status, instead make the (reasonable) assumption
 # that if an input is assigned to a DCA, then it must be unmuted, and vice versa.
-class DcaPlotterTrackingModel():
+class DcaTrackingModel():
 
     def __init__(self):
         #super().__init__()

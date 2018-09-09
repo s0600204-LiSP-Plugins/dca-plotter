@@ -42,7 +42,7 @@ class DcaChangeCue(Cue):
         dca_count = get_plugin('DcaPlotter').SessionConfig['dca_count']
 
     def __start__(self, fade=False):
-        get_plugin('DcaPlotter').tracker.call_cue(self.dca_changes)
+        get_plugin('DcaPlotter').tracker().call_cue(self.dca_changes)
         return False
 
 class DcaChangeCueSettings(SettingsPage):
