@@ -1,6 +1,8 @@
 
 import logging
+
 from lisp.plugins import get_plugin
+from lisp.plugins.dca_plotter.model_primitives import DcaModelTemplate, ModelsRow, ModelsEntry
 
 logger = logging.getLogger(__name__) # pylint: disable=invalid-name
 
@@ -11,26 +13,30 @@ logger = logging.getLogger(__name__) # pylint: disable=invalid-name
 # * Which mics are currently assigned where
 # * Current (last sent) names of dca channels
 #
-# For a view of all the dca assign and reset cues, a filtered model-view of CueModel should be sufficient
-# ... or not
-#
 # We do not explicitly track mute-status, instead make the (reasonable) assumption
 # that if an input is assigned to a DCA, then it must be unmuted, and vice versa.
-class DcaTrackingModel():
+class DcaTrackingModel(DcaModelTemplate):
+
+    _midi_out = None
 
     def __init__(self):
-        #super().__init__()
-        self.current_active = []
-        #self.current_names = [] # Coming in a future update ...
+        super().__init__()
         self._midi_out = get_plugin('Midi').output
 
-    def call_cue(self, new_assigns):
+        # Current/Active Assigns
+        self._add_node(self.createIndex(0, 0, self.root), ModelsRow(parent=self.root))
+
+        # Next 'Go' (ListLayout only)
+        if get_plugin('DcaPlotter').mapper_enabled():
+            self._add_node(self.createIndex(1, 0, self.root), ModelsRow(parent=self.root))
+
+    def call_cue(self, cue):
         # In "List" layout, we would already have this pre-calculated.
         # In "Cart" layout, we do this here.
         # However, at this point in development, we don't pre-calculate,
         #   instead doing it every time.
-        changes = self.calculate_diff(new_assigns)
-        
+        changes = self.calculate_diff(cue.dca_changes)
+
         # Here we have the MIDI sends...
         # Alternatively, as this is a *tracking* model, the diff change could be passed back
         #   and the calling cue handles sending the MIDI.
@@ -40,16 +46,21 @@ class DcaTrackingModel():
              self._midi_out.send_from_dict(dict_msg)
 
         # Update the currently active
+        current_assigns = self.root.child(0).children
         for change in changes:
             if change[0] == 'assign':
-                self.current_active[change[1]['dca']].append(change[1]['strip'][1])
+                block_node = current_assigns[change[1]['dca']]
+                self._add_node(block_node.index(),
+                               ModelsEntry(change[1]['strip'][1], parent=block_node))
             elif change[0] == 'unassign':
-                self.current_active[change[1]['dca']].remove(change[1]['strip'][1])
-            elif change[0] == 'rename':
-                self.current_names[change[1]['strip'][1]] = change[1]['name']
+                block_node = current_assigns[change[1]['dca']]
+                entry_num = block_node.getChildValues().index(change[1]['strip'][1])
+                entry_node = block_node.child(entry_num)
+                self._remove_node(entry_node.index())
 
         # Until I build a proper UI:
-        logger.info("Updated DCA arrangement: " + repr(self.current_active))
+        for dca_num, dca_block in enumerate(current_assigns):
+            logging.info("DCA {} : {}".format(dca_num, repr(dca_block.getChildValues())))
 
     def determine_midi_messages(self, changes):
         midi_plugin_config = get_plugin('MidiFixtureControl').SessionConfig
@@ -94,6 +105,7 @@ class DcaTrackingModel():
     def calculate_diff(self, new_assigns):
 
         cue_actions = []
+        current_assigns = self.root.child(0).children
 
         # Not present - No action
         # 0 = Mute
@@ -101,10 +113,9 @@ class DcaTrackingModel():
         # -1 = No Action (Keep On - Assign moved from one DCA to another)
         assign_changes = {}
 
-        dca_num = 0
-        for dca in new_assigns:
+        for dca_num, dca in enumerate(new_assigns):
             for to_add in dca['add']:
-                if to_add in self.current_active[dca_num]:
+                if to_add in current_assigns[dca_num].getChildValues():
                     continue
                 cue_actions.append(['assign', {
                         'strip': ['input', to_add],
@@ -116,7 +127,7 @@ class DcaTrackingModel():
                     assign_changes[to_add] = -1
 
             for to_rem in dca['rem']:
-                if to_rem not in self.current_active[dca_num]:
+                if to_rem not in current_assigns[dca_num].getChildValues():
                     continue
                 cue_actions.append(['unassign', {
                         'strip': ['input', to_rem],
@@ -126,8 +137,6 @@ class DcaTrackingModel():
                     assign_changes[to_rem] = 0
                 elif assign_changes[to_rem] == 1:
                     assign_changes[to_rem] = -1
-
-            dca_num += 1
 
         for mic_num, state_change in assign_changes.items():
             if state_change == 1:

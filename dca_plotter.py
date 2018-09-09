@@ -59,11 +59,6 @@ class DcaPlotter(Plugin):
         # Register our cue types
         app.register_cue_type(DcaChangeCue, translate("CueCategory", "DCA/VCA Manipulation"))
 
-        # Create the session's dca-tracking model
-        # This model does not contain cues.
-        # Instead it tracks which mics are muted and are currently assigned where
-        self._tracking_model = DcaTrackingModel()
-
         # Register a listener for when a session has been created.
         Application().session_created.connect(self._on_session_init)
 
@@ -74,7 +69,11 @@ class DcaPlotter(Plugin):
 
     def _on_session_init(self):
         """Post-session-creation init"""
-        self._tracking_model.current_active = [[] for i in range(self.SessionConfig['dca_count'])]
+
+        # Create the session's dca-tracking model
+        # This model does not contain cues.
+        # Instead it tracks which mics are muted and are currently assigned where
+        self._tracking_model = DcaTrackingModel()
 
         layout = Application().layout
         self._mapper_enabled = isinstance(layout, ListLayout)
