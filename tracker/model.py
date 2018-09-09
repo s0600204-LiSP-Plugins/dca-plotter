@@ -2,7 +2,7 @@
 import logging
 
 from lisp.plugins import get_plugin
-from lisp.plugins.dca_plotter.model_primitives import DcaModelTemplate, ModelsRow, ModelsEntry
+from lisp.plugins.dca_plotter.model_primitives import AssignStateEnum, DcaModelTemplate, ModelsRow, ModelsEntry
 
 logger = logging.getLogger(__name__) # pylint: disable=invalid-name
 
@@ -17,25 +17,26 @@ logger = logging.getLogger(__name__) # pylint: disable=invalid-name
 # that if an input is assigned to a DCA, then it must be unmuted, and vice versa.
 class DcaTrackingModel(DcaModelTemplate):
 
+    _cached_changes = []
+    _last_selected_cue_id = None
     _midi_out = None
 
-    def __init__(self, show_go_row):
+    def __init__(self, show_predictive_row):
         super().__init__()
         self._midi_out = get_plugin('Midi').output
 
         # Current/Active Assigns
         self._add_node(self.createIndex(0, 0, self.root), ModelsRow(parent=self.root))
 
-        # Next 'Go' (ListLayout only)
-        if show_go_row:
+        # Predicted assign changes (ListLayout only)
+        if show_predictive_row:
             self._add_node(self.createIndex(1, 0, self.root), ModelsRow(parent=self.root))
 
     def call_cue(self, cue):
-        # In "List" layout, we would already have this pre-calculated.
-        # In "Cart" layout, we do this here.
-        # However, at this point in development, we don't pre-calculate,
-        #   instead doing it every time.
-        changes = self.calculate_diff(cue.dca_changes)
+        if self._cached_changes and cue.id == self._last_selected_cue_id:
+            changes = self._cached_changes
+        else:
+            changes = self.calculate_diff(cue.dca_changes)
 
         # Here we have the MIDI sends...
         # Alternatively, as this is a *tracking* model, the diff change could be passed back
@@ -57,6 +58,29 @@ class DcaTrackingModel(DcaModelTemplate):
                 entry_num = block_node.getChildValues().index(change[1]['strip'][1])
                 entry_node = block_node.child(entry_num)
                 self._remove_node(entry_node.index())
+
+    def select_cue(self, cue):
+        self._last_selected_cue_id = cue.id
+
+        next_assigns = self.root.child(1).children
+        for block_node in next_assigns:
+            self._clear_node(block_node.index())
+
+        self._cached_changes = self.calculate_diff(cue.dca_changes)
+        for change in self._cached_changes:
+            if change[0] == 'assign':
+                block_node = next_assigns[change[1]['dca']]
+                self._add_node(block_node.index(),
+                               ModelsEntry(change[1]['strip'][1], AssignStateEnum.ASSIGN, parent=block_node))
+            elif change[0] == 'unassign':
+                block_node = next_assigns[change[1]['dca']]
+                self._add_node(block_node.index(),
+                               ModelsEntry(change[1]['strip'][1], AssignStateEnum.UNASSIGN, parent=block_node))
+
+    def on_cue_update(self, cue, property_name, property_value):
+        if cue.id != self._last_selected_cue_id or property_name != 'dca_changes':
+            return
+        self.select_cue(cue)
 
     def determine_midi_messages(self, changes):
         midi_plugin_config = get_plugin('MidiFixtureControl').SessionConfig

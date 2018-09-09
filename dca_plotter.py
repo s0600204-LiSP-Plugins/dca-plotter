@@ -115,20 +115,20 @@ class DcaPlotter(Plugin):
 
         self.initialised.emit()
 
-    def _on_cue_selected(self, prev, curr):
+    def _on_cue_selected(self, current, previous):
         """Action to take when a cue is selected.
 
         This function only gets called if the session is in the "List" layout.
         With the "Cart" layout, selecting a cue calls the cue, and there are no other layouts currently.
         """
-        # prev and curr are both of type
-        # -> lisp.plugins.list_layout.list_view.CueTreeWidgetItem
-        pass
+        if current and isinstance(current.cue, DcaChangeCue):
+            self._tracking_model.select_cue(current.cue)
 
     def _on_cue_added(self, cue):
         """Action to take when a cue is added to the List Layout."""
         if isinstance(cue, DcaChangeCue):
             self._mapping_model.append_cuerow(cue)
+            cue.property_changed.connect(self._tracking_model.on_cue_update)
 
     def _on_cue_moved(self, old_index, new_index):
         """Action to take when a cue is moved in the List Layout."""
@@ -140,6 +140,7 @@ class DcaPlotter(Plugin):
         """Action to take when a cue is removed from the List Layout."""
         if isinstance(cue, DcaChangeCue):
             self._mapping_model.remove_cuerow(cue)
+            cue.property_changed.disconnect(self._tracking_model.on_cue_update)
 
     def get_microphone_count(self):
         count = len(self.SessionConfig['inputs'])
