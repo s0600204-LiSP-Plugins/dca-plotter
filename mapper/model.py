@@ -110,7 +110,9 @@ class DcaMappingModel(DcaModelTemplate):
 
             if change[1] not in block_entry_values:
                 if change[2] != AssignStateEnum.UNASSIGN:
-                    self._add_node(block_index, ModelsEntry(change[1], parent=block_node))
+                    new_entry = ModelsEntry(change[1], parent=block_node)
+                    new_entry.setInherited(True)
+                    self._add_node(block_index, new_entry)
             else:
                 entry_node = block_node.child(block_entry_values.index(change[1]))
                 if entry_node.assign_state() != AssignStateEnum.NONE:

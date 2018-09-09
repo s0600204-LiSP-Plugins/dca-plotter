@@ -134,16 +134,13 @@ class ModelsEntry(ModelsLeafNode):
     def __init__(self, value, state=AssignStateEnum.NONE, **kwargs):
         super().__init__(**kwargs)
         self._value = value
-        self._is_inherited = state == AssignStateEnum.NONE
+        self._is_inherited = False
         self._assign_state = state
 
     def data(self, role=Qt.DisplayRole):
         # pylint: disable=too-many-return-statements
         if role == Qt.DisplayRole:
-            name = get_mic_assign_name(self.value())
-            if self._assign_state == AssignStateEnum.NONE:
-                return "({})".format(name)
-            return name
+            return get_mic_assign_name(self.value())
 
         if role == Qt.EditRole:
             return self.value
@@ -153,7 +150,7 @@ class ModelsEntry(ModelsLeafNode):
                 return QBrush(Qt.green)
             if self._assign_state == AssignStateEnum.UNASSIGN:
                 return QBrush(Qt.red)
-            if self._assign_state == AssignStateEnum.NONE:
+            if self._assign_state == AssignStateEnum.NONE and self._is_inherited:
                 return QBrush(QApplication.palette().dark().color())
 
         if role == Qt.FontRole and self._assign_state == AssignStateEnum.UNASSIGN:
