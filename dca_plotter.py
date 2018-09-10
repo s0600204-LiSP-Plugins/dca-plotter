@@ -23,6 +23,7 @@ from lisp.application import Application
 from lisp.core.plugin import Plugin
 from lisp.core.signal import Signal
 from lisp.plugins.dca_plotter.cue.change_cue import DcaChangeCue
+from lisp.plugins.dca_plotter.cue.reset_cue import DcaResetCue
 from lisp.plugins.dca_plotter.dca_plotter_mic_assign_ui import DcaPlotterMicAssignUi
 from lisp.plugins.dca_plotter.dca_plotter_settings import DcaPlotterSettings
 from lisp.plugins.dca_plotter.mapper.dialog import DcaMappingDialog
@@ -62,6 +63,7 @@ class DcaPlotter(Plugin):
 
         # Register our cue types
         app.register_cue_type(DcaChangeCue, translate("CueCategory", "DCA/VCA Manipulation"))
+        app.register_cue_type(DcaResetCue, translate("CueCategory", "DCA/VCA Manipulation"))
 
         # Register a listener for when a session has been created.
         Application().session_created.connect(self._on_session_init)
