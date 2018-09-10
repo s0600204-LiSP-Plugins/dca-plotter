@@ -117,31 +117,33 @@ class DcaPlotter(Plugin):
 
         self.initialised.emit()
 
+    def _is_supported_type(self, cue_type):
+        return cue_type == 'DcaChangeCue' or cue_type == 'DcaResetCue'
+
     def _on_cue_selected(self, current, previous):
         """Action to take when a cue is selected.
 
         This function only gets called if the session is in the "List" layout.
         With the "Cart" layout, selecting a cue calls the cue, and there are no other layouts currently.
         """
-        if current and \
-            (isinstance(current.cue, DcaChangeCue) or isinstance(current.cue, DcaResetCue)):
+        if current and self._is_supported_type(current.cue.type):
             self._tracking_model.select_cue(current.cue)
 
     def _on_cue_added(self, cue):
         """Action to take when a cue is added to the List Layout."""
-        if isinstance(cue, DcaChangeCue):
+        if self._is_supported_type(cue.type):
             self._mapping_model.append_cuerow(cue)
             cue.property_changed.connect(self._tracking_model.on_cue_update)
 
     def _on_cue_moved(self, old_index, new_index):
         """Action to take when a cue is moved in the List Layout."""
         cue = Application().layout._list_model.item(new_index)
-        if isinstance(cue, DcaChangeCue):
+        if self._is_supported_type(cue.type):
             self._mapping_model.move_cuerow(cue, new_index)
 
     def _on_cue_removed(self, cue):
         """Action to take when a cue is removed from the List Layout."""
-        if isinstance(cue, DcaChangeCue):
+        if self._is_supported_type(cue.type):
             self._mapping_model.remove_cuerow(cue)
             cue.property_changed.disconnect(self._tracking_model.on_cue_update)
 

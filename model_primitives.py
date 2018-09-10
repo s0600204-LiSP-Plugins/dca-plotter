@@ -112,6 +112,8 @@ class ModelsAssignRow(ModelsBranchNode):
         for dca in range(get_plugin('DcaPlotter').SessionConfig['dca_count']):
             self.addChild(ModelsBlock(parent=self))
 
+class ModelsResetRow(ModelsBranchNode):
+    '''Reset Row class.'''
 
 class ModelsBlock(ModelsBranchNode):
     '''Block class'''

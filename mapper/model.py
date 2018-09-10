@@ -5,9 +5,23 @@ import copy
 from PyQt5.QtCore import QModelIndex, Qt
 
 from lisp.plugins.dca_plotter.model_primitives import AssignStateEnum, DcaModelTemplate, \
-    ModelsRow, ModelsEntry
+    ModelsAssignRow, ModelsResetRow, ModelsEntry
 
-class ModelsCueRow(ModelsRow):
+class ModelsAssignCueRow(ModelsAssignRow):
+    '''Cue row class.'''
+    def __init__(self, cue, **kwargs):
+        super().__init__(**kwargs)
+        self.cue = cue
+
+    def data(self, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole:
+            return "{} : {}".format(self.cue.index + 1, self.cue.name)
+        return super().data(role)
+
+    def value(self):
+        return self.cue.index
+
+class ModelsResetCueRow(ModelsResetRow):
     '''Cue row class.'''
     def __init__(self, cue, **kwargs):
         super().__init__(**kwargs)
@@ -24,7 +38,7 @@ class ModelsCueRow(ModelsRow):
 class DcaMappingModel(DcaModelTemplate):
 
     def amend_cuerow(self, cue, property_name, property_value):
-        if property_name != 'dca_changes':
+        if property_name != 'dca_changes' or cue.type == "DcaResetCue":
             return
 
         cuerow = self._find_cuerow(cue.id)
@@ -42,11 +56,15 @@ class DcaMappingModel(DcaModelTemplate):
                                             this function will not pick that fact up...
                  Thankfully, creating a cue 'tween two others is not currently possible.
         '''
-        new_cuerow = ModelsCueRow(cue, parent=self.root)
-        self._add_node(self.createIndex(self.root.childCount(), 0, self.root), new_cuerow)
 
-        # Set assigns for this cuerow
-        self._set_inital_assigns(new_cuerow, cue.dca_changes, False)
+        if cue.type == "DcaChangeCue":
+            new_cuerow = ModelsAssignCueRow(cue, parent=self.root)
+            self._add_node(self.createIndex(self.root.childCount(), 0, self.root), new_cuerow)
+            self._set_inital_assigns(new_cuerow, cue.dca_changes, False)
+
+        elif cue.type == "DcaResetCue":
+            new_cuerow = ModelsResetCueRow(cue, parent=self.root)
+            self._add_node(self.createIndex(self.root.childCount(), 0, self.root), new_cuerow)
 
         # Attach listener so we get cue property changes
         cue.property_changed.connect(self.amend_cuerow)
@@ -63,7 +81,10 @@ class DcaMappingModel(DcaModelTemplate):
             return
 
         # Update assign entries at the leave point
-        changes = self._change_tuples_invert(self._change_tuples_derive(cuerow))
+        if cue.type == "DcaChangeCue":
+            changes = self._change_tuples_invert(self._change_tuples_derive(cuerow))
+        else:
+            changes = self._change_tuples_derive(cuerow.prev_sibling())
         self._change_tuples_cascade_apply(cuerow, changes)
 
         # When moving down, all other things move up. In this case, the new index is one out.
@@ -71,7 +92,7 @@ class DcaMappingModel(DcaModelTemplate):
             new_index += 1
 
         self.beginMoveRows(QModelIndex(), old_index, old_index, QModelIndex(), new_index)
-        self.root.children.sort(key=ModelsRow.value)
+        self.root.children.sort(key=ModelsAssignCueRow.value)
         self.endMoveRows()
 
         # Update assign entries at the entry point
@@ -83,8 +104,9 @@ class DcaMappingModel(DcaModelTemplate):
                     self._remove_node(entry.index())
 
         # Then, update from the new previous cue row
-        if cuerow.prev_sibling():
-            changes = self._change_tuples_derive(cuerow.prev_sibling())
+        prev_sibling = cuerow.prev_sibling()
+        if prev_sibling and prev_sibling.cue.type == "DcaChangeCue":
+            changes = self._change_tuples_derive(prev_sibling)
             self._change_tuples_apply(cuerow, changes)
 
         # Finally, cascade changes.
@@ -96,13 +118,21 @@ class DcaMappingModel(DcaModelTemplate):
         cuerow = self._find_cuerow(cue.id)
 
         # Update assign entries
-        changes = self._change_tuples_invert(self._change_tuples_derive(cuerow))
+        if cue.type == "DcaChangeCue":
+            changes = self._change_tuples_invert(self._change_tuples_derive(cuerow))
+        else:
+            changes = self._change_tuples_derive(cuerow.prev_sibling())
         self._change_tuples_cascade_apply(cuerow, changes)
 
         # And remove the cuerow from the model
         self._remove_node(cuerow.index())
 
     def _change_tuples_apply(self, cuerow, changes):
+
+        if cuerow.cue.type == "DcaResetCue":
+            changes.clear()
+            return
+
         for change in copy.copy(changes):
             block_node = cuerow.child(change[0])
             block_index = block_node.index()
@@ -123,15 +153,33 @@ class DcaMappingModel(DcaModelTemplate):
 
     def _change_tuples_cascade_apply(self, cuerow, changes=None):
         if not changes:
-            changes = self._change_tuples_derive(cuerow)
+            if cuerow.cue.type == "DcaResetCue":
+                changes = self._change_tuples_clear(self._change_tuples_derive(cuerow.prev_sibling()))
+            else:
+                changes = self._change_tuples_derive(cuerow)
         next_rownum = cuerow.rownum() + 1
 
         while changes and next_rownum < self.root.childCount():
             self._change_tuples_apply(self.root.child(next_rownum), changes)
             next_rownum += 1
 
+    def _change_tuples_clear(self, old_changes):
+        new_changes = []
+        for change in old_changes:
+            new_state = None
+            if change[2] != AssignStateEnum.UNASSIGN:
+                new_state = AssignStateEnum.UNASSIGN
+
+            if new_state:
+                new_changes.append((change[0],
+                                    change[1],
+                                    new_state))
+        return new_changes
+
     def _change_tuples_derive(self, cuerow):
         changes = []
+        if not cuerow or cuerow.cue.type == "DcaResetCue":
+            return changes
         for dca_num, dca_node in enumerate(cuerow.children):
             for entry in dca_node.children:
                 changes.append((dca_num, entry.value(), entry.assign_state()))
@@ -176,6 +224,7 @@ class DcaMappingModel(DcaModelTemplate):
                                ModelsEntry(entry, AssignStateEnum.UNASSIGN, parent=block_node))
 
         # Get inherits from previous cue row
-        if cuerow.prev_sibling():
-            changes = self._change_tuples_derive(cuerow.prev_sibling())
+        prev_sibling = cuerow.prev_sibling()
+        if prev_sibling and prev_sibling.cue.type == "DcaChangeCue":
+            changes = self._change_tuples_derive(prev_sibling)
             self._change_tuples_apply(cuerow, changes)
