@@ -103,17 +103,30 @@ class ModelsRootNode(ModelsBranchNode):
     def model(self):
         return self._model
 
-class ModelsAssignRow(ModelsBranchNode):
-    '''Assign Row class.'''
-    def __init__(self, **kwargs):
+class ModelsResetRow(ModelsBranchNode):
+    '''Reset Row class.'''
+    def __init__(self, cue=None, **kwargs):
         super().__init__(**kwargs)
+        self.cue = cue
+
+    def data(self, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole and self.cue:
+            return "{} : {}".format(self.cue.index + 1, self.cue.name)
+        return super().data(role)
+
+    def value(self):
+        if self.cue:
+            return self.cue.index
+        return super().value()
+
+class ModelsAssignRow(ModelsResetRow):
+    '''Assign Row class.'''
+    def __init__(self, cue=None, **kwargs):
+        super().__init__(cue, **kwargs)
 
         # pylint: disable=unused-variable
         for dca in range(get_plugin('DcaPlotter').SessionConfig['dca_count']):
             self.addChild(ModelsBlock(parent=self))
-
-class ModelsResetRow(ModelsBranchNode):
-    '''Reset Row class.'''
 
 class ModelsBlock(ModelsBranchNode):
     '''Block class'''

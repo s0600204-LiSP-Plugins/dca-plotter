@@ -7,34 +7,6 @@ from PyQt5.QtCore import QModelIndex, Qt
 from lisp.plugins.dca_plotter.model_primitives import AssignStateEnum, DcaModelTemplate, \
     ModelsAssignRow, ModelsResetRow, ModelsEntry
 
-class ModelsAssignCueRow(ModelsAssignRow):
-    '''Cue row class.'''
-    def __init__(self, cue, **kwargs):
-        super().__init__(**kwargs)
-        self.cue = cue
-
-    def data(self, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole:
-            return "{} : {}".format(self.cue.index + 1, self.cue.name)
-        return super().data(role)
-
-    def value(self):
-        return self.cue.index
-
-class ModelsResetCueRow(ModelsResetRow):
-    '''Cue row class.'''
-    def __init__(self, cue, **kwargs):
-        super().__init__(**kwargs)
-        self.cue = cue
-
-    def data(self, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole:
-            return "{} : {}".format(self.cue.index + 1, self.cue.name)
-        return super().data(role)
-
-    def value(self):
-        return self.cue.index
-
 class DcaMappingModel(DcaModelTemplate):
 
     def amend_cuerow(self, cue, property_name, property_value):
@@ -58,12 +30,12 @@ class DcaMappingModel(DcaModelTemplate):
         '''
 
         if cue.type == "DcaChangeCue":
-            new_cuerow = ModelsAssignCueRow(cue, parent=self.root)
+            new_cuerow = ModelsAssignRow(cue, parent=self.root)
             self._add_node(self.createIndex(self.root.childCount(), 0, self.root), new_cuerow)
             self._set_inital_assigns(new_cuerow, cue.dca_changes, False)
 
         elif cue.type == "DcaResetCue":
-            new_cuerow = ModelsResetCueRow(cue, parent=self.root)
+            new_cuerow = ModelsResetRow(cue, parent=self.root)
             self._add_node(self.createIndex(self.root.childCount(), 0, self.root), new_cuerow)
 
         # Attach listener so we get cue property changes
@@ -92,7 +64,7 @@ class DcaMappingModel(DcaModelTemplate):
             new_index += 1
 
         self.beginMoveRows(QModelIndex(), old_index, old_index, QModelIndex(), new_index)
-        self.root.children.sort(key=ModelsAssignCueRow.value)
+        self.root.children.sort(key=ModelsResetRow.value)
         self.endMoveRows()
 
         # Update assign entries at the entry point
