@@ -254,8 +254,10 @@ class DcaModelViewTemplate(QAbstractItemView):
                                              FONT_HEIGHT))
                     block_y += ENTRY_MARGINED_HEIGHT
 
+                block_y += self.BLOCK_MARGIN
+
                 block_dict['entries'] = entry_rects
-                block_max_height = max(block_max_height, block_y - running_y)
+                block_max_height = max(block_max_height, block_y - running_y - row_height)
                 row_dict['blocks'].append(block_dict)
 
             # Set the basic rect of the blocks
@@ -267,6 +269,9 @@ class DcaModelViewTemplate(QAbstractItemView):
                                            block_max_height)
 
             row_height += block_max_height
+
+            if self.DRAW_CUEHEADER:
+                row_height += FONT_HEIGHT
 
             row_dict['rect'] = QRect(0, running_y, CUEROW_WIDTH, row_height)
             self._cell_sizes.append(row_dict)
