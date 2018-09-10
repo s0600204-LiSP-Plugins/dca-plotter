@@ -2,7 +2,8 @@
 import logging
 
 from lisp.plugins import get_plugin
-from lisp.plugins.dca_plotter.model_primitives import AssignStateEnum, DcaModelTemplate, ModelsRow, ModelsEntry
+from lisp.plugins.action_cues.dca_change_cue import DcaChangeCue
+from lisp.plugins.dca_plotter.model_primitives import AssignStateEnum, DcaModelTemplate, ModelsAssignRow, ModelsEntry
 
 logger = logging.getLogger(__name__) # pylint: disable=invalid-name
 
@@ -26,17 +27,19 @@ class DcaTrackingModel(DcaModelTemplate):
         self._midi_out = get_plugin('Midi').output
 
         # Current/Active Assigns
-        self._add_node(self.createIndex(0, 0, self.root), ModelsRow(parent=self.root))
+        self._add_node(self.createIndex(0, 0, self.root), ModelsAssignRow(parent=self.root))
 
         # Predicted assign changes (ListLayout only)
         if show_predictive_row:
-            self._add_node(self.createIndex(1, 0, self.root), ModelsRow(parent=self.root))
+            self._add_node(self.createIndex(1, 0, self.root), ModelsAssignRow(parent=self.root))
 
     def call_cue(self, cue):
         if self._cached_changes and cue.id == self._last_selected_cue_id:
             changes = self._cached_changes
-        else:
+        elif isinstance(cue, DcaChangeCue):
             changes = self.calculate_diff(cue.dca_changes)
+        else:
+            changes = self.cancel_current()
 
         # Here we have the MIDI sends...
         # Alternatively, as this is a *tracking* model, the diff change could be passed back
@@ -66,7 +69,11 @@ class DcaTrackingModel(DcaModelTemplate):
         for block_node in next_assigns:
             self._clear_node(block_node.index())
 
-        self._cached_changes = self.calculate_diff(cue.dca_changes)
+        if isinstance(cue, DcaChangeCue):
+            self._cached_changes = self.calculate_diff(cue.dca_changes)
+        else:
+            self._cached_changes = self.cancel_current()
+
         for change in self._cached_changes:
             if change[0] == 'assign':
                 block_node = next_assigns[change[1]['dca']]
@@ -121,6 +128,19 @@ class DcaTrackingModel(DcaModelTemplate):
                                                          args))
 
         return messages
+
+    def cancel_current(self):
+        cue_actions = []
+        for dca_num, dca_node in enumerate(self.root.child(0).children):
+            for entry_node in dca_node.children:
+                cue_actions.append(['unassign', {
+                    'strip': ['input', entry_node.value()],
+                    'dca': dca_num
+                }])
+                cue_actions.append(['mute', {
+                    'strip': ['input', entry_node.value()]
+                }])
+        return cue_actions
 
     def calculate_diff(self, new_assigns):
 

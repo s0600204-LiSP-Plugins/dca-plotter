@@ -103,8 +103,8 @@ class ModelsRootNode(ModelsBranchNode):
     def model(self):
         return self._model
 
-class ModelsRow(ModelsBranchNode):
-    '''Row class.'''
+class ModelsAssignRow(ModelsBranchNode):
+    '''Assign Row class.'''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

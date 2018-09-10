@@ -37,7 +37,7 @@ class DcaResetCue(Cue):
         self.name = translate('CueName', self.Name)
 
     def __start__(self, fade=False):
-        #get_plugin('DcaPlotter').tracker().call_cue(self)
+        get_plugin('DcaPlotter').tracker().call_cue(self)
         return False
 
 class DcaResetCueSettings(SettingsPage):

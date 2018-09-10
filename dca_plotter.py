@@ -123,7 +123,8 @@ class DcaPlotter(Plugin):
         This function only gets called if the session is in the "List" layout.
         With the "Cart" layout, selecting a cue calls the cue, and there are no other layouts currently.
         """
-        if current and isinstance(current.cue, DcaChangeCue):
+        if current and \
+            (isinstance(current.cue, DcaChangeCue) or isinstance(current.cue, DcaResetCue)):
             self._tracking_model.select_cue(current.cue)
 
     def _on_cue_added(self, cue):
