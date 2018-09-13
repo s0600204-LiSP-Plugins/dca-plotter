@@ -11,11 +11,13 @@ class DcaModelViewTemplate(QAbstractItemView):
     BLOCKENTRY_MARGIN = 1
     CUEROW_MARGIN = 8
     CUEHEADER_MARGIN = 2
+    MINIMUM_BLOCK_WIDTH = 128
     DRAW_CUEHEADER = False # <-- Overridden to True in the Mapper view
 
     _cell_sizes = []
     _cell_sizes_dirty = False
     _ideal_height = 0
+    _ideal_width = 0
 
     def __init__(self, font_variant, **kwargs):
         super().__init__(**kwargs)
@@ -97,8 +99,10 @@ class DcaModelViewTemplate(QAbstractItemView):
 
                 # And a line under it
                 self._paint_line(painter,
-                                 block_dimensions['line_rect'].adjusted(0, -self.verticalScrollBar().value(),
-                                                                        0, -self.verticalScrollBar().value()))
+                                 block_dimensions['line_rect'].adjusted(-self.horizontalScrollBar().value(),
+                                                                        -self.verticalScrollBar().value(),
+                                                                        -self.horizontalScrollBar().value(),
+                                                                        -self.verticalScrollBar().value()))
 
                 # Draw the assigns
                 for assign_num, assign_dimensions in enumerate(block_dimensions['entries']):
@@ -196,11 +200,13 @@ class DcaModelViewTemplate(QAbstractItemView):
             return
         self._cell_sizes = []
 
+        DCA_COUNT = get_plugin('DcaPlotter').SessionConfig['dca_count']
         FONT_HEIGHT = self._fontmetrics.height()
-        CUEROW_WIDTH = self.viewport().width()
-        CUEROW_HEADER_WIDTH = CUEROW_WIDTH - self.CUEHEADER_MARGIN * 2
         BLOCK_INDENT = (FONT_HEIGHT * 3) if self.DRAW_CUEHEADER else 0
-        BLOCK_WIDTH = (CUEROW_WIDTH - BLOCK_INDENT) / get_plugin('DcaPlotter').SessionConfig['dca_count']
+        BLOCK_WIDTH = max(self.MINIMUM_BLOCK_WIDTH,
+                          (self.viewport().width() - BLOCK_INDENT) / DCA_COUNT)
+        CUEROW_WIDTH = DCA_COUNT * BLOCK_WIDTH + BLOCK_INDENT
+        CUEROW_HEADER_WIDTH = CUEROW_WIDTH - self.CUEHEADER_MARGIN * 2
         BLOCK_HEADER_WIDTH = BLOCK_WIDTH - self.BLOCK_MARGIN * 2
         BLOCK_LINE_LENGTH = BLOCK_WIDTH - self.BLOCK_MARGIN * 4
         BLOCK_LINE_BREADTH = 1
@@ -279,6 +285,7 @@ class DcaModelViewTemplate(QAbstractItemView):
 
         self._cell_sizes_dirty = False
         self._ideal_height = running_y + self.CUEHEADER_MARGIN * 2
+        self._ideal_width = CUEROW_WIDTH
         self.viewport().update()
 
     def _paint_outline(self, painter, rect):
