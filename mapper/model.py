@@ -13,7 +13,7 @@ class DcaMappingModel(DcaModelTemplate):
         if property_name != 'dca_changes' or cue.type == "DcaResetCue":
             return
 
-        cuerow = self._find_cuerow(cue.id)
+        cuerow = self.find_cuerow(cue.id)
         before = self._change_tuples_derive(cuerow)
 
         # Update assigns for this cuerow.
@@ -50,7 +50,7 @@ class DcaMappingModel(DcaModelTemplate):
 
     def move_cuerow(self, cue, new_cue_index):
         '''Called when a cue is moved in the main cue list'''
-        cuerow = self._find_cuerow(cue.id)
+        cuerow = self.find_cuerow(cue.id)
 
         old_index = cuerow.rownum()
         new_index = sorted(self.root.getChildValues()).index(new_cue_index)
@@ -98,7 +98,7 @@ class DcaMappingModel(DcaModelTemplate):
     def remove_cuerow(self, cue):
         '''Removes the cue-row from the model'''
         cue.property_changed.disconnect(self.amend_cuerow)
-        cuerow = self._find_cuerow(cue.id)
+        cuerow = self.find_cuerow(cue.id)
 
         # Update assign entries
         if cue.type == "DcaChangeCue":
@@ -177,7 +177,7 @@ class DcaMappingModel(DcaModelTemplate):
                                 new_state))
         return new_changes
 
-    def _find_cuerow(self, cue_id):
+    def find_cuerow(self, cue_id):
         '''Find and return the cue-row that matches the given cue-id'''
         for cuerow in self.root.children:
             if cuerow.cue.id == cue_id:
