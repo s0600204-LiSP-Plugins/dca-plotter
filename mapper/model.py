@@ -14,12 +14,19 @@ class DcaMappingModel(DcaModelTemplate):
             return
 
         cuerow = self._find_cuerow(cue.id)
+        before = self._change_tuples_derive(cuerow)
 
-        # Update assigns for this cuerow
-        self._set_inital_assigns(cuerow, property_value, True)
+        # Update assigns for this cuerow.
+        self._set_initial_assigns(cuerow, property_value, True)
 
-        # Update the cuerows beyond it
-        self._change_tuples_cascade_apply(cuerow)
+        # For the "Assigns" that were removed.
+        after = self._change_tuples_derive(cuerow)
+        for change in before:
+            if change not in after and change[2] == AssignStateEnum.ASSIGN:
+                after.append((change[0], change[1], None))
+
+        # Update the cuerows beyond it.
+        self._change_tuples_cascade_apply(cuerow, after)
 
     def append_cuerow(self, cue):
         '''Append a cue-row to the model
@@ -32,7 +39,7 @@ class DcaMappingModel(DcaModelTemplate):
         if cue.type == "DcaChangeCue":
             new_cuerow = ModelsAssignRow(cue, parent=self.root)
             self._add_node(self.createIndex(self.root.childCount(), 0, self.root), new_cuerow)
-            self._set_inital_assigns(new_cuerow, cue.dca_changes, False)
+            self._set_initial_assigns(new_cuerow, cue.dca_changes, False)
 
         elif cue.type == "DcaResetCue":
             new_cuerow = ModelsResetRow(cue, parent=self.root)
@@ -82,7 +89,11 @@ class DcaMappingModel(DcaModelTemplate):
             self._change_tuples_apply(cuerow, changes)
 
         # Finally, cascade changes.
-        self._change_tuples_cascade_apply(cuerow)
+        if cuerow.cue.type == "DcaResetCue":
+            changes = self._change_tuples_clear(self._change_tuples_derive(cuerow.prev_sibling()))
+        else:
+            changes = self._change_tuples_derive(cuerow)
+        self._change_tuples_cascade_apply(cuerow, changes)
 
     def remove_cuerow(self, cue):
         '''Removes the cue-row from the model'''
@@ -120,15 +131,10 @@ class DcaMappingModel(DcaModelTemplate):
                 if entry_node.assign_state() != AssignStateEnum.NONE:
                     changes.remove(change)
                     entry_node.setInherited(change[2] != AssignStateEnum.UNASSIGN)
-                elif change[2] == AssignStateEnum.UNASSIGN:
+                elif not change[2] or change[2] == AssignStateEnum.UNASSIGN:
                     self._remove_node(entry_node.index())
 
-    def _change_tuples_cascade_apply(self, cuerow, changes=None):
-        if not changes:
-            if cuerow.cue.type == "DcaResetCue":
-                changes = self._change_tuples_clear(self._change_tuples_derive(cuerow.prev_sibling()))
-            else:
-                changes = self._change_tuples_derive(cuerow)
+    def _change_tuples_cascade_apply(self, cuerow, changes):
         next_rownum = cuerow.rownum() + 1
 
         while changes and next_rownum < self.root.childCount():
@@ -178,7 +184,7 @@ class DcaMappingModel(DcaModelTemplate):
                 return cuerow
         return None
 
-    def _set_inital_assigns(self, cuerow, cue_defined_assigns, clear_first):
+    def _set_initial_assigns(self, cuerow, cue_defined_assigns, clear_first):
         # Set base add and remove assigns
         for dca_num, assign_actions in enumerate(cue_defined_assigns):
             block_node = cuerow.child(dca_num)
