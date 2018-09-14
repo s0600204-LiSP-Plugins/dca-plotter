@@ -1,7 +1,7 @@
 
-from PyQt5.QtCore import QModelIndex, Qt, QRect
-from PyQt5.QtGui import QFontMetrics, QPainter, QPen # QMouseEvent
-from PyQt5.QtWidgets import QAbstractItemView, QApplication
+from PyQt5.QtCore import QItemSelection, QModelIndex, QRect, Qt
+from PyQt5.QtGui import QFontMetrics, QPainter, QPen, QRegion
+from PyQt5.QtWidgets import QAbstractItemView, QApplication, QStyle
 
 from lisp.plugins import get_plugin
 
@@ -25,6 +25,7 @@ class DcaModelViewTemplate(QAbstractItemView):
         self._fontmetrics = QFontMetrics(self.font())
         self.horizontalScrollBar().setRange(0, 0)
         self.verticalScrollBar().setRange(0, 0)
+        self.setSelectionMode(QAbstractItemView.SingleSelection)
 
     def dataChanged(topLeft, bottomRight):
         '''This slot is called when the items with model indexes in the rectangle from topLeft to bottomRight change
@@ -47,19 +48,38 @@ class DcaModelViewTemplate(QAbstractItemView):
         @arg point QPoint
         @return QModelIndex
         '''
+        point.setX(point.x() + self.horizontalScrollBar().value())
+        point.setY(point.y() + self.verticalScrollBar().value())
+        self._recalculate_cell_size()
+
+        for row_num, row_dimensions in enumerate(self._cell_sizes):
+
+            if row_dimensions['rect'].contains(point):
+                row_index = self.model().index(row_num, 0, self.rootIndex())
+
+                if self.DRAW_CUEHEADER and row_dimensions['header_rect'].contains(point):
+                    return row_index
+
+                for block_num, block_dimensions in enumerate(row_dimensions['blocks']):
+                    if block_dimensions['rect'].contains(point):
+                        block_index = self.model().index(block_num, 0, row_index)
+
+                        if block_dimensions['header_rect'].contains(point):
+                            return block_index
+
+                        for assign_num, assign_dimensions in enumerate(block_dimensions['entries']):
+                            if assign_dimensions.contains(point):
+                                return self.model().index(assign_num, 0, block_index)
+
         return QModelIndex()
 
-    #def isIndexHidden(self, index): # REQUIRED
-    #    '''Returns true if the item at index is a hidden item (and therefore should not be shown)
-    #    @arg index QModelIndex
-    #    @return bool
-    #    '''
-    #    return False
-
-    #def mousePressEvent(self, event):
-    #    '''Typically used to set the current model index to the index of the clicked item
-    #    @arg event QMouseEvent
-    #    '''
+    def isIndexHidden(self, index): # REQUIRED
+        '''Returns true if the item at index is a hidden item (and therefore should not be shown)
+        @arg index QModelIndex
+        @return bool
+        '''
+        # @todo: Return True for cuerow indexes if not drawing those...
+        return False
 
     def moveCursor(self, how, modifiers): # REQUIRED REQUESTED
         '''Returns the model index of the item after navigating how (e.g., up, down, left, or right), and accounting for the keyboard modifiers
@@ -75,6 +95,14 @@ class DcaModelViewTemplate(QAbstractItemView):
         '''
         painter = QPainter(self.viewport())
 
+        def _get_selection_state(assign_index):
+            state = 0
+            if self.selectionModel().isSelected(assign_index):
+                state |= QStyle.State_Selected
+            if self.currentIndex() == assign_index:
+                state |= QStyle.State_HasFocus
+            return state
+
         # Update/Recalculate dimensions
         self._recalculate_cell_size()
 
@@ -85,6 +113,7 @@ class DcaModelViewTemplate(QAbstractItemView):
                 # Draw the Cue Number & Name
                 row_viewoptions = self.viewOptions()
                 row_viewoptions.rect = self._viewport_rect_for_item(row_index)
+                row_viewoptions.state |= _get_selection_state(row_index)
                 self.itemDelegate().paint(painter, row_viewoptions, row_index)
 
             # Then each DCA block
@@ -95,6 +124,7 @@ class DcaModelViewTemplate(QAbstractItemView):
                 # @todo: centre the text
                 dcaname_viewoptions = self.viewOptions()
                 dcaname_viewoptions.rect = self._viewport_rect_for_item(block_index)
+                dcaname_viewoptions.state |= _get_selection_state(block_index)
                 self.itemDelegate().paint(painter, dcaname_viewoptions, block_index)
 
                 # And a line under it
@@ -109,6 +139,7 @@ class DcaModelViewTemplate(QAbstractItemView):
                     assign_index = self.model().index(assign_num, 0, block_index)
                     assign_viewoptions = self.viewOptions()
                     assign_viewoptions.rect = self._viewport_rect_for_item(assign_index)
+                    assign_viewoptions.state |= _get_selection_state(assign_index)
                     self.itemDelegate().paint(painter, assign_viewoptions, assign_index)
 
     def resizeEvent(self, event):
@@ -149,11 +180,29 @@ class DcaModelViewTemplate(QAbstractItemView):
         self.viewport().scroll(dx, dy)
         self.viewport().update()
 
-    #def scrollTo(self, index, hint): # REQUIRED
-    #    '''Scrolls the view to ensure that the item at the given model index is visible, and respecting the scroll hint as it scrolls
-    #    @arg index QModelIndex
-    #    @arg hint QAbstractItemView::ScrollHint
-    #    '''
+    def scrollTo(self, index, hint): # REQUIRED
+        '''Scrolls the view to ensure that the item at the given model index is visible, and respecting the scroll hint as it scrolls
+        @arg index QModelIndex
+        @arg hint QAbstractItemView::ScrollHint
+        '''
+        view_rect = self.viewport().rect();
+        item_rect = self.visualRect(index);
+        horiz_scrollbar = self.horizontalScrollBar()
+        verti_scrollbar = self.verticalScrollBar()
+
+        if item_rect.left() < view_rect.left():
+            horiz_scrollbar.setValue(horiz_scrollbar.value() + item_rect.left() - view_rect.left())
+        elif item_rect.right() > view_rect.right():
+            horiz_scrollbar.setValue(horiz_scrollbar.value() + min(item_rect.right() - view_rect.right(),
+                                                                   item_rect.left() - view_rect.left()))
+
+        if item_rect.top() < view_rect.top():
+            verti_scrollbar.setValue(verti_scrollbar.value() + item_rect.top() - view_rect.top());
+        elif item_rect.bottom() > view_rect.bottom():
+            verti_scrollbar.setValue(verti_scrollbar.value() + min(item_rect.bottom() - view_rect.bottom(),
+                                                                   item_rect.top() - view_rect.top()))
+
+        self.viewport().update()
 
     def setModel(self, model):
         '''Makes the view use the given model
@@ -162,11 +211,51 @@ class DcaModelViewTemplate(QAbstractItemView):
         super().setModel(model)
         self._cell_sizes_dirty = True
 
-    #def setSelection(self, rect, flags): # REQUIRED
-    #    '''Applies the selection flags to all of the items in or touching the rectangle rect
-    #    @arg rect QRect
-    #    @arg flags QItemSelectionModel::SelectionFlags
-    #    '''
+    def setSelection(self, rect, flags): # REQUIRED
+        '''Applies the selection flags to all of the items in or touching the rectangle rect
+        @arg rect QRect
+        @arg flags QItemSelectionModel::SelectionFlags
+        '''
+        rectangle = rect.translated(self.horizontalScrollBar().value(),
+                                    self.verticalScrollBar().value()).normalized()
+        self._recalculate_cell_size()
+        something_selected = False
+
+        for row_num, row_dimensions in enumerate(self._cell_sizes):
+
+            if row_dimensions['rect'].intersects(rectangle):
+                row_index = self.model().index(row_num, 0, self.rootIndex())
+
+                if self.DRAW_CUEHEADER and row_dimensions['header_rect'].intersects(rectangle):
+                    something_selected = True
+                    self.selectionModel().select(QItemSelection(row_index,
+                                                                row_index), flags)
+
+                for block_num, block_dimensions in enumerate(row_dimensions['blocks']):
+                    if block_dimensions['rect'].intersects(rectangle):
+                        block_index = self.model().index(block_num, 0, row_index)
+
+                        if block_dimensions['header_rect'].intersects(rectangle):
+                            something_selected = True
+                            self.selectionModel().select(QItemSelection(block_index,
+                                                                        block_index), flags)
+
+                        selectStart = len(block_dimensions['entries'])
+                        selectEnd = -1
+
+                        for assign_num, assign_dimensions in enumerate(block_dimensions['entries']):
+                            if assign_dimensions.intersects(rectangle):
+                                something_selected = True
+                                selectStart = selectStart if selectStart < assign_num else assign_num
+                                selectEnd = selectEnd if selectEnd > assign_num else assign_num
+
+                        if selectStart != len(block_dimensions['entries']) and selectEnd != -1:
+                            selection = QItemSelection(self.model().index(selectStart, 0, block_index),
+                                                       self.model().index(selectEnd, 0, block_index))
+                            self.selectionModel().select(selection, flags)
+
+        if not something_selected:
+            self.selectionModel().select(QItemSelection(QModelIndex(), QModelIndex()), flags)
 
     #def updateGeometries(self):
     #    '''Typically used to update the geometries of the view's child widgets, e.g., the scrollbars
@@ -189,11 +278,16 @@ class DcaModelViewTemplate(QAbstractItemView):
             return self._viewport_rect_for_item(index)
         return QRect()
 
-    #def visualRegionForSelection(self, selection): # REQUIRED
-    #    '''Returns the viewport region for the items in the selection
-    #    @arg selection QItemSelection
-    #    @return QRegion
-    #    '''
+    def visualRegionForSelection(self, selection): # REQUIRED
+        '''Returns the viewport region for the items in the selection
+        @arg selection QItemSelection
+        @return QRegion
+        '''
+        region = QRegion()
+        for rng in selection:
+            for index in rng.indexes():
+                region += self.visualRect(index)
+        return region
 
     def _recalculate_cell_size(self):
         if not self._cell_sizes_dirty:

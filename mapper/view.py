@@ -13,6 +13,10 @@ class DcaMappingView(DcaModelViewTemplate):
     def __init__(self, **kwargs):
         super().__init__("QTreeView", **kwargs)
 
+        # Temporarily disable selections and editing for this view.
+        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.setSelectionMode(QAbstractItemView.NoSelection)
+
     def updateGeometries(self):
         self.verticalScrollBar().setRange(0, max(0, self._ideal_height - self.viewport().height()))
 

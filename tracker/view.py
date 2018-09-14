@@ -10,6 +10,9 @@ class DcaTrackingView(DcaModelViewTemplate):
 
     def __init__(self, **kwargs):
         super().__init__("QTableView", **kwargs)
+        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.setFocusPolicy(Qt.NoFocus)
+        self.setSelectionMode(QAbstractItemView.NoSelection)
         get_plugin('DcaPlotter').initialised.connect(self._post_init_set_model)
 
     def _post_init_set_model(self):
