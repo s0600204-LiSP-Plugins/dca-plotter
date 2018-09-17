@@ -29,7 +29,6 @@ from lisp.ui.ui_utils import translate
 
 from lisp.plugins.dca_plotter.cue.model import DcaCueModel
 from lisp.plugins.dca_plotter.cue.view import DcaCueView
-from lisp.plugins.dca_plotter.dca_plotter_input_select_dialog import InputSelectDialog
 
 class DcaChangeCue(Cue):
     Name = QT_TRANSLATE_NOOP('CueName', 'DCA/VCA Change Cue')
@@ -50,7 +49,6 @@ class DcaChangeCueSettings(SettingsPage):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.inputSelectDialog = InputSelectDialog(parent=self)
         self.setLayout(QVBoxLayout())
 
         self.model = DcaCueModel()

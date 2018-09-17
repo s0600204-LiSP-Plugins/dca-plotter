@@ -57,3 +57,40 @@ class DcaCueModel(DcaModelTemplate):
                 'rem': rem
             })
         return assigns
+
+    def add_new_entry(self, dca_num, mic_num, assign_state):
+        dca_node = self.root.child(0).child(dca_num)
+        self._add_node(dca_node.index(), ModelsEntry(mic_num, assign_state, parent=dca_node))
+
+    def inherits_enabled(self):
+        return self._inherits_enabled
+
+    def pin_entry(self, entry_index):
+        entry_node = entry_index.internalPointer()
+        entry_node._assign_state = AssignStateEnum.ASSIGN
+
+    def remove_entry(self, entry_index):
+        entry_node = entry_index.internalPointer()
+        if not entry_node.inherited():
+            self._remove_node(entry_index)
+        elif entry_node.assign_state() == AssignStateEnum.NONE:
+            entry_node._assign_state = AssignStateEnum.UNASSIGN
+        else:
+            entry_node._assign_state = AssignStateEnum.NONE
+
+    def get_input_selection_choice(self, target_row, target_dca_num, intention):
+        possible_values = [val for val in range(1, get_plugin('DcaPlotter').get_microphone_count() + 1)]
+        for dca_num, dca_node in enumerate(self.root.child(target_row).children):
+            for entry in dca_node.children:
+                if entry.value() not in possible_values:
+                    continue
+
+                # We filter any assigns/unassigns in the currently selected DCA block
+                # If adding a new assign, we filter out any assigns explicit/implicit that are already in the current row.
+                # If adding a new unassign, we filter out any unassigns already in the current row.
+                if dca_num == target_dca_num or \
+                    intention == AssignStateEnum.ASSIGN and entry.assign_state() != AssignStateEnum.UNASSIGN or \
+                    intention == AssignStateEnum.UNASSIGN and entry.assign_state() == AssignStateEnum.UNASSIGN:
+                    possible_values.remove(entry.value())
+
+        return possible_values
