@@ -4,29 +4,36 @@ import copy
 # pylint: disable=no-name-in-module
 from PyQt5.QtCore import QModelIndex, Qt
 
+from lisp.plugins import get_plugin
 from lisp.plugins.dca_plotter.model_primitives import AssignStateEnum, DcaModelTemplate, \
     ModelsAssignRow, ModelsResetRow, ModelsEntry
 
 class DcaMappingModel(DcaModelTemplate):
 
     def amend_cuerow(self, cue, property_name, property_value):
-        if property_name != 'dca_changes' or cue.type == "DcaResetCue":
+        if property_name != 'dca_changes' and property_name != 'new_dca_name':
             return
 
         cuerow = self.find_cuerow(cue.id)
-        before = self._change_tuples_derive(cuerow)
+        changes = []
 
-        # Update assigns for this cuerow.
-        self._set_initial_assigns(cuerow, property_value, True)
+        if cue.type == "DcaResetCue":
+            for dca_num in range(get_plugin('DcaPlotter').SessionConfig['dca_count']):
+                changes.append((dca_num, property_value, 'Name'))
+        else:
+            before = self._change_tuples_derive(cuerow)
 
-        # For the "Assigns" that were removed.
-        after = self._change_tuples_derive(cuerow)
-        for change in before:
-            if change not in after and change[2] == AssignStateEnum.ASSIGN:
-                after.append((change[0], change[1], None))
+            # Update assigns for this cuerow.
+            self._set_initial_assigns(cuerow, property_value, True)
+
+            # For the "Assigns" that were removed.
+            changes = self._change_tuples_derive(cuerow)
+            for change in before:
+                if change not in changes and change[2] == AssignStateEnum.ASSIGN:
+                    changes.append((change[0], change[1], None))
 
         # Update the cuerows beyond it.
-        self._change_tuples_cascade_apply(cuerow, after)
+        self._change_tuples_cascade_apply(cuerow, changes)
 
     def append_cuerow(self, cue):
         '''Append a cue-row to the model
@@ -121,7 +128,11 @@ class DcaMappingModel(DcaModelTemplate):
             block_index = block_node.index()
             block_entry_values = block_node.getChildValues()
 
-            if change[1] not in block_entry_values:
+            if change[2] == 'Name':
+                block_node.setInherited(change[1])
+                if not block_node.inherited():
+                    changes.remove(change)
+            elif change[1] not in block_entry_values:
                 if change[2] != AssignStateEnum.UNASSIGN:
                     new_entry = ModelsEntry(change[1], parent=block_node)
                     new_entry.setInherited(True)
@@ -156,9 +167,16 @@ class DcaMappingModel(DcaModelTemplate):
 
     def _change_tuples_derive(self, cuerow):
         changes = []
-        if not cuerow or cuerow.cue.type == "DcaResetCue":
+        if not cuerow:
             return changes
+
+        if cuerow.cue.type == "DcaResetCue":
+            for dca_num in range(get_plugin('DcaPlotter').SessionConfig['dca_count']):
+                changes.append((dca_num, cuerow.cue.new_dca_name, 'Name'))
+            return changes
+
         for dca_num, dca_node in enumerate(cuerow.children):
+            changes.append((dca_num, dca_node.data(), 'Name'))
             for entry in dca_node.children:
                 changes.append((dca_num, entry.value(), entry.assign_state()))
         return changes
@@ -192,6 +210,10 @@ class DcaMappingModel(DcaModelTemplate):
 
             if clear_first:
                 self._clear_node(block_index)
+                block_node.setData("", Qt.EditRole)
+
+            if assign_actions['name']:
+                block_node.setData(assign_actions['name'], Qt.EditRole)
 
             for entry in assign_actions['add']:
                 self._add_node(block_index,
@@ -203,6 +225,6 @@ class DcaMappingModel(DcaModelTemplate):
 
         # Get inherits from previous cue row
         prev_sibling = cuerow.prev_sibling()
-        if prev_sibling and prev_sibling.cue.type == "DcaChangeCue":
+        if prev_sibling:
             changes = self._change_tuples_derive(prev_sibling)
             self._change_tuples_apply(cuerow, changes)

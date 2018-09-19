@@ -25,6 +25,10 @@ class DcaCueModel(DcaModelTemplate):
 
             # Set the Adds and Removes
             for action, nums in dca_assign_actions.items():
+                if action == 'name':
+                    dca_node.deserialiseName(nums)
+                    continue
+
                 assign_action = AssignStateEnum.UNASSIGN if action == 'rem' else AssignStateEnum.ASSIGN
                 for mic_num in nums:
                     self._add_node(dca_node.index(), ModelsEntry(mic_num, assign_action, parent=dca_node))
@@ -32,6 +36,13 @@ class DcaCueModel(DcaModelTemplate):
         # Set the inheritance flags
         for dca_num, dca_node in enumerate(self.root.child(0).children):
             if self._inherits_enabled:
+                previous_cuerow = cuerow.prev_sibling()
+                if previous_cuerow:
+                    if previous_cuerow.cue.type == "DcaChangeCue":
+                        dca_node.setInherited(previous_cuerow.child(dca_num).data())
+                    else:
+                        dca_node.setInherited(previous_cuerow.cue.new_dca_name)
+
                 for entry in cuerow.child(dca_num).children:
                     values = dca_node.getChildValues()
                     if entry.inherited():
@@ -53,6 +64,7 @@ class DcaCueModel(DcaModelTemplate):
                 elif entry.assign_state() == AssignStateEnum.UNASSIGN:
                     rem.append(entry.value())
             assigns.append({
+                'name': dca_node.serialiseName(),
                 'add': add,
                 'rem': rem
             })

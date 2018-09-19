@@ -9,7 +9,7 @@ from PyQt5.QtGui import QBrush, QFont
 from PyQt5.QtWidgets import QApplication
 
 from lisp.plugins import get_plugin
-from lisp.plugins.dca_plotter.utilities import get_mic_assign_name
+from lisp.plugins.dca_plotter.utilities import build_default_dca_name, get_mic_assign_name
 
 class AssignStateEnum(enum.Enum):
     ASSIGN = enum.auto()
@@ -47,6 +47,9 @@ class ModelsNode():
         if self in self.parent.children:
             return self.parent.children.index(self)
         return -1
+
+    def setData(self, value, role):
+        return False
 
 class ModelsBranchNode(ModelsNode):
     '''Branch parent class'''
@@ -132,16 +135,41 @@ class ModelsBlock(ModelsBranchNode):
     '''Block class'''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = False
+        self._given_name = False
+        self._inherited_name = build_default_dca_name(self.parent.childCount() + 1)
+        self.flags |= Qt.ItemIsEditable
 
     def addChild(self, child):
         self.children.insert(self.getInsertPoint(child.value()), child)
 
     def data(self, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole:
-            return 'DCA {}'.format(self.parent.children.index(self) + 1) # @todo: Proper implementation of DCA names
+        if role == Qt.DisplayRole or role == Qt.EditRole:
+            return self._given_name or self._inherited_name
+
+        if role == Qt.ForegroundRole and not self._given_name:
+            return QBrush(QApplication.palette().dark().color())
 
         return super().data(role)
+
+    def inherited(self):
+        return self._given_name == False
+
+    def deserialiseName(self, value):
+        self.setData(value, Qt.EditRole)
+
+    def serialiseName(self):
+        return self._given_name
+
+    def setData(self, value, role):
+        if role != Qt.EditRole:
+            return False
+
+        self._given_name = value if value else False
+        return True
+
+    def setInherited(self, value):
+        self._inherited_name = value
+
 
 ### LEAVES
 class ModelsEntry(ModelsLeafNode):
@@ -206,6 +234,11 @@ class DcaModelTemplate(QAbstractItemModel):
         if not index.isValid():
             return None
         return index.internalPointer().data(role)
+
+    def setData(self, index, value, role):
+        if not index.isValid():
+            return False
+        return index.internalPointer().setData(value, role)
 
     def flags(self, index):
         # pylint: disable=no-self-use

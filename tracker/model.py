@@ -1,6 +1,8 @@
 
 import logging
 
+from PyQt5.QtCore import Qt
+
 from lisp.plugins import get_plugin
 from lisp.plugins.action_cues.dca_change_cue import DcaChangeCue
 from lisp.plugins.dca_plotter.model_primitives import AssignStateEnum, DcaModelTemplate, ModelsAssignRow, ModelsEntry
@@ -21,6 +23,7 @@ class DcaTrackingModel(DcaModelTemplate):
     _cached_changes = []
     _last_selected_cue_id = None
     _midi_out = None
+    _predictive_row_enabled = False
 
     def __init__(self, show_predictive_row):
         super().__init__()
@@ -32,6 +35,7 @@ class DcaTrackingModel(DcaModelTemplate):
         # Predicted assign changes (ListLayout only)
         if show_predictive_row:
             self._add_node(self.createIndex(1, 0, self.root), ModelsAssignRow(parent=self.root))
+            self._predictive_row_enabled = True
 
     def call_cue(self, cue):
         if self._cached_changes and cue.id == self._last_selected_cue_id:
@@ -39,7 +43,7 @@ class DcaTrackingModel(DcaModelTemplate):
         elif isinstance(cue, DcaChangeCue):
             changes = self.calculate_diff(cue.dca_changes)
         else:
-            changes = self.cancel_current()
+            changes = self.cancel_current(cue.new_dca_name)
 
         # Here we have the MIDI sends...
         # Alternatively, as this is a *tracking* model, the diff change could be passed back
@@ -61,6 +65,10 @@ class DcaTrackingModel(DcaModelTemplate):
                 entry_num = block_node.getChildValues().index(change[1]['strip'][1])
                 entry_node = block_node.child(entry_num)
                 self._remove_node(entry_node.index())
+            elif change[0] == 'rename':
+                current_assigns[change[1]['dca']].setData(change[1]['name'], Qt.EditRole)
+                if self._predictive_row_enabled:
+                    self.root.child(1).children[change[1]['dca']].setInherited(change[1]['name'])
 
     def select_cue(self, cue):
         self._last_selected_cue_id = cue.id
@@ -68,11 +76,12 @@ class DcaTrackingModel(DcaModelTemplate):
         next_assigns = self.root.child(1).children
         for block_node in next_assigns:
             self._clear_node(block_node.index())
+            block_node.setData("", Qt.EditRole)
 
         if isinstance(cue, DcaChangeCue):
             self._cached_changes = self.calculate_diff(cue.dca_changes)
         else:
-            self._cached_changes = self.cancel_current()
+            self._cached_changes = self.cancel_current(cue.new_dca_name)
 
         for change in self._cached_changes:
             if change[0] == 'assign':
@@ -83,6 +92,9 @@ class DcaTrackingModel(DcaModelTemplate):
                 block_node = next_assigns[change[1]['dca']]
                 self._add_node(block_node.index(),
                                ModelsEntry(change[1]['strip'][1], AssignStateEnum.UNASSIGN, parent=block_node))
+            elif change[0] == 'rename':
+                block_node = next_assigns[change[1]['dca']]
+                block_node.setData(change[1]['name'], Qt.EditRole)
 
     def on_cue_update(self, cue, property_name, property_value):
         if cue.id != self._last_selected_cue_id or property_name != 'dca_changes':
@@ -129,9 +141,13 @@ class DcaTrackingModel(DcaModelTemplate):
 
         return messages
 
-    def cancel_current(self):
+    def cancel_current(self, new_name):
         cue_actions = []
         for dca_num, dca_node in enumerate(self.root.child(0).children):
+            cue_actions.append(['rename', {
+                        'name': new_name,
+                        'dca': dca_num
+                    }])
             for entry_node in dca_node.children:
                 cue_actions.append(['unassign', {
                     'strip': ['input', entry_node.value()],
@@ -154,6 +170,12 @@ class DcaTrackingModel(DcaModelTemplate):
         assign_changes = {}
 
         for dca_num, dca in enumerate(new_assigns):
+            if dca['name'] and current_assigns[dca_num].data() != dca['name']:
+                cue_actions.append(['rename', {
+                        'name': dca['name'],
+                        'dca': dca_num
+                    }])
+
             for to_add in dca['add']:
                 if to_add in current_assigns[dca_num].getChildValues():
                     continue
