@@ -41,7 +41,10 @@ class DcaTrackingModel(DcaModelTemplate):
         if self._cached_changes and cue.id == self._last_selected_cue_id:
             changes = self._cached_changes
         elif isinstance(cue, DcaChangeCue):
-            changes = self.calculate_diff(cue.dca_changes)
+            if self._predictive_row_enabled:
+                changes = self.calculate_diff_from_mapper(cue.id)
+            else:
+                changes = self.calculate_diff(cue.dca_changes)
         else:
             changes = self.cancel_current(cue.new_dca_name)
 
@@ -79,7 +82,10 @@ class DcaTrackingModel(DcaModelTemplate):
             block_node.setData("", Qt.EditRole)
 
         if isinstance(cue, DcaChangeCue):
-            self._cached_changes = self.calculate_diff(cue.dca_changes)
+            if self._predictive_row_enabled:
+                self._cached_changes = self.calculate_diff_from_mapper(cue.id)
+            else:
+                self._cached_changes = self.calculate_diff(cue.dca_changes)
         else:
             self._cached_changes = self.cancel_current(cue.new_dca_name)
 
@@ -143,73 +149,116 @@ class DcaTrackingModel(DcaModelTemplate):
 
     def cancel_current(self, new_name):
         cue_actions = []
+        assign_changes = {}
         for dca_num, dca_node in enumerate(self.root.child(0).children):
-            cue_actions.append(['rename', {
-                        'name': new_name,
-                        'dca': dca_num
-                    }])
+            cue_actions.append(_create_rename_action(dca_num, new_name))
             for entry_node in dca_node.children:
-                cue_actions.append(['unassign', {
-                    'strip': ['input', entry_node.value()],
-                    'dca': dca_num
-                }])
-                cue_actions.append(['mute', {
-                    'strip': ['input', entry_node.value()]
-                }])
+                cue_actions.append(_create_unassign_action(assign_changes, dca_num, entry_node.value()))
+
+        cue_actions.extend(_calculate_mutes(assign_changes))
+        return cue_actions
+
+    def calculate_diff_from_mapper(self, cue_id):
+        cuerow = get_plugin('DcaPlotter').mapper().find_cuerow(cue_id)
+        current_assigns = self.root.child(0).children
+
+        cue_actions = []
+        assign_changes = {}
+
+        for dca_num, dca_node in enumerate(cuerow.children):
+            if dca_node.data() and current_assigns[dca_num].data() != dca_node.data():
+                cue_actions.append(_create_rename_action(dca_num, dca_node.data()))
+
+            currently_assigned = current_assigns[dca_num].getChildValues()
+            for entry in dca_node.children:
+                if entry.value() not in currently_assigned:
+                    if entry.assign_state() != AssignStateEnum.UNASSIGN:
+                        cue_actions.append(_create_assign_action(assign_changes, dca_num, entry.value()))
+                elif entry.assign_state() == AssignStateEnum.UNASSIGN:
+                    cue_actions.append(_create_unassign_action(assign_changes, dca_num, entry.value()))
+
+            cue_assigned = dca_node.getChildValues()
+            for input_num in currently_assigned:
+                if input_num not in cue_assigned:
+                    cue_actions.append(_create_unassign_action(assign_changes, dca_num, input_num))
+
+        cue_actions.extend(_calculate_mutes(assign_changes))
         return cue_actions
 
     def calculate_diff(self, new_assigns):
 
         cue_actions = []
         current_assigns = self.root.child(0).children
-
-        # Not present - No action
-        # 0 = Mute
-        # 1 = UnMute
-        # -1 = No Action (Keep On - Assign moved from one DCA to another)
         assign_changes = {}
 
         for dca_num, dca in enumerate(new_assigns):
             if dca['name'] and current_assigns[dca_num].data() != dca['name']:
-                cue_actions.append(['rename', {
-                        'name': dca['name'],
-                        'dca': dca_num
-                    }])
+                cue_actions.append(_create_rename_action(dca_num, dca['name']))
 
             for to_add in dca['add']:
                 if to_add in current_assigns[dca_num].getChildValues():
                     continue
-                cue_actions.append(['assign', {
-                        'strip': ['input', to_add],
-                        'dca': dca_num
-                    }])
-                if to_add not in assign_changes:
-                    assign_changes[to_add] = 1
-                elif assign_changes[to_add] == 0:
-                    assign_changes[to_add] = -1
+                cue_actions.append(_create_assign_action(assign_changes, dca_num, to_add))
 
             for to_rem in dca['rem']:
                 if to_rem not in current_assigns[dca_num].getChildValues():
                     continue
-                cue_actions.append(['unassign', {
-                        'strip': ['input', to_rem],
-                        'dca': dca_num
-                    }])
-                if to_rem not in assign_changes:
-                    assign_changes[to_rem] = 0
-                elif assign_changes[to_rem] == 1:
-                    assign_changes[to_rem] = -1
+                cue_actions.append(_create_unassign_action(assign_changes, dca_num, to_rem))
 
-        for mic_num, state_change in assign_changes.items():
-            if state_change == 1:
-                cue_actions.append([
-                    'unmute', {
-                        'strip': ['input', mic_num]
-                    }])
-            elif state_change == 0:
-                cue_actions.append([
-                    'mute', {
-                        'strip': ['input', mic_num]
-                    }])
-
+        cue_actions.extend(_calculate_mutes(assign_changes))
         return cue_actions
+
+def _calculate_mutes(assign_changes):
+    cue_actions = []
+    for input_num, state_change in assign_changes.items():
+        if state_change == 1:
+            cue_actions.append([
+                'unmute', {
+                    'strip': ['input', input_num]
+                }])
+        elif state_change == 0:
+            cue_actions.append([
+                'mute', {
+                    'strip': ['input', input_num]
+                }])
+    return cue_actions
+
+def _create_assign_action(assign_changes, dca_num, input_num):
+    _update_assign_changes(assign_changes, "assign", input_num)
+    return ['assign', {
+        'strip': ['input', input_num],
+        'dca': dca_num
+    }]
+
+def _create_rename_action(dca_num, new_name):
+    return ['rename', {
+        'name': new_name,
+        'strip': ['dca', dca_num + 1],
+        'dca': dca_num
+    }]
+
+def _create_unassign_action(assign_changes, dca_num, input_num):
+    _update_assign_changes(assign_changes, "unassign", input_num)
+    return ['unassign', {
+        'strip': ['input', input_num],
+        'dca': dca_num
+    }]
+
+def _update_assign_changes(assign_changes, action, input_num):
+
+    # Assign changes key:
+    #   Not present = No action
+    #   0 = Mute
+    #   1 = UnMute
+    #   -1 = No Action (Keep On - Assign moved from one DCA to another)
+
+    if action == "assign":
+        if input_num not in assign_changes:
+            assign_changes[input_num] = 1
+        elif assign_changes[input_num] == 0:
+            assign_changes[input_num] = -1
+    elif action == "unassign":
+        if input_num not in assign_changes:
+            assign_changes[input_num] = 0
+        elif assign_changes[input_num] == 1:
+            assign_changes[input_num] = -1
