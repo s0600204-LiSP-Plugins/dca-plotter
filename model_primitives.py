@@ -149,6 +149,9 @@ class ModelsBlock(ModelsBranchNode):
         if role == Qt.ForegroundRole and not self._given_name:
             return QBrush(QApplication.palette().dark().color())
 
+        if role == Qt.TextAlignmentRole:
+            return Qt.AlignHCenter | Qt.AlignBottom
+
         return super().data(role)
 
     def inherited(self):

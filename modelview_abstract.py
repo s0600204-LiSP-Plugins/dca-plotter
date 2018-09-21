@@ -121,7 +121,6 @@ class DcaModelViewTemplate(QAbstractItemView):
                 block_index = self.model().index(block_num, 0, row_index)
 
                 # Draw the DCA name
-                # @todo: centre the text
                 dcaname_viewoptions = self.viewOptions()
                 dcaname_viewoptions.rect = self._viewport_rect_for_item(block_index)
                 dcaname_viewoptions.state |= _get_selection_state(block_index)
