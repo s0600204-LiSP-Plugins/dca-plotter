@@ -3,6 +3,7 @@ import logging
 
 from PyQt5.QtCore import Qt
 
+from lisp.application import Application
 from lisp.plugins import get_plugin
 from lisp.plugins.action_cues.dca_change_cue import DcaChangeCue
 from lisp.plugins.dca_plotter.model_primitives import AssignStateEnum, DcaModelTemplate, ModelsAssignRow, ModelsEntry
@@ -18,12 +19,30 @@ logger = logging.getLogger(__name__) # pylint: disable=invalid-name
 #
 # We do not explicitly track mute-status, instead make the (reasonable) assumption
 # that if an input is assigned to a DCA, then it must be unmuted, and vice versa.
+#
+# We have a potential race-condition in this model:
+# * When a cue is called, it is done in its own thread.
+# * When a cue is selected, it is done on the main thread.
+# This means it possible for a new cue to be selected before the current one has finished running.
+#
+# This is expected: it prevents the UI from locking up whilst an audio cue (or some other 
+# long-running cue) is active.
+#
+# This model contains listeners (or in Qt's definition: 'slots') for both these events. And
+# unfortunately, there is the rare but annoying occasion where the MIDI takes more time to be
+# transmitted than it does for the UI to select the next cue.
+#
+# Thus, we have a problem: one of the slots modifies the model data that the other slot reads.
+#
+# To prevent this, we don't call the entirety of the second slot - just enough so that as the first
+# slot finishes, it's aware it needs to call the second slot directly.
 class DcaTrackingModel(DcaModelTemplate):
 
     _cached_changes = []
     _last_selected_cue_id = None
     _midi_out = None
     _predictive_row_enabled = False
+    _cue_in_progress = False
 
     def __init__(self, show_predictive_row):
         super().__init__()
@@ -38,6 +57,7 @@ class DcaTrackingModel(DcaModelTemplate):
             self._predictive_row_enabled = True
 
     def call_cue(self, cue):
+        self._cue_in_progress = True
         if self._cached_changes and cue.id == self._last_selected_cue_id:
             changes = self._cached_changes
         elif isinstance(cue, DcaChangeCue):
@@ -73,8 +93,22 @@ class DcaTrackingModel(DcaModelTemplate):
                 if self._predictive_row_enabled:
                     self.root.child(1).children[change[1]['dca']].setInherited(change[1]['name'])
 
+        self._cue_in_progress = False
+
+        if self._predictive_row_enabled:
+            # If the cue selection has changed whilst the cue was running,
+            # or this is the last cue in the list, call the slot again
+            cue_model = Application().cue_model
+            cue_next = cue_model.get(self._last_selected_cue_id)
+            if cue.id != self._last_selected_cue_id or cue_next.index + 1 == len(cue_model):
+                self.select_cue(cue_next)
+
     def select_cue(self, cue):
         self._last_selected_cue_id = cue.id
+
+        # If the cue is still processing, return.
+        if self._cue_in_progress:
+            return
 
         next_assigns = self.root.child(1).children
         for block_node in next_assigns:
