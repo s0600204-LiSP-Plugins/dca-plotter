@@ -25,15 +25,15 @@ from lisp.plugins.dca_plotter.utilities import build_default_mic_name
 from lisp.ui.qdelegates import LabelDelegate, LineEditDelegate, SpinBoxDelegate
 from lisp.ui.qviews import SimpleTableView
 from lisp.ui.qmodels import SimpleTableModel
-from lisp.ui.settings.pages import ConfigurationPage
+from lisp.ui.settings.pages import SettingsPage
 from lisp.ui.ui_utils import translate
 
-class DcaPlotterMicAssignUi(ConfigurationPage):
+class DcaPlotterMicAssignUi(SettingsPage):
     '''Mic Assign UI'''
     Name = "Mic Assignments"
 
-    def __init__(self, config, **kwargs):
-        super().__init__(config, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.setLayout(QVBoxLayout())
 
         self.widgetGroup = QGroupBox(self)
@@ -69,24 +69,22 @@ class DcaPlotterMicAssignUi(ConfigurationPage):
         self.inputList = SimpleTableView(model, columns, parent=self)
         self.widgetGroup.layout().addWidget(self.inputList)
 
-        self.loadConfiguration()
-
-    def applySettings(self):
+    def getSettings(self):
         model = self.inputList.model()
-        self.config['inputs'] = []
+        conf = {}
         for row_idx in range(model.rowCount()):
-            self.config['inputs'].append({
+            conf.setdefault('inputs', []).append({
                 'name': model.data(model.createIndex(row_idx, 2)),
                 'in': model.data(model.createIndex(row_idx, 1))
             })
-        get_plugin('DcaPlotter').WriteSessionConfig(self.config)
+        return conf
 
-    def loadConfiguration(self):
+    def loadSettings(self, settings):
         plugin_config = get_plugin('DcaPlotter').Config
 
-        if 'inputs' in self.config and len(self.config['inputs']):
-            self.inputCount.setValue(len(self.config['inputs']))
-            for row_idx, row in enumerate(self.config['inputs']):
+        if 'inputs' in settings and len(settings['inputs']):
+            self.inputCount.setValue(len(settings['inputs']))
+            for row_idx, row in enumerate(settings['inputs']):
                 self.inputList.model().appendRow(row_idx + 1, row['in'], row['name'])
         else:
             self.inputCount.setValue(plugin_config['input_channel_count'])

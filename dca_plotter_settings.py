@@ -19,14 +19,14 @@
 
 from PyQt5.QtWidgets import QVBoxLayout, QFormLayout, QSpinBox, QGroupBox
 
-from lisp.ui.settings.pages import ConfigurationPage
+from lisp.ui.settings.pages import SettingsPage
 from lisp.ui.ui_utils import translate
 
-class DcaPlotterSettings(ConfigurationPage):
+class DcaPlotterSettings(SettingsPage):
     Name = "DCA Plotter"
 
-    def __init__(self, config, **kwargs):
-        super().__init__(config, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.setLayout(QVBoxLayout())
 
         self.settingsGroup = QGroupBox(self)
@@ -38,11 +38,10 @@ class DcaPlotterSettings(ConfigurationPage):
         self.inputCount.setRange(1, 96)
         self.settingsGroup.layout().addRow('Default Microphone Count', self.inputCount)
 
-        self.loadConfiguration()
+    def getSettings(self):
+        return {
+            'input_channel_count': self.inputCount.value()
+        }
 
-    def applySettings(self):
-        self.config['input_channel_count'] = self.inputCount.value()
-        self.config.write()
-
-    def loadConfiguration(self):
-        self.inputCount.setValue(self.config['input_channel_count'])
+    def loadSettings(self, settings):
+        self.inputCount.setValue(settings['input_channel_count'])
