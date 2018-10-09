@@ -23,12 +23,13 @@
 from PyQt5.QtWidgets import QFormLayout, QGroupBox, QSpinBox, QVBoxLayout, QWidget
 
 from lisp.plugins import get_plugin
-from lisp.plugins.dca_plotter.utilities import build_default_mic_name
 from lisp.ui.qdelegates import LabelDelegate, LineEditDelegate, SpinBoxDelegate
 from lisp.ui.qviews import SimpleTableView
 from lisp.ui.qmodels import SimpleTableModel
 from lisp.ui.settings.pages import SettingsPage
 from lisp.ui.ui_utils import translate
+
+from .utilities import build_default_mic_name
 
 class MicAssignUi(SettingsPage):
     '''Mic Assign UI'''

@@ -5,8 +5,10 @@ from PyQt5.QtCore import Qt
 
 from lisp.application import Application
 from lisp.plugins import get_plugin
-from lisp.plugins.action_cues.dca_change_cue import DcaChangeCue
-from lisp.plugins.dca_plotter.model_primitives import AssignStateEnum, DcaModelTemplate, ModelsAssignRow, ModelsEntry
+
+# pylint: disable=relative-beyond-top-level
+from ..cue.change_cue import DcaChangeCue
+from ..model_primitives import AssignStateEnum, DcaModelTemplate, ModelsAssignRow, ModelsEntry
 
 logger = logging.getLogger(__name__) # pylint: disable=invalid-name
 

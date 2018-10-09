@@ -9,7 +9,8 @@ from PyQt5.QtGui import QBrush, QFont
 from PyQt5.QtWidgets import QApplication
 
 from lisp.plugins import get_plugin
-from lisp.plugins.dca_plotter.utilities import build_default_dca_name, get_mic_assign_name
+
+from .utilities import build_default_dca_name, get_mic_assign_name
 
 class AssignStateEnum(enum.Enum):
     ASSIGN = enum.auto()

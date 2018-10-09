@@ -2,7 +2,8 @@
 from PyQt5.QtWidgets import QDialog, QVBoxLayout
 
 from lisp.plugins import get_plugin
-from lisp.plugins.dca_plotter.mapper.view import DcaMappingView
+
+from .view import DcaMappingView
 
 class DcaMappingDialog(QDialog):
 

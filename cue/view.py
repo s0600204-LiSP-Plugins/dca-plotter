@@ -2,10 +2,11 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAction, QMenu
 
-from lisp.plugins.dca_plotter.input_select_dialog import InputSelectDialog
-from lisp.plugins.dca_plotter.modelview_abstract import DcaModelViewTemplate
-from lisp.plugins.dca_plotter.model_primitives import AssignStateEnum, ModelsBlock, ModelsEntry
-from lisp.plugins.dca_plotter.utilities import get_mic_name
+# pylint: disable=relative-beyond-top-level
+from ..input_select_dialog import InputSelectDialog
+from ..modelview_abstract import DcaModelViewTemplate
+from ..model_primitives import AssignStateEnum, ModelsBlock, ModelsEntry
+from ..utilities import get_mic_name
 
 class DcaCueView(DcaModelViewTemplate):
 

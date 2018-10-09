@@ -4,7 +4,9 @@ from PyQt5.QtGui import QFontMetrics, QPainter, QPen # QMouseEvent
 from PyQt5.QtWidgets import QAbstractItemView, QApplication
 
 from lisp.plugins import get_plugin
-from lisp.plugins.dca_plotter.modelview_abstract import DcaModelViewTemplate
+
+# pylint: disable=relative-beyond-top-level
+from ..modelview_abstract import DcaModelViewTemplate
 
 class DcaTrackingView(DcaModelViewTemplate):
 

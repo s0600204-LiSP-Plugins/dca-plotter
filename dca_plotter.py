@@ -22,17 +22,18 @@ from PyQt5.QtWidgets import QAction#, QDialog
 from lisp.application import Application
 from lisp.core.plugin import Plugin
 from lisp.core.signal import Signal
-from lisp.plugins.dca_plotter.cue.change_cue import DcaChangeCue
-from lisp.plugins.dca_plotter.cue.reset_cue import DcaResetCue
-from lisp.plugins.dca_plotter.dca_plotter_settings import DcaPlotterSettings
-from lisp.plugins.dca_plotter.mapper.dialog import DcaMappingDialog
-from lisp.plugins.dca_plotter.mapper.model import DcaMappingModel
-from lisp.plugins.dca_plotter.mic_assign_ui import MicAssignUi
-from lisp.plugins.dca_plotter.tracker.model import DcaTrackingModel
 from lisp.plugins.list_layout.layout import ListLayout
 from lisp.ui.settings.app_configuration import AppConfigurationDialog
 from lisp.ui.settings.session_configuration import SessionConfigurationDialog
 from lisp.ui.ui_utils import translate
+
+from .cue.change_cue import DcaChangeCue
+from .cue.reset_cue import DcaResetCue
+from .dca_plotter_settings import DcaPlotterSettings
+from .mapper.dialog import DcaMappingDialog
+from .mapper.model import DcaMappingModel
+from .mic_assign_ui import MicAssignUi
+from .tracker.model import DcaTrackingModel
 
 class DcaPlotter(Plugin):
     """Provides the ability to plot DCA/VCA assignments"""

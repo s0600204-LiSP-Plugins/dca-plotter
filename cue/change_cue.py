@@ -27,8 +27,8 @@ from lisp.ui.settings.cue_settings import CueSettingsRegistry
 from lisp.ui.settings.pages import SettingsPage
 from lisp.ui.ui_utils import translate
 
-from lisp.plugins.dca_plotter.cue.model import DcaCueModel
-from lisp.plugins.dca_plotter.cue.view import DcaCueView
+from .model import DcaCueModel
+from .view import DcaCueView
 
 class DcaChangeCue(Cue):
     Name = QT_TRANSLATE_NOOP('CueName', 'DCA/VCA Change Cue')

@@ -24,7 +24,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAbstractItemView, QDialog, QDialogButtonBox, QLabel, \
     QListWidget, QListWidgetItem, QVBoxLayout
 
-from lisp.plugins.dca_plotter.utilities import get_mic_assign_name
+from .utilities import get_mic_assign_name
 
 DataRole = Qt.UserRole + 1 # pylint: disable=invalid-name
 

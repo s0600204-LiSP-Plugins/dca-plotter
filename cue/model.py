@@ -2,7 +2,10 @@
 import logging
 
 from lisp.plugins import get_plugin
-from lisp.plugins.dca_plotter.model_primitives import AssignStateEnum, DcaModelTemplate, ModelsAssignRow, ModelsEntry
+
+# pylint: disable=relative-beyond-top-level
+from ..model_primitives import AssignStateEnum, DcaModelTemplate, \
+    ModelsAssignRow, ModelsEntry
 
 logger = logging.getLogger(__name__) # pylint: disable=invalid-name
 

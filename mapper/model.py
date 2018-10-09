@@ -5,8 +5,10 @@ import copy
 from PyQt5.QtCore import QModelIndex, Qt
 
 from lisp.plugins import get_plugin
-from lisp.plugins.dca_plotter.model_primitives import AssignStateEnum, DcaModelTemplate, \
-    ModelsAssignRow, ModelsResetRow, ModelsEntry
+
+# pylint: disable=relative-beyond-top-level
+from ..model_primitives import AssignStateEnum, DcaModelTemplate, ModelsAssignRow, \
+    ModelsEntry, ModelsResetRow
 
 class DcaMappingModel(DcaModelTemplate):
 
