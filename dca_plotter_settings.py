@@ -17,11 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
+# pylint: disable=missing-docstring, invalid-name
+
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QVBoxLayout, QFormLayout, QSpinBox, QGroupBox
 
 from lisp.ui.settings.pages import SettingsPage
-from lisp.ui.ui_utils import translate
 
 class DcaPlotterSettings(SettingsPage):
     Name = "DCA Plotter"

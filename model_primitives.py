@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=missing-docstring
+# pylint: disable=missing-docstring, invalid-name
 
 import enum
 
@@ -68,6 +68,7 @@ class ModelsNode():
         return -1
 
     def setData(self, value, role):
+        # pylint: disable=unused-argument, no-self-use
         return False
 
 class ModelsBranchNode(ModelsNode):
@@ -162,7 +163,7 @@ class ModelsBlock(ModelsBranchNode):
         self.children.insert(self.getInsertPoint(child.value()), child)
 
     def data(self, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole or role == Qt.EditRole:
+        if role in (Qt.DisplayRole, Qt.EditRole):
             return self._given_name or self._inherited_name
 
         if role == Qt.ForegroundRole and not self._given_name:
@@ -174,7 +175,7 @@ class ModelsBlock(ModelsBranchNode):
         return super().data(role)
 
     def inherited(self):
-        return self._given_name == False
+        return self._given_name is False
 
     def deserialiseName(self, value):
         self.setData(value, Qt.EditRole)
@@ -206,9 +207,6 @@ class ModelsEntry(ModelsLeafNode):
         # pylint: disable=too-many-return-statements
         if role == Qt.DisplayRole:
             return get_mic_assign_name(self.value())
-
-        if role == Qt.EditRole:
-            return self.value
 
         if role == Qt.ForegroundRole: # Text colour:
             if self._assign_state == AssignStateEnum.ASSIGN:
@@ -262,6 +260,7 @@ class DcaModelTemplate(QAbstractItemModel):
         return index.internalPointer().data(role)
 
     def setData(self, index, value, role):
+        # pylint: disable=no-self-use
         if not index.isValid():
             return False
         return index.internalPointer().setData(value, role)

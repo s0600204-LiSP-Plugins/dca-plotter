@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
+# pylint: disable=missing-docstring
+
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QAction
 
@@ -119,11 +121,12 @@ class DcaPlotter(Plugin):
 
         self.initialised.emit()
 
-    def _on_cue_selected(self, current, previous):
+    def _on_cue_selected(self, current, _):
         """Action to take when a cue is selected.
 
         This function only gets called if the session is in the "List" layout.
-        With the "Cart" layout, selecting a cue calls the cue, and there are no other layouts currently.
+        With the "Cart" layout, selecting a cue calls the cue.
+        (And there are no other layouts currently.)
         """
         if current and _is_supported_cuetype(current.cue.type):
             self._tracking_model.select_cue(current.cue)
@@ -134,9 +137,9 @@ class DcaPlotter(Plugin):
             self._mapping_model.append_cuerow(cue)
             cue.property_changed.connect(self._tracking_model.on_cue_update)
 
-    def _on_cue_moved(self, old_index, new_index):
+    def _on_cue_moved(self, _, new_index):
         """Action to take when a cue is moved in the List Layout."""
-        cue = Application().layout._list_model.item(new_index)
+        cue = Application().layout.list_model().item(new_index)
         if _is_supported_cuetype(cue.type):
             self._mapping_model.move_cuerow(cue, new_index)
 

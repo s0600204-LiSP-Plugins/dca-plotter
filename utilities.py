@@ -17,7 +17,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# get_mic_assign_name
+# pylint: disable=missing-docstring
+
+# get_mic_name
 from lisp.plugins import get_plugin
 
 def build_default_dca_name(num):

@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
+# pylint: disable=missing-docstring, invalid-name, line-too-long
+
 import logging
 
 from lisp.plugins import get_plugin
@@ -99,6 +101,7 @@ class DcaCueModel(DcaModelTemplate):
         return self._inherits_enabled
 
     def pin_entry(self, entry_index):
+        # pylint: disable=no-self-use
         entry_node = entry_index.internalPointer()
         entry_node.setAssignState(AssignStateEnum.ASSIGN)
 

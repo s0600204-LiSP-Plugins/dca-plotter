@@ -17,10 +17,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
+# pylint: disable=missing-docstring, invalid-name
+
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QAbstractItemView
-
-from lisp.plugins import get_plugin
 
 # pylint: disable=relative-beyond-top-level
 from ..modelview_abstract import DcaModelViewTemplate

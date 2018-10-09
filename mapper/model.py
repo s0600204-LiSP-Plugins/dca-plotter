@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
+# pylint: disable=missing-docstring
+
 import copy
 
 # pylint: disable=no-name-in-module
@@ -31,7 +33,7 @@ from ..model_primitives import AssignStateEnum, DcaModelTemplate, ModelsAssignRo
 class DcaMappingModel(DcaModelTemplate):
 
     def amend_cuerow(self, cue, property_name, property_value):
-        if property_name != 'dca_changes' and property_name != 'new_dca_name':
+        if property_name not in ('dca_changes', 'new_dca_name'):
             return
 
         cuerow = self.find_cuerow(cue.id)

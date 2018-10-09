@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
+# pylint: disable=missing-docstring
+
 """Dialog allowing for selection of multiple microphones, for assigning to a DCA"""
 
 # pylint: disable=no-name-in-module

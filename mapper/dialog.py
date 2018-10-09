@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
+# pylint: disable=missing-docstring, invalid-name
+
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QDialog, QVBoxLayout
 
@@ -30,7 +32,7 @@ class DcaMappingDialog(QDialog):
         super().__init__(**kwargs)
 
         self.setWindowTitle('DCA Mapping')
-        self.setMinimumSize(1080, 800)
+        self.setMinimumSize(1280, 800)
         self.setLayout(QVBoxLayout())
 
         self.model = get_plugin('DcaPlotter').mapper()

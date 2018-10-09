@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
+# pylint: disable=missing-docstring, invalid-name
+
 import logging
 
 # pylint: disable=no-name-in-module
@@ -46,7 +48,7 @@ logger = logging.getLogger(__name__) # pylint: disable=invalid-name
 # * When a cue is selected, it is done on the main thread.
 # This means it possible for a new cue to be selected before the current one has finished running.
 #
-# This is expected: it prevents the UI from locking up whilst an audio cue (or some other 
+# This is expected: it prevents the UI from locking up whilst an audio cue (or some other
 # long-running cue) is active.
 #
 # This model contains listeners (or in Qt's definition: 'slots') for both these events. And
@@ -95,7 +97,7 @@ class DcaTrackingModel(DcaModelTemplate):
         # Then again, we don't want update the 'currently active' if sending fails... so...
         midi_messages = determine_midi_messages(changes)
         for dict_msg in midi_messages:
-             self._midi_out.send_from_dict(dict_msg)
+            self._midi_out.send_from_dict(dict_msg)
 
         # Update the currently active
         current_assigns = self.root.child(0).children
@@ -148,16 +150,20 @@ class DcaTrackingModel(DcaModelTemplate):
             if change[0] == 'assign':
                 block_node = next_assigns[change[1]['dca']]
                 self._add_node(block_node.index(),
-                               ModelsEntry(change[1]['strip'][1], AssignStateEnum.ASSIGN, parent=block_node))
+                               ModelsEntry(change[1]['strip'][1],
+                                           AssignStateEnum.ASSIGN,
+                                           parent=block_node))
             elif change[0] == 'unassign':
                 block_node = next_assigns[change[1]['dca']]
                 self._add_node(block_node.index(),
-                               ModelsEntry(change[1]['strip'][1], AssignStateEnum.UNASSIGN, parent=block_node))
+                               ModelsEntry(change[1]['strip'][1],
+                                           AssignStateEnum.UNASSIGN,
+                                           parent=block_node))
             elif change[0] == 'rename':
                 block_node = next_assigns[change[1]['dca']]
                 block_node.setData(change[1]['name'], Qt.EditRole)
 
-    def on_cue_update(self, cue, property_name, property_value):
+    def on_cue_update(self, cue, property_name, _):
         if cue.id != self._last_selected_cue_id or property_name != 'dca_changes':
             return
         self.select_cue(cue)
@@ -168,7 +174,9 @@ class DcaTrackingModel(DcaModelTemplate):
         for dca_num, dca_node in enumerate(self.root.child(0).children):
             cue_actions.append(_create_rename_action(dca_num, new_name))
             for entry_node in dca_node.children:
-                cue_actions.append(_create_unassign_action(assign_changes, dca_num, entry_node.value()))
+                cue_actions.append(_create_unassign_action(assign_changes,
+                                                           dca_num,
+                                                           entry_node.value()))
 
         cue_actions.extend(_calculate_mutes(assign_changes))
         return cue_actions
@@ -188,14 +196,20 @@ class DcaTrackingModel(DcaModelTemplate):
             for entry in dca_node.children:
                 if entry.value() not in currently_assigned:
                     if entry.assignState() != AssignStateEnum.UNASSIGN:
-                        cue_actions.append(_create_assign_action(assign_changes, dca_num, entry.value()))
+                        cue_actions.append(_create_assign_action(assign_changes,
+                                                                 dca_num,
+                                                                 entry.value()))
                 elif entry.assignState() == AssignStateEnum.UNASSIGN:
-                    cue_actions.append(_create_unassign_action(assign_changes, dca_num, entry.value()))
+                    cue_actions.append(_create_unassign_action(assign_changes,
+                                                               dca_num,
+                                                               entry.value()))
 
             cue_assigned = dca_node.getChildValues()
             for input_num in currently_assigned:
                 if input_num not in cue_assigned:
-                    cue_actions.append(_create_unassign_action(assign_changes, dca_num, input_num))
+                    cue_actions.append(_create_unassign_action(assign_changes,
+                                                               dca_num,
+                                                               input_num))
 
         cue_actions.extend(_calculate_mutes(assign_changes))
         return cue_actions

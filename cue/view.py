@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
+# pylint: disable=missing-docstring, invalid-name
+
 # pylint: disable=no-name-in-module
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAction, QMenu
@@ -56,7 +58,8 @@ class DcaCueView(DcaModelViewTemplate):
             if current_node.assignState() == AssignStateEnum.NONE:
                 self._create_menu_action('Pin', self._pin_entry)
 
-            '''
+            # pylint: disable=pointless-string-statement
+            ''' Logic:
             if ASSIGN and !inherited   => remove
             if ASSIGN and inherited    => unpin
             if inherited               => unassign
@@ -105,7 +108,9 @@ class DcaCueView(DcaModelViewTemplate):
         selected_index = self.selectedIndexes()[0]
         selected_node = selected_index.internalPointer()
 
-        selection_choices = self.model().get_input_selection_choice(0, selected_node.rownum(), AssignStateEnum.ASSIGN)
+        selection_choices = self.model().get_input_selection_choice(0,
+                                                                    selected_node.rownum(),
+                                                                    AssignStateEnum.ASSIGN)
         self._input_select_dialog.set_entries(selection_choices)
 
         if self._input_select_dialog.exec_() == self._input_select_dialog.Accepted:
@@ -118,12 +123,16 @@ class DcaCueView(DcaModelViewTemplate):
         selected_index = self.selectedIndexes()[0]
         selected_node = selected_index.internalPointer()
 
-        selection_choices = self.model().get_input_selection_choice(0, selected_node.rownum(), AssignStateEnum.UNASSIGN)
+        selection_choices = self.model().get_input_selection_choice(0,
+                                                                    selected_node.rownum(),
+                                                                    AssignStateEnum.UNASSIGN)
         self._input_select_dialog.set_entries(selection_choices)
 
         if self._input_select_dialog.exec_() == self._input_select_dialog.Accepted:
             for mic_num in self._input_select_dialog.selected_entries():
-                self.model().add_new_entry(selected_node.rownum(), mic_num, AssignStateEnum.UNASSIGN)
+                self.model().add_new_entry(selected_node.rownum(),
+                                           mic_num,
+                                           AssignStateEnum.UNASSIGN)
 
     def _remove_entry(self):
         parents = []

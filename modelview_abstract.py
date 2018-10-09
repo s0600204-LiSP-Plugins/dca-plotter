@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
+# pylint: disable=missing-docstring, invalid-name
+
 # pylint: disable=no-name-in-module
 from PyQt5.QtCore import QItemSelection, QModelIndex, QRect
 from PyQt5.QtGui import QFontMetrics, QPainter, QPen, QRegion
@@ -40,14 +42,15 @@ class DcaModelViewTemplate(QAbstractItemView):
 
     def __init__(self, font_variant, **kwargs):
         super().__init__(**kwargs)
-        self.setFont(QApplication.font(font_variant));
+        self.setFont(QApplication.font(font_variant))
         self._fontmetrics = QFontMetrics(self.font())
         self.horizontalScrollBar().setRange(0, 0)
         self.verticalScrollBar().setRange(0, 0)
         self.setSelectionMode(QAbstractItemView.SingleSelection)
 
-    def dataChanged(topLeft, bottomRight):
-        '''This slot is called when the items with model indexes in the rectangle from topLeft to bottomRight change
+    def dataChanged(self, topLeft, bottomRight):
+        '''This slot is called when the items with model indexes in the rectangle
+           from topLeft to bottomRight change
         @arg topLeft QModelIndex
         @arg bottomRight QModelIndex
         @arg roles QVector<int> - optional
@@ -57,6 +60,7 @@ class DcaModelViewTemplate(QAbstractItemView):
         self.viewport().update()
 
     def horizontalOffset(self): # REQUIRED REQUESTED
+        # pylint: disable=no-self-use
         '''Returns the view's horizontal offset.
         @return int
         '''
@@ -93,22 +97,25 @@ class DcaModelViewTemplate(QAbstractItemView):
         return QModelIndex()
 
     def isIndexHidden(self, index): # REQUIRED
+        # pylint: disable=no-self-use, unused-argument
         '''Returns true if the item at index is a hidden item (and therefore should not be shown)
         @arg index QModelIndex
         @return bool
         '''
-        # @todo: Return True for cuerow indexes if not drawing those...
+        # TODO: Return True for cuerow indexes if not drawing those...
         return False
 
     def moveCursor(self, how, modifiers): # REQUIRED REQUESTED
-        '''Returns the model index of the item after navigating how (e.g., up, down, left, or right), and accounting for the keyboard modifiers
+        # pylint: disable=no-self-use, unused-argument
+        '''Returns the model index of the item after navigating how (e.g. up, down, left, or right),
+           and accounting for the keyboard modifiers
         @arg how QAbstractItemView::CursorAction
-        @arg modifiers Qt::KeyboardModifiers 
+        @arg modifiers Qt::KeyboardModifiers
         @return QModelIndex
         '''
         return QModelIndex()
 
-    def paintEvent(self, event):
+    def paintEvent(self, _):
         '''Paints the view's contents on the viewport
         @arg event QPaintEvent
         '''
@@ -146,6 +153,7 @@ class DcaModelViewTemplate(QAbstractItemView):
                 self.itemDelegate().paint(painter, dcaname_viewoptions, block_index)
 
                 # And a line under it
+                # pylint: disable=line-too-long
                 self._paint_line(painter,
                                  block_dimensions['line_rect'].adjusted(-self.horizontalScrollBar().value(),
                                                                         -self.verticalScrollBar().value(),
@@ -153,14 +161,14 @@ class DcaModelViewTemplate(QAbstractItemView):
                                                                         -self.verticalScrollBar().value()))
 
                 # Draw the assigns
-                for assign_num, assign_dimensions in enumerate(block_dimensions['entries']):
+                for assign_num in range(len(block_dimensions['entries'])):
                     assign_index = self.model().index(assign_num, 0, block_index)
                     assign_viewoptions = self.viewOptions()
                     assign_viewoptions.rect = self._viewport_rect_for_item(assign_index)
                     assign_viewoptions.state |= _get_selection_state(assign_index)
                     self.itemDelegate().paint(painter, assign_viewoptions, assign_index)
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, _):
         '''Typically used to update the scrollbars
         @arg event QResizeEvent
         '''
@@ -198,25 +206,28 @@ class DcaModelViewTemplate(QAbstractItemView):
         self.viewport().scroll(dx, dy)
         self.viewport().update()
 
-    def scrollTo(self, index, hint): # REQUIRED
-        '''Scrolls the view to ensure that the item at the given model index is visible, and respecting the scroll hint as it scrolls
+    def scrollTo(self, index, _): # REQUIRED
+        '''Scrolls the view to ensure that the item at the given model index is visible,
+           respecting the scroll hint as it scrolls
         @arg index QModelIndex
         @arg hint QAbstractItemView::ScrollHint
         '''
-        view_rect = self.viewport().rect();
-        item_rect = self.visualRect(index);
+        view_rect = self.viewport().rect()
+        item_rect = self.visualRect(index)
         horiz_scrollbar = self.horizontalScrollBar()
         verti_scrollbar = self.verticalScrollBar()
 
         if item_rect.left() < view_rect.left():
             horiz_scrollbar.setValue(horiz_scrollbar.value() + item_rect.left() - view_rect.left())
         elif item_rect.right() > view_rect.right():
+            # pylint: disable=line-too-long
             horiz_scrollbar.setValue(horiz_scrollbar.value() + min(item_rect.right() - view_rect.right(),
                                                                    item_rect.left() - view_rect.left()))
 
         if item_rect.top() < view_rect.top():
-            verti_scrollbar.setValue(verti_scrollbar.value() + item_rect.top() - view_rect.top());
+            verti_scrollbar.setValue(verti_scrollbar.value() + item_rect.top() - view_rect.top())
         elif item_rect.bottom() > view_rect.bottom():
+            # pylint: disable=line-too-long
             verti_scrollbar.setValue(verti_scrollbar.value() + min(item_rect.bottom() - view_rect.bottom(),
                                                                    item_rect.top() - view_rect.top()))
 
@@ -264,10 +275,11 @@ class DcaModelViewTemplate(QAbstractItemView):
                         for assign_num, assign_dimensions in enumerate(block_dimensions['entries']):
                             if assign_dimensions.intersects(rectangle):
                                 something_selected = True
-                                selectStart = selectStart if selectStart < assign_num else assign_num
+                                selectStart = selectStart if selectStart < assign_num else assign_num # pylint: disable=line-too-long
                                 selectEnd = selectEnd if selectEnd > assign_num else assign_num
 
                         if selectStart != len(block_dimensions['entries']) and selectEnd != -1:
+                            # pylint: disable=line-too-long
                             selection = QItemSelection(self.model().index(selectStart, 0, block_index),
                                                        self.model().index(selectEnd, 0, block_index))
                             self.selectionModel().select(selection, flags)
@@ -275,13 +287,8 @@ class DcaModelViewTemplate(QAbstractItemView):
         if not something_selected:
             self.selectionModel().select(QItemSelection(QModelIndex(), QModelIndex()), flags)
 
-    #def updateGeometries(self):
-    #    '''Typically used to update the geometries of the view's child widgets, e.g., the scrollbars
-    #    (no args or return)
-    #    '''
-    #    pass
-
     def verticalOffset(self): # REQUESTED
+        # pylint: disable=no-self-use
         '''Returns the view's vertical offset
         @return int
         '''
@@ -365,7 +372,7 @@ class DcaModelViewTemplate(QAbstractItemView):
 
                 # And the assign entries
                 entry_rects = []
-                for assign_num in range(self.model().childCount(block_index)):
+                for _ in range(self.model().childCount(block_index)):
                     entry_rects.append(QRect(block_x + self.BLOCKENTRY_MARGIN,
                                              block_y + self.BLOCKENTRY_MARGIN,
                                              ENTRY_WIDTH,
@@ -401,17 +408,17 @@ class DcaModelViewTemplate(QAbstractItemView):
         self.viewport().update()
 
     def _paint_outline(self, painter, rect):
-        rect = rect.adjusted(0, 0, -1, -1);
-        painter.save();
-        painter.setPen(QPen(self.palette().dark().color(), 0.5));
-        painter.drawRect(rect);
-        painter.restore();
+        rect = rect.adjusted(0, 0, -1, -1)
+        painter.save()
+        painter.setPen(QPen(self.palette().dark().color(), 0.5))
+        painter.drawRect(rect)
+        painter.restore()
 
     def _paint_line(self, painter, rect):
-        painter.save();
-        painter.setPen(QPen(self.palette().dark().color(), 0.5));
-        painter.drawLine(rect.topLeft(), rect.bottomRight());
-        painter.restore();
+        painter.save()
+        painter.setPen(QPen(self.palette().dark().color(), 0.5))
+        painter.drawLine(rect.topLeft(), rect.bottomRight())
+        painter.restore()
 
     def _viewport_rect_for_item(self, index):
         self._recalculate_cell_size()
@@ -431,11 +438,11 @@ class DcaModelViewTemplate(QAbstractItemView):
         walk.reverse()
 
         # This if...elif... is awkward
-        # @todo: Replace with something better
+        # TODO: Replace with something better
         if len(walk) == 3:
             return self._cell_sizes[walk[0]]['blocks'][walk[1]]['entries'][walk[2]]
-        elif len(walk) == 2:
+        if len(walk) == 2:
             return self._cell_sizes[walk[0]]['blocks'][walk[1]]['header_rect']
-        elif len(walk) == 1 and self.DRAW_CUEHEADER:
+        if len(walk) == 1 and self.DRAW_CUEHEADER:
             return self._cell_sizes[walk[0]]['header_rect']
         return QRect()
