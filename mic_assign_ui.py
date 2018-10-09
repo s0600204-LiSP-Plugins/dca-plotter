@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
+# pylint: disable=missing-docstring, invalid-name
+
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QFormLayout, QGroupBox, QSpinBox, QVBoxLayout, QWidget
 
@@ -28,7 +30,7 @@ from lisp.ui.qmodels import SimpleTableModel
 from lisp.ui.settings.pages import SettingsPage
 from lisp.ui.ui_utils import translate
 
-class DcaPlotterMicAssignUi(SettingsPage):
+class MicAssignUi(SettingsPage):
     '''Mic Assign UI'''
     Name = "Mic Assignments"
 
@@ -82,7 +84,7 @@ class DcaPlotterMicAssignUi(SettingsPage):
     def loadSettings(self, settings):
         plugin_config = get_plugin('DcaPlotter').Config
 
-        if 'inputs' in settings and len(settings['inputs']):
+        if 'inputs' in settings and settings['inputs']:
             self.inputCount.setValue(len(settings['inputs']))
             for row_idx, row in enumerate(settings['inputs']):
                 self.inputList.model().appendRow(row_idx + 1, row['in'], row['name'])

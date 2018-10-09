@@ -24,10 +24,10 @@ from lisp.core.plugin import Plugin
 from lisp.core.signal import Signal
 from lisp.plugins.dca_plotter.cue.change_cue import DcaChangeCue
 from lisp.plugins.dca_plotter.cue.reset_cue import DcaResetCue
-from lisp.plugins.dca_plotter.dca_plotter_mic_assign_ui import DcaPlotterMicAssignUi
 from lisp.plugins.dca_plotter.dca_plotter_settings import DcaPlotterSettings
 from lisp.plugins.dca_plotter.mapper.dialog import DcaMappingDialog
 from lisp.plugins.dca_plotter.mapper.model import DcaMappingModel
+from lisp.plugins.dca_plotter.mic_assign_ui import MicAssignUi
 from lisp.plugins.dca_plotter.tracker.model import DcaTrackingModel
 from lisp.plugins.list_layout.layout import ListLayout
 from lisp.ui.settings.app_configuration import AppConfigurationDialog
@@ -59,7 +59,7 @@ class DcaPlotter(Plugin):
 
         # Register the session-level mic assign ui
         SessionConfigurationDialog.registerSettingsPage(
-            'mic_assign', DcaPlotterMicAssignUi, self)
+            'mic_assign', MicAssignUi, self)
 
         # Register our cue types
         app.register_cue_type(DcaChangeCue, translate("CueCategory", "DCA/VCA Manipulation"))
