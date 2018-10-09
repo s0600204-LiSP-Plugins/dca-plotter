@@ -41,13 +41,13 @@ class DcaMappingModel(DcaModelTemplate):
             for dca_num in range(get_plugin('DcaPlotter').SessionConfig['dca_count']):
                 changes.append((dca_num, property_value, 'Name'))
         else:
-            before = self._change_tuples_derive(cuerow)
+            before = _change_tuples_derive(cuerow)
 
             # Update assigns for this cuerow.
             self._set_initial_assigns(cuerow, property_value, True)
 
             # For the "Assigns" that were removed.
-            changes = self._change_tuples_derive(cuerow)
+            changes = _change_tuples_derive(cuerow)
             for change in before:
                 if change not in changes and change[2] == AssignStateEnum.ASSIGN:
                     changes.append((change[0], change[1], None))
@@ -88,9 +88,9 @@ class DcaMappingModel(DcaModelTemplate):
 
         # Update assign entries at the leave point
         if cue.type == "DcaChangeCue":
-            changes = self._change_tuples_invert(self._change_tuples_derive(cuerow))
+            changes = _change_tuples_invert(_change_tuples_derive(cuerow))
         else:
-            changes = self._change_tuples_derive(cuerow.prev_sibling())
+            changes = _change_tuples_derive(cuerow.prev_sibling())
         self._change_tuples_cascade_apply(cuerow, changes)
 
         # When moving down, all other things move up. In this case, the new index is one out.
@@ -112,14 +112,14 @@ class DcaMappingModel(DcaModelTemplate):
         # Then, update from the new previous cue row
         prev_sibling = cuerow.prev_sibling()
         if prev_sibling and prev_sibling.cue.type == "DcaChangeCue":
-            changes = self._change_tuples_derive(prev_sibling)
+            changes = _change_tuples_derive(prev_sibling)
             self._change_tuples_apply(cuerow, changes)
 
         # Finally, cascade changes.
         if cuerow.cue.type == "DcaResetCue":
-            changes = self._change_tuples_clear(self._change_tuples_derive(cuerow.prev_sibling()))
+            changes = _change_tuples_clear(_change_tuples_derive(cuerow.prev_sibling()))
         else:
-            changes = self._change_tuples_derive(cuerow)
+            changes = _change_tuples_derive(cuerow)
         self._change_tuples_cascade_apply(cuerow, changes)
 
     def remove_cuerow(self, cue):
@@ -129,9 +129,9 @@ class DcaMappingModel(DcaModelTemplate):
 
         # Update assign entries
         if cue.type == "DcaChangeCue":
-            changes = self._change_tuples_invert(self._change_tuples_derive(cuerow))
+            changes = _change_tuples_invert(_change_tuples_derive(cuerow))
         else:
-            changes = self._change_tuples_derive(cuerow.prev_sibling())
+            changes = _change_tuples_derive(cuerow.prev_sibling())
         self._change_tuples_cascade_apply(cuerow, changes)
 
         # And remove the cuerow from the model
@@ -172,49 +172,6 @@ class DcaMappingModel(DcaModelTemplate):
             self._change_tuples_apply(self.root.child(next_rownum), changes)
             next_rownum += 1
 
-    def _change_tuples_clear(self, old_changes):
-        new_changes = []
-        for change in old_changes:
-            new_state = None
-            if change[2] != AssignStateEnum.UNASSIGN:
-                new_state = AssignStateEnum.UNASSIGN
-
-            if new_state:
-                new_changes.append((change[0],
-                                    change[1],
-                                    new_state))
-        return new_changes
-
-    def _change_tuples_derive(self, cuerow):
-        changes = []
-        if not cuerow:
-            return changes
-
-        if cuerow.cue.type == "DcaResetCue":
-            for dca_num in range(get_plugin('DcaPlotter').SessionConfig['dca_count']):
-                changes.append((dca_num, cuerow.cue.new_dca_name, 'Name'))
-            return changes
-
-        for dca_num, dca_node in enumerate(cuerow.children):
-            changes.append((dca_num, dca_node.data(), 'Name'))
-            for entry in dca_node.children:
-                changes.append((dca_num, entry.value(), entry.assign_state()))
-        return changes
-
-    def _change_tuples_invert(self, old_changes):
-        new_changes = []
-        for change in old_changes:
-            new_state = change[2]
-            if new_state == AssignStateEnum.ASSIGN:
-                new_state = AssignStateEnum.UNASSIGN
-            elif new_state == AssignStateEnum.UNASSIGN:
-                new_state = AssignStateEnum.ASSIGN
-
-            new_changes.append((change[0],
-                                change[1],
-                                new_state))
-        return new_changes
-
     def find_cuerow(self, cue_id):
         '''Find and return the cue-row that matches the given cue-id'''
         for cuerow in self.root.children:
@@ -246,5 +203,49 @@ class DcaMappingModel(DcaModelTemplate):
         # Get inherits from previous cue row
         prev_sibling = cuerow.prev_sibling()
         if prev_sibling:
-            changes = self._change_tuples_derive(prev_sibling)
+            changes = _change_tuples_derive(prev_sibling)
             self._change_tuples_apply(cuerow, changes)
+
+
+def _change_tuples_clear(old_changes):
+    new_changes = []
+    for change in old_changes:
+        new_state = None
+        if change[2] != AssignStateEnum.UNASSIGN:
+            new_state = AssignStateEnum.UNASSIGN
+
+        if new_state:
+            new_changes.append((change[0],
+                                change[1],
+                                new_state))
+    return new_changes
+
+def _change_tuples_derive(cuerow):
+    changes = []
+    if not cuerow:
+        return changes
+
+    if cuerow.cue.type == "DcaResetCue":
+        for dca_num in range(get_plugin('DcaPlotter').SessionConfig['dca_count']):
+            changes.append((dca_num, cuerow.cue.new_dca_name, 'Name'))
+        return changes
+
+    for dca_num, dca_node in enumerate(cuerow.children):
+        changes.append((dca_num, dca_node.data(), 'Name'))
+        for entry in dca_node.children:
+            changes.append((dca_num, entry.value(), entry.assignState()))
+    return changes
+
+def _change_tuples_invert(old_changes):
+    new_changes = []
+    for change in old_changes:
+        new_state = change[2]
+        if new_state == AssignStateEnum.ASSIGN:
+            new_state = AssignStateEnum.UNASSIGN
+        elif new_state == AssignStateEnum.UNASSIGN:
+            new_state = AssignStateEnum.ASSIGN
+
+        new_changes.append((change[0],
+                            change[1],
+                            new_state))
+    return new_changes

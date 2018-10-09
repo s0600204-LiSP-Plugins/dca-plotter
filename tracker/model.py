@@ -93,7 +93,7 @@ class DcaTrackingModel(DcaModelTemplate):
         # Alternatively, as this is a *tracking* model, the diff change could be passed back
         #   and the calling cue handles sending the MIDI.
         # Then again, we don't want update the 'currently active' if sending fails... so...
-        midi_messages = self.determine_midi_messages(changes)
+        midi_messages = determine_midi_messages(changes)
         for dict_msg in midi_messages:
              self._midi_out.send_from_dict(dict_msg)
 
@@ -161,46 +161,6 @@ class DcaTrackingModel(DcaModelTemplate):
         if cue.id != self._last_selected_cue_id or property_name != 'dca_changes':
             return
         self.select_cue(cue)
-
-    def determine_midi_messages(self, changes):
-        midi_plugin_config = get_plugin('MidiFixtureControl').SessionConfig
-        if not midi_plugin_config['dca_device']:
-            logger.error("Please identify a device capable of remote VCA/DCA control.")
-            return []
-
-        library = get_plugin('MidiFixtureControl').get_library()
-
-        patch_details = None
-        for patch in midi_plugin_config['patches']:
-            if patch['patch_id'] == midi_plugin_config['dca_device']:
-                patch_details = patch
-                break
-        
-        messages = []
-        for change in changes:
-            action = ""
-            args = {
-                "channelType": change[1]['strip'][0],
-                "channelNum": change[1]['strip'][1]
-            }
-
-            if change[0] == 'assign' or change[0] == 'unassign':
-                action = "dcaAssign" if change[0] == 'assign' else "dcaUnAssign"
-                args['dcaNum'] = change[1]['dca'] + 1
-
-            elif change[0] == 'mute' or change[0] == "unmute":
-                action = "mute" if change[0] == 'mute' else "unmute"
-
-            elif change[0] == 'rename':
-                action = "setName"
-                args["arbitraryString"] = change[1]['name']
-
-            messages.extend(library.build_device_command(patch_details['fixture_id'],
-                                                         patch_details['midi_channel'],
-                                                         action,
-                                                         args))
-
-        return messages
 
     def cancel_current(self, new_name):
         cue_actions = []
@@ -317,3 +277,43 @@ def _update_assign_changes(assign_changes, action, input_num):
             assign_changes[input_num] = 0
         elif assign_changes[input_num] == 1:
             assign_changes[input_num] = -1
+
+def determine_midi_messages(changes):
+    midi_plugin_config = get_plugin('MidiFixtureControl').SessionConfig
+    if not midi_plugin_config['dca_device']:
+        logger.error("Please identify a device capable of remote VCA/DCA control.")
+        return []
+
+    library = get_plugin('MidiFixtureControl').get_library()
+
+    patch_details = None
+    for patch in midi_plugin_config['patches']:
+        if patch['patch_id'] == midi_plugin_config['dca_device']:
+            patch_details = patch
+            break
+
+    messages = []
+    for change in changes:
+        action = ""
+        args = {
+            "channelType": change[1]['strip'][0],
+            "channelNum": change[1]['strip'][1]
+        }
+
+        if change[0] == 'assign' or change[0] == 'unassign':
+            action = "dcaAssign" if change[0] == 'assign' else "dcaUnAssign"
+            args['dcaNum'] = change[1]['dca'] + 1
+
+        elif change[0] == 'mute' or change[0] == "unmute":
+            action = "mute" if change[0] == 'mute' else "unmute"
+
+        elif change[0] == 'rename':
+            action = "setName"
+            args["arbitraryString"] = change[1]['name']
+
+        messages.extend(library.build_device_command(patch_details['fixture_id'],
+                                                     patch_details['midi_channel'],
+                                                     action,
+                                                     args))
+
+    return messages
