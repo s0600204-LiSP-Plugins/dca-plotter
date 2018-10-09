@@ -33,7 +33,7 @@ class DcaCueView(DcaModelViewTemplate):
                 self._create_menu_action('New Unassign', self._add_new_unassign_entry)
 
         elif isinstance(current_node, ModelsEntry):
-            if current_node.assign_state() == AssignStateEnum.NONE:
+            if current_node.assignState() == AssignStateEnum.NONE:
                 self._create_menu_action('Pin', self._pin_entry)
 
             '''
@@ -45,9 +45,9 @@ class DcaCueView(DcaModelViewTemplate):
             '''
             caption = 'Remove'
             if current_node.inherited():
-                if current_node.assign_state() == AssignStateEnum.ASSIGN:
+                if current_node.assignState() == AssignStateEnum.ASSIGN:
                     caption = 'Unpin'
-                elif current_node.assign_state() == AssignStateEnum.UNASSIGN:
+                elif current_node.assignState() == AssignStateEnum.UNASSIGN:
                     caption = 'Restore'
                 else:
                     caption = 'Unassign'
@@ -69,7 +69,7 @@ class DcaCueView(DcaModelViewTemplate):
 
         assigns = []
         for entry in dca_node.children:
-            if entry.assign_state() != AssignStateEnum.UNASSIGN:
+            if entry.assignState() != AssignStateEnum.UNASSIGN:
                 assigns.append(entry.value())
 
         # If there's no name explicitly given to the dca, and only one assign/inherit entry,

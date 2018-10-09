@@ -86,7 +86,7 @@ class DcaMappingModel(DcaModelTemplate):
         for dca_node in cuerow.children:
             for entry in copy.copy(dca_node.children):
                 entry.setInherited(False)
-                if entry.assign_state() == AssignStateEnum.NONE:
+                if entry.assignState() == AssignStateEnum.NONE:
                     self._remove_node(entry.index())
 
         # Then, update from the new previous cue row
@@ -139,7 +139,7 @@ class DcaMappingModel(DcaModelTemplate):
                     self._add_node(block_index, new_entry)
             else:
                 entry_node = block_node.child(block_entry_values.index(change[1]))
-                if entry_node.assign_state() != AssignStateEnum.NONE:
+                if entry_node.assignState() != AssignStateEnum.NONE:
                     changes.remove(change)
                     entry_node.setInherited(change[2] != AssignStateEnum.UNASSIGN)
                 elif not change[2] or change[2] == AssignStateEnum.UNASSIGN:

@@ -59,9 +59,9 @@ class DcaCueModel(DcaModelTemplate):
             add = []
             rem = []
             for entry in dca_node.children:
-                if entry.assign_state() == AssignStateEnum.ASSIGN:
+                if entry.assignState() == AssignStateEnum.ASSIGN:
                     add.append(entry.value())
-                elif entry.assign_state() == AssignStateEnum.UNASSIGN:
+                elif entry.assignState() == AssignStateEnum.UNASSIGN:
                     rem.append(entry.value())
             assigns.append({
                 'name': dca_node.serialiseName(),
@@ -79,16 +79,16 @@ class DcaCueModel(DcaModelTemplate):
 
     def pin_entry(self, entry_index):
         entry_node = entry_index.internalPointer()
-        entry_node._assign_state = AssignStateEnum.ASSIGN
+        entry_node.setAssignState(AssignStateEnum.ASSIGN)
 
     def remove_entry(self, entry_index):
         entry_node = entry_index.internalPointer()
         if not entry_node.inherited():
             self._remove_node(entry_index)
-        elif entry_node.assign_state() == AssignStateEnum.NONE:
-            entry_node._assign_state = AssignStateEnum.UNASSIGN
+        elif entry_node.assignState() == AssignStateEnum.NONE:
+            entry_node.setAssignState(AssignStateEnum.UNASSIGN)
         else:
-            entry_node._assign_state = AssignStateEnum.NONE
+            entry_node.setAssignState(AssignStateEnum.NONE)
 
     def get_input_selection_choice(self, target_row, target_dca_num, intention):
         possible_values = [val for val in range(1, get_plugin('DcaPlotter').get_microphone_count() + 1)]
@@ -101,8 +101,8 @@ class DcaCueModel(DcaModelTemplate):
                 # If adding a new assign, we filter out any assigns explicit/implicit that are already in the current row.
                 # If adding a new unassign, we filter out any unassigns already in the current row.
                 if dca_num == target_dca_num or \
-                    intention == AssignStateEnum.ASSIGN and entry.assign_state() != AssignStateEnum.UNASSIGN or \
-                    intention == AssignStateEnum.UNASSIGN and entry.assign_state() == AssignStateEnum.UNASSIGN:
+                    intention == AssignStateEnum.ASSIGN and entry.assignState() != AssignStateEnum.UNASSIGN or \
+                    intention == AssignStateEnum.UNASSIGN and entry.assignState() == AssignStateEnum.UNASSIGN:
                     possible_values.remove(entry.value())
 
         return possible_values

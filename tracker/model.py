@@ -206,9 +206,9 @@ class DcaTrackingModel(DcaModelTemplate):
             currently_assigned = current_assigns[dca_num].getChildValues()
             for entry in dca_node.children:
                 if entry.value() not in currently_assigned:
-                    if entry.assign_state() != AssignStateEnum.UNASSIGN:
+                    if entry.assignState() != AssignStateEnum.UNASSIGN:
                         cue_actions.append(_create_assign_action(assign_changes, dca_num, entry.value()))
-                elif entry.assign_state() == AssignStateEnum.UNASSIGN:
+                elif entry.assignState() == AssignStateEnum.UNASSIGN:
                     cue_actions.append(_create_unassign_action(assign_changes, dca_num, entry.value()))
 
             cue_assigned = dca_node.getChildValues()

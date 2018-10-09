@@ -206,11 +206,15 @@ class ModelsEntry(ModelsLeafNode):
 
         return super().data(role)
 
-    def assign_state(self):
+    def assignState(self):
         return self._assign_state
 
     def inherited(self):
         return self._is_inherited
+
+    def setAssignState(self, new_state):
+        if new_state in AssignStateEnum:
+            self._assign_state = new_state
 
     def setInherited(self, is_inherited):
         self._is_inherited = is_inherited
