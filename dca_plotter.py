@@ -17,7 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt5.QtWidgets import QAction#, QDialog
+# pylint: disable=no-name-in-module
+from PyQt5.QtWidgets import QAction
 
 from lisp.application import Application
 from lisp.core.plugin import Plugin

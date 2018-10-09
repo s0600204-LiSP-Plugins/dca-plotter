@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
+# pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QDialog, QVBoxLayout
 
 from lisp.plugins import get_plugin

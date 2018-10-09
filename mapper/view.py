@@ -17,9 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt5.QtCore import Qt, QModelIndex, QRect
-from PyQt5.QtGui import QFontMetrics, QPainter, QPen # QMouseEvent
-from PyQt5.QtWidgets import QAbstractItemView, QApplication
+# pylint: disable=no-name-in-module
+from PyQt5.QtWidgets import QAbstractItemView
 
 from lisp.plugins import get_plugin
 

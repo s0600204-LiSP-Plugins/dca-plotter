@@ -19,6 +19,7 @@
 
 import logging
 
+# pylint: disable=no-name-in-module
 from PyQt5.QtCore import Qt
 
 from lisp.application import Application
