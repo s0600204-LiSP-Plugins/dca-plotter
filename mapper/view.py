@@ -35,9 +35,12 @@ class DcaMappingView(DcaModelViewTemplate):
         # Temporarily disable selections and editing for this view.
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.setSelectionMode(QAbstractItemView.NoSelection)
+        self.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
 
     def updateGeometries(self):
         self.verticalScrollBar().setRange(0, max(0, self._ideal_height - self.viewport().height()))
+        self.verticalScrollBar().setSingleStep(self._fontmetrics.height() / 3)
+        self.verticalScrollBar().setPageStep(self.viewport().height())
 
     def verticalOffset(self):
         return self.verticalScrollBar().value()
