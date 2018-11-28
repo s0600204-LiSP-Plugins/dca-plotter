@@ -27,6 +27,7 @@ from lisp.ui.settings.cue_settings import CueSettingsRegistry
 from lisp.ui.settings.pages import SettingsPage
 from lisp.ui.ui_utils import translate
 
+from ..model_primitives import AssignStateEnum
 from .model import DcaCueModel
 from .view import DcaCueView
 
@@ -43,6 +44,18 @@ class DcaChangeCue(Cue):
     def __start__(self, fade=False):
         get_plugin('DcaPlotter').tracker().call_cue(self)
         return False
+
+    def validate_assigns(self, assigns_from_mapper):
+        active = []
+
+        for assign_change in assigns_from_mapper:
+            if assign_change[2] in (AssignStateEnum.NONE, AssignStateEnum.ASSIGN):
+                if assign_change[1] in active:
+                    self._error()
+                    return
+                active.append(assign_change[1])
+
+        self._clear_error()
 
 class DcaChangeCueSettings(SettingsPage):
     Name = QT_TRANSLATE_NOOP('SettingsPageName', 'DCA/VCA Change Settings')

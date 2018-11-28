@@ -54,6 +54,8 @@ class DcaMappingModel(DcaModelTemplate):
                 if change not in changes and change[2] == AssignStateEnum.ASSIGN:
                     changes.append((change[0], change[1], None))
 
+            cue.validate_assigns(changes)
+
         # Update the cuerows beyond it.
         self._change_tuples_cascade_apply(cuerow, changes)
 
@@ -69,6 +71,7 @@ class DcaMappingModel(DcaModelTemplate):
             new_cuerow = ModelsAssignRow(cue, parent=self.root)
             self._add_node(self.createIndex(self.root.childCount(), 0, self.root), new_cuerow)
             self._set_initial_assigns(new_cuerow, cue.dca_changes, False)
+            new_cuerow.cue.validate_assigns(_change_tuples_derive(new_cuerow))
 
         elif cue.type == "DcaResetCue":
             new_cuerow = ModelsResetRow(cue, parent=self.root)
@@ -171,7 +174,10 @@ class DcaMappingModel(DcaModelTemplate):
         next_rownum = cuerow.rownum() + 1
 
         while changes and next_rownum < self.root.childCount():
-            self._change_tuples_apply(self.root.child(next_rownum), changes)
+            new_cuerow = self.root.child(next_rownum)
+            self._change_tuples_apply(new_cuerow, changes)
+            if new_cuerow.cue.type != "DcaResetCue":
+                new_cuerow.cue.validate_assigns(_change_tuples_derive(new_cuerow))
             next_rownum += 1
 
     def find_cuerow(self, cue_id):
