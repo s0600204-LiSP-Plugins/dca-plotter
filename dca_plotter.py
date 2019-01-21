@@ -30,13 +30,14 @@ from lisp.ui.settings.app_configuration import AppConfigurationDialog
 from lisp.ui.settings.session_configuration import SessionConfigurationDialog
 from lisp.ui.ui_utils import translate
 
-from .cue.change_cue import DcaChangeCue
-from .cue.reset_cue import DcaResetCue
-from .dca_plotter_settings import DcaPlotterSettings
-from .mapper.dialog import DcaMappingDialog
-from .mapper.model import DcaMappingModel
-from .mic_assign_ui import MicAssignUi
-from .tracker.model import DcaTrackingModel
+from dca_plotter.cue.change_cue import DcaChangeCue
+from dca_plotter.cue.reset_cue import DcaResetCue
+from dca_plotter.dca_plotter_settings import DcaPlotterSettings
+from dca_plotter.mapper.dialog import DcaMappingDialog
+from dca_plotter.mapper.model import DcaMappingModel
+from dca_plotter.mic_assign_ui import MicAssignUi
+from dca_plotter.tracker.model import DcaTrackingModel
+from dca_plotter.tracker.view import DcaTrackingView
 
 class DcaPlotter(Plugin):
     """Provides the ability to plot DCA/VCA assignments"""
