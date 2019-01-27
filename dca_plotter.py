@@ -20,11 +20,13 @@
 # pylint: disable=missing-docstring
 
 # pylint: disable=no-name-in-module
+from PyQt5.QtCore import QT_TRANSLATE_NOOP
 from PyQt5.QtWidgets import QAction
 
 from lisp.application import Application
 from lisp.core.plugin import Plugin
 from lisp.core.signal import Signal
+from lisp.cues.cue_factory import CueFactory
 from lisp.plugins.list_layout.layout import ListLayout
 from lisp.ui.settings.app_configuration import AppConfigurationDialog
 from lisp.ui.settings.session_configuration import SessionConfigurationDialog
@@ -46,6 +48,7 @@ class DcaPlotter(Plugin):
     Authors = ('s0600204',)
     Depends = ('Midi', 'MidiFixtureControl')
     Description = 'Provides the ability to plot DCA/VCA assignments'
+    CueCategory = QT_TRANSLATE_NOOP("CueCategory", "DCA/VCA Manipulation")
 
     _mapper_enabled = False
     _mapping_menu_action = None
@@ -67,8 +70,11 @@ class DcaPlotter(Plugin):
             'mic_assign', MicAssignUi, self)
 
         # Register our cue types
-        app.register_cue_type(DcaChangeCue, translate("CueCategory", "DCA/VCA Manipulation"))
-        app.register_cue_type(DcaResetCue, translate("CueCategory", "DCA/VCA Manipulation"))
+        CueFactory.register_factory(DcaChangeCue.__name__, DcaChangeCue)
+        app.window.registerSimpleCueMenu(DcaChangeCue, self.CueCategory)
+
+        CueFactory.register_factory(DcaResetCue.__name__, DcaResetCue)
+        app.window.registerSimpleCueMenu(DcaResetCue, self.CueCategory)
 
         # Register a listener for when a session has been created.
         Application().session_created.connect(self._on_session_init)
