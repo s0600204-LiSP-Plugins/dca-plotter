@@ -76,13 +76,23 @@ class DcaPlotter(Plugin):
         CueFactory.register_factory(DcaResetCue.__name__, DcaResetCue)
         app.window.registerSimpleCueMenu(DcaResetCue, self.CueCategory)
 
-        # Register a listener for when a session has been created.
+        # Register listeners for when a session has been created and pre-destruction.
         Application().session_created.connect(self._on_session_init)
+        Application().session_before_finalize.connect(self._pre_session_deinit)
 
     def _open_mapper_dialog(self):
         if self._mapper_enabled:
             dca_mapper = DcaMappingDialog()
             dca_mapper.exec_()
+
+    def _pre_session_deinit(self):
+        layout = Application().layout
+        if isinstance(layout, ListLayout):
+            cuelist_model = layout.list_model()
+            cuelist_model.item_added.disconnect(self._on_cue_added)
+            cuelist_model.item_moved.disconnect(self._on_cue_moved)
+            cuelist_model.item_removed.disconnect(self._on_cue_removed)
+            layout.view().listView.currentItemChanged.disconnect(self._on_cue_selected)
 
     def _on_session_init(self):
         """Post-session-creation init"""
