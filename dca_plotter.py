@@ -23,7 +23,6 @@
 from PyQt5.QtCore import QT_TRANSLATE_NOOP
 from PyQt5.QtWidgets import QAction
 
-from lisp.application import Application
 from lisp.core.plugin import Plugin
 from lisp.core.signal import Signal
 from lisp.cues.cue_factory import CueFactory
@@ -77,8 +76,8 @@ class DcaPlotter(Plugin):
         app.window.registerSimpleCueMenu(DcaResetCue, self.CueCategory)
 
         # Register listeners for when a session has been created and pre-destruction.
-        Application().session_created.connect(self._on_session_init)
-        Application().session_before_finalize.connect(self._pre_session_deinit)
+        app.session_created.connect(self._on_session_init)
+        app.session_before_finalize.connect(self._pre_session_deinit)
 
     def _open_mapper_dialog(self):
         if self._mapper_enabled:
@@ -86,7 +85,7 @@ class DcaPlotter(Plugin):
             dca_mapper.exec_()
 
     def _pre_session_deinit(self):
-        layout = Application().layout
+        layout = self.app.layout
         if isinstance(layout, ListLayout):
             cuelist_model = layout.list_model()
             cuelist_model.item_added.disconnect(self._on_cue_added)
@@ -97,7 +96,7 @@ class DcaPlotter(Plugin):
     def _on_session_init(self):
         """Post-session-creation init"""
 
-        layout = Application().layout
+        layout = self.app.layout
         self._mapper_enabled = isinstance(layout, ListLayout)
 
         # Create the session's dca-tracking model
@@ -156,7 +155,7 @@ class DcaPlotter(Plugin):
 
     def _on_cue_moved(self, _, new_index):
         """Action to take when a cue is moved in the List Layout."""
-        cue = Application().layout.list_model().item(new_index)
+        cue = self.app.layout.list_model().item(new_index)
         if _is_supported_cuetype(cue.type):
             self._mapping_model.move_cuerow(cue, new_index)
 
