@@ -49,7 +49,6 @@ class DcaPlotter(Plugin):
     Description = 'Provides the ability to plot DCA/VCA assignments'
     CueCategory = QT_TRANSLATE_NOOP("CueCategory", "DCA/VCA Manipulation")
 
-    _mapper_enabled = False
     _mapping_menu_action = None
     _mapping_model = None
     _tracking_model = None
@@ -80,7 +79,7 @@ class DcaPlotter(Plugin):
         app.session_before_finalize.connect(self._pre_session_deinit)
 
     def _open_mapper_dialog(self):
-        if self._mapper_enabled:
+        if self.mapper_enabled():
             dca_mapper = DcaMappingDialog()
             dca_mapper.exec_()
 
@@ -97,15 +96,14 @@ class DcaPlotter(Plugin):
         """Post-session-creation init"""
 
         layout = self.app.layout
-        self._mapper_enabled = isinstance(layout, ListLayout)
 
         # Create the session's dca-tracking model
         # This model does not contain cues.
         # Instead it tracks which mics are muted and are currently assigned where
-        self._tracking_model = DcaTrackingModel(self._mapper_enabled)
+        self._tracking_model = DcaTrackingModel(self.mapper_enabled())
 
         # If the mapper is not to be used we don't need to have it or its menu option in existence
-        if not self._mapper_enabled:
+        if not self.mapper_enabled():
             if self._mapping_menu_action:
                 self.app.window.menuTools.removeAction(self._mapping_menu_action)
             self._mapping_menu_action = None
@@ -170,7 +168,7 @@ class DcaPlotter(Plugin):
         return count if count > 0 else self.Config['input_channel_count']
 
     def mapper_enabled(self):
-        return self._mapper_enabled
+        return isinstance(self.app.layout, ListLayout)
 
     def mapper(self):
         return self._mapping_model
