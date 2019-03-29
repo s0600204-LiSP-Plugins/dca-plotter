@@ -142,8 +142,11 @@ class DcaPlotter(Plugin):
         With the "Cart" layout, selecting a cue calls the cue.
         (And there are no other layouts currently.)
         """
-        if current and _is_supported_cuetype(current.cue.type):
-            self._tracking_model.select_cue(current.cue)
+        if current:
+            if _is_supported_cuetype(current.cue.type):
+                self._tracking_model.select_cue(current.cue)
+            else:
+                self._tracking_model.clear_current_diff()
 
     def _on_cue_added(self, cue):
         """Action to take when a cue is added to the List Layout."""

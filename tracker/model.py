@@ -126,6 +126,13 @@ class DcaTrackingModel(DcaModelTemplate):
             if cue.id != self._last_selected_cue_id or cue_next.index + 1 == len(cue_model):
                 self.select_cue(cue_next)
 
+    def clear_current_diff(self):
+        '''Clears current diff state.'''
+        next_assigns = self.root.child(1).children
+        for block_node in next_assigns:
+            self._clear_node(block_node.index())
+            block_node.setData("", Qt.EditRole)
+
     def select_cue(self, cue):
         self._last_selected_cue_id = cue.id
 
@@ -133,10 +140,7 @@ class DcaTrackingModel(DcaModelTemplate):
         if self._cue_in_progress:
             return
 
-        next_assigns = self.root.child(1).children
-        for block_node in next_assigns:
-            self._clear_node(block_node.index())
-            block_node.setData("", Qt.EditRole)
+        self.clear_current_diff()
 
         if isinstance(cue, DcaChangeCue):
             if self._predictive_row_enabled:
@@ -146,6 +150,7 @@ class DcaTrackingModel(DcaModelTemplate):
         else:
             self._cached_changes = self.cancel_current(cue.new_dca_name)
 
+        next_assigns = self.root.child(1).children
         for change in self._cached_changes:
             if change[0] == 'assign':
                 block_node = next_assigns[change[1]['dca']]
