@@ -54,6 +54,8 @@ class DcaPlotter(Plugin):
     _tracking_model = None
     _tracker_view = None
 
+    _cue_types = (DcaChangeCue, DcaResetCue)
+
     initialised = Signal()
 
     def __init__(self, app):
@@ -68,11 +70,9 @@ class DcaPlotter(Plugin):
             'mic_assign', MicAssignUi, self)
 
         # Register our cue types
-        CueFactory.register_factory(DcaChangeCue.__name__, DcaChangeCue)
-        app.window.registerSimpleCueMenu(DcaChangeCue, self.CueCategory)
-
-        CueFactory.register_factory(DcaResetCue.__name__, DcaResetCue)
-        app.window.registerSimpleCueMenu(DcaResetCue, self.CueCategory)
+        for cue_type in self._cue_types:
+            CueFactory.register_factory(cue_type.__name__, cue_type)
+            app.window.registerSimpleCueMenu(cue_type, self.CueCategory)
 
         # Register listeners for when a session has been created and pre-destruction.
         app.session_created.connect(self._on_session_init)
@@ -143,26 +143,26 @@ class DcaPlotter(Plugin):
         (And there are no other layouts currently.)
         """
         if current:
-            if _is_supported_cuetype(current.cue.type):
+            if self._is_supported_cuetype(current.cue.type):
                 self._tracking_model.select_cue(current.cue)
             else:
                 self._tracking_model.clear_current_diff()
 
     def _on_cue_added(self, cue):
         """Action to take when a cue is added to the List Layout."""
-        if _is_supported_cuetype(cue.type):
+        if self._is_supported_cuetype(cue.type):
             self._mapping_model.append_cuerow(cue)
             cue.property_changed.connect(self._tracking_model.on_cue_update)
 
     def _on_cue_moved(self, _, new_index):
         """Action to take when a cue is moved in the List Layout."""
         cue = self.app.layout.list_model().item(new_index)
-        if _is_supported_cuetype(cue.type):
+        if self._is_supported_cuetype(cue.type):
             self._mapping_model.move_cuerow(cue, new_index)
 
     def _on_cue_removed(self, cue):
         """Action to take when a cue is removed from the List Layout."""
-        if _is_supported_cuetype(cue.type):
+        if self._is_supported_cuetype(cue.type):
             self._mapping_model.remove_cuerow(cue)
             cue.property_changed.disconnect(self._tracking_model.on_cue_update)
 
@@ -179,5 +179,5 @@ class DcaPlotter(Plugin):
     def tracker(self):
         return self._tracking_model
 
-def _is_supported_cuetype(cue_type):
-    return cue_type in ('DcaChangeCue', 'DcaResetCue')
+    def _is_supported_cuetype(self, cue_type):
+        return cue_type in [ct.__name__ for ct in self._cue_types]
