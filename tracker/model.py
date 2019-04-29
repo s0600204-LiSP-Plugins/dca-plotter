@@ -303,13 +303,7 @@ def determine_midi_messages(changes):
         logger.error("Please identify a device capable of remote VCA/DCA control.")
         return []
 
-    library = get_plugin('MidiFixtureControl').get_library()
-
-    patch_details = None
-    for patch in midi_plugin_config['patches']:
-        if patch['patch_id'] == midi_plugin_config['dca_device']:
-            patch_details = patch
-            break
+    profile = get_plugin('MidiFixtureControl').get_profile(midi_plugin_config['dca_device'])
 
     messages = []
     for change in changes:
@@ -330,9 +324,6 @@ def determine_midi_messages(changes):
             action = "setName"
             args["arbitraryString"] = change[1]['name']
 
-        messages.extend(library.build_device_command(patch_details['fixture_id'],
-                                                     patch_details['midi_channel'],
-                                                     action,
-                                                     args))
+        messages.extend(profile.build_device_command(action, args))
 
     return messages

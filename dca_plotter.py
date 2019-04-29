@@ -23,6 +23,7 @@
 from PyQt5.QtCore import QT_TRANSLATE_NOOP
 from PyQt5.QtWidgets import QAction
 
+# pylint: disable=import-error
 from lisp.core.plugin import Plugin
 from lisp.core.signal import Signal
 from lisp.cues.cue_factory import CueFactory
@@ -74,16 +75,12 @@ class DcaPlotter(Plugin):
             CueFactory.register_factory(cue_type.__name__, cue_type)
             app.window.registerSimpleCueMenu(cue_type, self.CueCategory)
 
-        # Register listeners for when a session has been created and pre-destruction.
-        app.session_created.connect(self._on_session_init)
-        app.session_before_finalize.connect(self._pre_session_deinit)
-
     def _open_mapper_dialog(self):
         if self.mapper_enabled():
             dca_mapper = DcaMappingDialog()
             dca_mapper.exec_()
 
-    def _pre_session_deinit(self):
+    def _pre_session_deinitialisation(self, _):
         layout = self.app.layout
         if isinstance(layout, ListLayout):
             cuelist_model = layout.list_model()
@@ -92,9 +89,12 @@ class DcaPlotter(Plugin):
             cuelist_model.item_removed.disconnect(self._on_cue_removed)
             layout.view().listView.currentItemChanged.disconnect(self._on_cue_selected)
 
-    def _on_session_init(self):
-        """Post-session-creation init"""
+    def _on_session_initialised(self, _):
+        """Post-session-initialisation init.
 
+        Called after the plugin session-configuration have been set, but before cues have
+        been restored (in the case of loading from file).
+        """
         layout = self.app.layout
 
         # Create the session's dca-tracking model
