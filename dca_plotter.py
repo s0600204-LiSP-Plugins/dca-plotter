@@ -83,10 +83,9 @@ class DcaPlotter(Plugin):
     def _pre_session_deinitialisation(self, _):
         layout = self.app.layout
         if isinstance(layout, ListLayout):
-            cuelist_model = layout.list_model()
-            cuelist_model.item_added.disconnect(self._on_cue_added)
-            cuelist_model.item_moved.disconnect(self._on_cue_moved)
-            cuelist_model.item_removed.disconnect(self._on_cue_removed)
+            layout.model.item_added.disconnect(self._on_cue_added)
+            layout.model.item_moved.disconnect(self._on_cue_moved)
+            layout.model.item_removed.disconnect(self._on_cue_removed)
             layout.view().listView.currentItemChanged.disconnect(self._on_cue_selected)
 
     def _on_session_initialised(self, _):
@@ -127,10 +126,9 @@ class DcaPlotter(Plugin):
             self.app.window.menuTools.addAction(self._mapping_menu_action)
 
         # Listeners for cue actions
-        cuelist_model = layout.list_model()
-        cuelist_model.item_added.connect(self._on_cue_added)
-        cuelist_model.item_moved.connect(self._on_cue_moved)
-        cuelist_model.item_removed.connect(self._on_cue_removed)
+        layout.model.item_added.connect(self._on_cue_added)
+        layout.model.item_moved.connect(self._on_cue_moved)
+        layout.model.item_removed.connect(self._on_cue_removed)
         layout.view().listView.currentItemChanged.connect(self._on_cue_selected)
 
         self.initialised.emit()
@@ -156,7 +154,7 @@ class DcaPlotter(Plugin):
 
     def _on_cue_moved(self, _, new_index):
         """Action to take when a cue is moved in the List Layout."""
-        cue = self.app.layout.list_model().item(new_index)
+        cue = self.app.layout.model.item(new_index)
         if self._is_supported_cuetype(cue.type):
             self._mapping_model.move_cuerow(cue, new_index)
 
