@@ -86,7 +86,7 @@ class DcaPlotter(Plugin):
             layout.model.item_added.disconnect(self._on_cue_added)
             layout.model.item_moved.disconnect(self._on_cue_moved)
             layout.model.item_removed.disconnect(self._on_cue_removed)
-            layout.view().listView.currentItemChanged.disconnect(self._on_cue_selected)
+            layout.view.listView.currentItemChanged.disconnect(self._on_cue_selected)
 
     def _on_session_initialised(self, _):
         """Post-session-initialisation init.
@@ -111,8 +111,8 @@ class DcaPlotter(Plugin):
             return
 
         # Draw the tracker
-        self._tracker_view = DcaTrackingView(parent=layout.view().parent())
-        layout.view().layout().addWidget(self._tracker_view, 2, 0, 1, 3)
+        self._tracker_view = DcaTrackingView(parent=layout.view.parent())
+        layout.view.layout().addWidget(self._tracker_view, 2, 0, 1, 3)
 
         # Create the mapping model.
         # This model *does* contain cues - or references to them - and with the
@@ -129,7 +129,7 @@ class DcaPlotter(Plugin):
         layout.model.item_added.connect(self._on_cue_added)
         layout.model.item_moved.connect(self._on_cue_moved)
         layout.model.item_removed.connect(self._on_cue_removed)
-        layout.view().listView.currentItemChanged.connect(self._on_cue_selected)
+        layout.view.listView.currentItemChanged.connect(self._on_cue_selected)
 
         self.initialised.emit()
 
