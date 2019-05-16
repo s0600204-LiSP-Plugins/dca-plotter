@@ -307,23 +307,25 @@ def determine_midi_messages(changes):
 
     messages = []
     for change in changes:
-        action = ""
+        command = ""
         args = {
             "channelType": change[1]['strip'][0],
             "channelNum": change[1]['strip'][1]
         }
 
         if change[0] == 'assign' or change[0] == 'unassign':
-            action = "dcaAssign" if change[0] == 'assign' else "dcaUnAssign"
+            command = 'dcaAssign'
+            args['assignAction'] = 'assign' if change[0] == 'assign' else 'unassign'
             args['dcaNum'] = change[1]['dca'] + 1
 
         elif change[0] == 'mute' or change[0] == "unmute":
-            action = "mute" if change[0] == 'mute' else "unmute"
+            command = 'mute'
+            args['muteAction'] = 'mute' if change[0] == 'mute' else 'unmute'
 
         elif change[0] == 'rename':
-            action = "setName"
+            command = 'setName'
             args["arbitraryString"] = change[1]['name']
 
-        messages.extend(profile.build_device_command(action, args))
+        messages.extend(profile.build_device_command(command, args))
 
     return messages
