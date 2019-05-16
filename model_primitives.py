@@ -245,6 +245,9 @@ class DcaModelTemplate(QAbstractItemModel):
         super().__init__()
         self.root = ModelsRootNode(model=self)
 
+    def __len__(self):
+        return self.root.childCount()
+
     def childCount(self, index):
         node = index.internalPointer() if index.isValid() else self.root
         return node.childCount()
