@@ -123,7 +123,7 @@ class DcaTrackingModel(DcaModelTemplate):
             # or this is the last cue in the list, call the slot again
             cue_model = Application().cue_model
             cue_next = cue_model.get(self._last_selected_cue_id)
-            if cue.id != self._last_selected_cue_id or cue_next.index + 1 == len(cue_model):
+            if cue_next and (cue.id != self._last_selected_cue_id or cue_next.index + 1 == len(cue_model)):
                 self.select_cue(cue_next)
 
     def clear_current_diff(self):
