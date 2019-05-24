@@ -24,12 +24,11 @@ from PyQt5.QtWidgets import QFormLayout, QGroupBox, QSpinBox, QVBoxLayout, QWidg
 
 from lisp.plugins import get_plugin
 from lisp.ui.qdelegates import LineEditDelegate, SpinBoxDelegate
-from lisp.ui.qviews import SimpleTableView
 from lisp.ui.qmodels import SimpleTableModel
 from lisp.ui.settings.pages import SettingsPage
 from lisp.ui.ui_utils import translate
 
-from midi_fixture_control.ui import LabelDelegate
+from midi_fixture_control.ui import LabelDelegate, SimpleTableView
 
 from .utilities import build_default_mic_name
 
