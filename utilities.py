@@ -19,6 +19,7 @@
 
 # pylint: disable=missing-docstring
 
+# pylint: disable=import-error
 # get_mic_name
 from lisp.plugins import get_plugin
 

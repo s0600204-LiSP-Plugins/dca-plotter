@@ -24,6 +24,7 @@ from PyQt5.QtCore import QItemSelection, QModelIndex, QRect
 from PyQt5.QtGui import QFontMetrics, QPainter, QPen, QRegion
 from PyQt5.QtWidgets import QAbstractItemView, QApplication, QStyle
 
+# pylint: disable=import-error
 from lisp.plugins import get_plugin
 
 class DcaModelViewTemplate(QAbstractItemView):

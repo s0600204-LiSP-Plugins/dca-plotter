@@ -22,6 +22,7 @@
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QVBoxLayout, QFormLayout, QSpinBox, QGroupBox
 
+# pylint: disable=import-error
 from lisp.ui.settings.pages import SettingsPage
 
 class DcaPlotterSettings(SettingsPage):

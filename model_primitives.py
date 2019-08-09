@@ -26,6 +26,7 @@ from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex
 from PyQt5.QtGui import QBrush, QFont
 from PyQt5.QtWidgets import QApplication
 
+# pylint: disable=import-error
 from lisp.plugins import get_plugin
 
 from .utilities import build_default_dca_name, get_mic_assign_name

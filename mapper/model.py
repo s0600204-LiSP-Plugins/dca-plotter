@@ -24,6 +24,7 @@ import copy
 # pylint: disable=no-name-in-module
 from PyQt5.QtCore import QModelIndex, Qt
 
+# pylint: disable=import-error
 from lisp.plugins import get_plugin
 
 # pylint: disable=relative-beyond-top-level

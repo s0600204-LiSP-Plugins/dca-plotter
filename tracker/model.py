@@ -24,6 +24,7 @@ import logging
 # pylint: disable=no-name-in-module
 from PyQt5.QtCore import Qt
 
+# pylint: disable=import-error
 from lisp.application import Application
 from lisp.plugins import get_plugin
 

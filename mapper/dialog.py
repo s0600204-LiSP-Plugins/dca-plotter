@@ -22,8 +22,10 @@
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QDialog, QVBoxLayout
 
+# pylint: disable=import-error
 from lisp.plugins import get_plugin
 
+# pylint: disable=relative-beyond-top-level
 from .view import DcaMappingView
 
 class DcaMappingDialog(QDialog):

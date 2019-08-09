@@ -22,6 +22,7 @@
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QFormLayout, QGroupBox, QSpinBox, QVBoxLayout, QWidget
 
+# pylint: disable=import-error
 from lisp.plugins import get_plugin
 from lisp.ui.qdelegates import LineEditDelegate, SpinBoxDelegate
 from lisp.ui.qmodels import SimpleTableModel

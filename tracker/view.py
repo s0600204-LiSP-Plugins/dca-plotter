@@ -23,6 +23,7 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAbstractItemView
 
+# pylint: disable=import-error
 from lisp.plugins import get_plugin
 
 # pylint: disable=relative-beyond-top-level
