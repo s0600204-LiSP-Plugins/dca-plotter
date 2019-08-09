@@ -17,33 +17,28 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
+# pylint: disable=missing-docstring, invalid-name, too-few-public-methods
+
+# pylint: disable=no-name-in-module
 from PyQt5.QtCore import QT_TRANSLATE_NOOP
 from PyQt5.QtWidgets import QVBoxLayout
 
+# pylint: disable=import-error
 from lisp.core.has_properties import Property
-from lisp.cues.cue import Cue
-from lisp.plugins import get_plugin
 from lisp.ui.settings.cue_settings import CueSettingsRegistry
 from lisp.ui.settings.pages import SettingsPage
-from lisp.ui.ui_utils import translate
 
+# pylint: disable=relative-beyond-top-level
 from ..model_primitives import AssignStateEnum
+from .dca_cue import DcaCue
 from .model import DcaCueModel
 from .view import DcaCueView
 
-class DcaChangeCue(Cue):
+class DcaChangeCue(DcaCue):
     Name = QT_TRANSLATE_NOOP('CueName', 'DCA/VCA Change Cue')
 
     dca_changes = Property([])
     dca_names = Property([])
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.name = translate('CueName', self.Name)
-
-    def __start__(self, fade=False):
-        get_plugin('DcaPlotter').tracker().call_cue(self)
-        return False
 
     def validate_assigns(self, assigns_from_mapper):
         active = []

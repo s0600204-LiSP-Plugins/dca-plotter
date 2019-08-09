@@ -21,6 +21,7 @@
 
 import logging
 
+# pylint: disable=import-error
 from lisp.plugins import get_plugin
 
 # pylint: disable=relative-beyond-top-level
