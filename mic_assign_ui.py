@@ -35,14 +35,14 @@ from .utilities import build_default_mic_name
 
 class MicAssignUi(SettingsPage):
     '''Mic Assign UI'''
-    Name = "Mic Assignments"
+    Name = translate("DcaPlotter", "Mic Assignments")
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.setLayout(QVBoxLayout())
 
         self.widgetGroup = QGroupBox(self)
-        self.widgetGroup.setTitle(translate("DcaPlotter", "Mic Assignments"))
+        self.widgetGroup.setTitle(self.Name)
         self.widgetGroup.setLayout(QVBoxLayout())
         self.layout().addWidget(self.widgetGroup)
 

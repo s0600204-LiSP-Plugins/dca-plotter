@@ -22,14 +22,13 @@
 # pylint: disable=import-error
 # get_mic_name
 from lisp.plugins import get_plugin
+from lisp.ui.ui_utils import translate
 
 def build_default_dca_name(num):
-    # TODO: translate string
-    return "DCA {0}".format(num)
+    return translate("DcaPlotter", "DCA {0}").format(num)
 
 def build_default_mic_name(num):
-    # TODO: translate string
-    return "Microphone {0}".format(num)
+    return translate("DcaPlotter", "Microphone {0}").format(num)
 
 def get_mic_assign_name(numid):
     return '{id} : {name}'.format_map({

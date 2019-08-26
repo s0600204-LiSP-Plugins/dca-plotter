@@ -30,7 +30,6 @@ from lisp.cues.cue_factory import CueFactory
 from lisp.plugins.list_layout.layout import ListLayout
 from lisp.ui.settings.app_configuration import AppConfigurationDialog
 from lisp.ui.settings.session_configuration import SessionConfigurationDialog
-from lisp.ui.ui_utils import translate
 
 from dca_plotter.cue.change_cue import DcaChangeCue
 from dca_plotter.cue.reset_cue import DcaResetCue
