@@ -111,7 +111,7 @@ class DcaPlotter(Plugin):
 
         # Draw the tracker
         self._tracker_view = DcaTrackingView(parent=layout.view.parent())
-        layout.view.layout().addWidget(self._tracker_view, 2, 0, 1, 3)
+        layout.view.layout().addWidget(self._tracker_view)
 
         # Create the mapping model.
         # This model *does* contain cues - or references to them - and with the
