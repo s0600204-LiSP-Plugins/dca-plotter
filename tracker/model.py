@@ -27,6 +27,7 @@ from PyQt5.QtCore import Qt
 # pylint: disable=import-error
 from lisp.application import Application
 from lisp.plugins import get_plugin
+from lisp.plugins.midi.midi_utils import midi_from_dict
 
 # pylint: disable=relative-beyond-top-level
 from ..cue.change_cue import DcaChangeCue
@@ -98,7 +99,7 @@ class DcaTrackingModel(DcaModelTemplate):
         # Then again, we don't want update the 'currently active' if sending fails... so...
         midi_messages = determine_midi_messages(changes)
         for dict_msg in midi_messages:
-            self._midi_out.send_from_dict(dict_msg)
+            self._midi_out.send(midi_from_dict(dict_msg))
 
         # Update the currently active
         current_assigns = self.root.child(0).children
