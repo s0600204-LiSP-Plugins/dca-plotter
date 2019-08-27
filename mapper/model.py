@@ -124,6 +124,8 @@ class DcaMappingModel(DcaModelTemplate):
         # Finally, cascade changes.
         if cuerow.cue.type == "DcaResetCue":
             changes = _change_tuples_clear(_change_tuples_derive(cuerow.prev_sibling()))
+            for dca_num in range(get_plugin('DcaPlotter').SessionConfig['dca_count']):
+                changes.append((dca_num, cue.new_dca_name, 'Name'))
         else:
             changes = _change_tuples_derive(cuerow)
         self._change_tuples_cascade_apply(cuerow, changes)
@@ -219,14 +221,12 @@ class DcaMappingModel(DcaModelTemplate):
 def _change_tuples_clear(old_changes):
     new_changes = []
     for change in old_changes:
-        new_state = None
-        if change[2] != AssignStateEnum.UNASSIGN:
-            new_state = AssignStateEnum.UNASSIGN
+        if change[2] in [AssignStateEnum.UNASSIGN, 'Name']:
+            continue
 
-        if new_state:
-            new_changes.append((change[0],
-                                change[1],
-                                new_state))
+        new_changes.append((change[0],
+                            change[1],
+                            AssignStateEnum.UNASSIGN))
     return new_changes
 
 def _change_tuples_derive(cuerow):
