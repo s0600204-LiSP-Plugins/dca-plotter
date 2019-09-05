@@ -30,6 +30,7 @@ from lisp.plugins import get_plugin
 # pylint: disable=relative-beyond-top-level
 from ..model_primitives import AssignStateEnum, DcaModelTemplate, ModelsAssignRow, \
     ModelsEntry, ModelsResetRow
+from ..utilities import build_default_dca_name
 
 class DcaMappingModel(DcaModelTemplate):
 
@@ -95,8 +96,12 @@ class DcaMappingModel(DcaModelTemplate):
         # Update assign entries at the leave point
         if cue.type == "DcaChangeCue":
             changes = _change_tuples_invert(_change_tuples_derive(cuerow))
-        else:
+        elif cuerow.prev_sibling():
             changes = _change_tuples_derive(cuerow.prev_sibling())
+        else:
+            changes = []
+            for dca_num in range(get_plugin('DcaPlotter').SessionConfig['dca_count']):
+                changes.append((dca_num, build_default_dca_name(dca_num + 1), 'Name'))
         self._change_tuples_cascade_apply(cuerow, changes)
 
         # When moving down, all other things move up. In this case, the new index is one out.
