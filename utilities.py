@@ -37,5 +37,5 @@ def get_mic_assign_name(numid):
     })
 
 def get_mic_name(numid):
-    inputs = get_plugin('DcaPlotter').SessionConfig['inputs']
+    inputs = get_plugin('DcaPlotter').SessionConfig['assigns']['inputs']
     return inputs[numid - 1]['name'] if inputs else build_default_mic_name(numid)

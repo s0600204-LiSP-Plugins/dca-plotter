@@ -31,12 +31,12 @@ from lisp.plugins.list_layout.layout import ListLayout
 from lisp.ui.settings.app_configuration import AppConfigurationDialog
 from lisp.ui.settings.session_configuration import SessionConfigurationDialog
 
+from dca_plotter.config.channel_assign import ChannelAssignConfig
 from dca_plotter.cue.change_cue import DcaChangeCue
 from dca_plotter.cue.reset_cue import DcaResetCue
 from dca_plotter.dca_plotter_settings import DcaPlotterSettings
 from dca_plotter.mapper.dialog import DcaMappingDialog
 from dca_plotter.mapper.model import DcaMappingModel
-from dca_plotter.mic_assign_ui import MicAssignUi
 from dca_plotter.tracker.model import DcaTrackingModel
 from dca_plotter.tracker.view import DcaTrackingView
 
@@ -65,9 +65,9 @@ class DcaPlotter(Plugin):
         AppConfigurationDialog.registerSettingsPage(
             'plugins.dca_plotter', DcaPlotterSettings, DcaPlotter.Config)
 
-        # Register the session-level mic assign ui
+        # Register the session-level configuration of inputs
         SessionConfigurationDialog.registerSettingsPage(
-            'mic_assign', MicAssignUi, self)
+            'channel_assign', ChannelAssignConfig, self)
 
         # Register our cue types
         for cue_type in self._cue_types:
@@ -173,7 +173,7 @@ class DcaPlotter(Plugin):
             cue.property_changed.disconnect(self._tracking_model.on_cue_update)
 
     def get_microphone_count(self):
-        count = len(self.SessionConfig['inputs'])
+        count = len(self.SessionConfig['assigns']['inputs'])
         return count if count > 0 else self.Config['input_channel_count']
 
     def mapper_enabled(self):

@@ -31,25 +31,20 @@ from lisp.ui.ui_utils import translate
 
 from midi_fixture_control.ui import LabelDelegate, SimpleTableView
 
-from .utilities import build_default_mic_name
+from ..utilities import build_default_mic_name
 
 class MicAssignUi(SettingsPage):
     '''Mic Assign UI'''
-    Name = translate("DcaPlotter", "Mic Assignments")
+    Name = translate("DcaPlotter", "Microphone Assignments")
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.setLayout(QVBoxLayout())
 
-        self.widgetGroup = QGroupBox(self)
-        self.widgetGroup.setTitle(self.Name)
-        self.widgetGroup.setLayout(QVBoxLayout())
-        self.layout().addWidget(self.widgetGroup)
-
         # Options at top
         self.optionsGroup = QWidget(self)
         self.optionsGroup.setLayout(QFormLayout())
-        self.widgetGroup.layout().addWidget(self.optionsGroup)
+        self.layout().layout().addWidget(self.optionsGroup)
 
         self.inputCount = QSpinBox(self)
         self.inputCount.setRange(1, 96)
@@ -72,7 +67,7 @@ class MicAssignUi(SettingsPage):
             'delegate': LineEditDelegate(max_length=16)
         }]
         self.inputList = SimpleTableView(model, columns, parent=self)
-        self.widgetGroup.layout().addWidget(self.inputList)
+        self.layout().layout().addWidget(self.inputList)
 
     def getSettings(self):
         model = self.inputList.model()

@@ -1,4 +1,6 @@
 {
-	"inputs": [],
+	"assigns": {
+		"inputs": []
+	},
 	"dca_count": 8
 }
