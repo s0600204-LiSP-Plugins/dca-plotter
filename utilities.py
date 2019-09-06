@@ -30,12 +30,25 @@ def build_default_dca_name(num):
 def build_default_mic_name(num):
     return translate("DcaPlotter", "Microphone {0}").format(num)
 
+def build_default_fx_name(num):
+    return translate("DcaPlotter", "FX {0}").format(num)
+
 def get_mic_assign_name(numid):
     return '{id} : {name}'.format_map({
         'id': numid,
         'name': get_mic_name(numid)
     })
 
+def get_fx_assign_name(numid):
+    return '{id} : {name}'.format_map({
+        'id': numid,
+        'name': get_fx_name(numid)
+    })
+
 def get_mic_name(numid):
     inputs = get_plugin('DcaPlotter').SessionConfig['assigns']['inputs']
     return inputs[numid - 1]['name'] if inputs else build_default_mic_name(numid)
+
+def get_fx_name(numid):
+    inputs = get_plugin('DcaPlotter').SessionConfig['assigns']['fx']
+    return inputs[numid - 1]['name'] if inputs else build_default_fx_name(numid)

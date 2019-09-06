@@ -1,5 +1,6 @@
 {
-	"_version_": "1.1",
+	"_version_": "1.2",
 	"_enabled_": true,
-	"input_channel_count": 16
+	"input_channel_count": 16,
+	"fx_channel_count": 4
 }

@@ -41,10 +41,16 @@ class DcaPlotterSettings(SettingsPage):
         self.inputCount.setRange(1, 96)
         self.settingsGroup.layout().addRow('Default Microphone Count', self.inputCount)
 
+        self.fxCount = QSpinBox(self.settingsGroup)
+        self.fxCount.setRange(1, 16)
+        self.settingsGroup.layout().addRow('Default Effects Unit Count', self.fxCount)
+
     def getSettings(self):
         return {
-            'input_channel_count': self.inputCount.value()
+            'input_channel_count': self.inputCount.value(),
+            'fx_channel_count': self.fxCount.value(),
         }
 
     def loadSettings(self, settings):
         self.inputCount.setValue(settings['input_channel_count'])
+        self.fxCount.setValue(settings['fx_channel_count'])
