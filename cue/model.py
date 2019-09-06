@@ -119,7 +119,7 @@ class DcaCueModel(DcaModelTemplate):
         possible_values = [val for val in range(1, get_plugin('DcaPlotter').get_microphone_count() + 1)]
         for dca_num, dca_node in enumerate(self.root.child(target_row).children):
             for entry in dca_node.children:
-                if entry.value() not in possible_values:
+                if entry.value()[1] not in possible_values:
                     continue
 
                 # We filter any assigns/unassigns in the currently selected DCA block
@@ -128,6 +128,6 @@ class DcaCueModel(DcaModelTemplate):
                 if dca_num == target_dca_num or \
                     intention == AssignStateEnum.ASSIGN and entry.assignState() != AssignStateEnum.UNASSIGN or \
                     intention == AssignStateEnum.UNASSIGN and entry.assignState() == AssignStateEnum.UNASSIGN:
-                    possible_values.remove(entry.value())
+                    possible_values.remove(entry.value()[1])
 
         return possible_values

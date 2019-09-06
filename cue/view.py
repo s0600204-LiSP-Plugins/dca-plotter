@@ -98,7 +98,10 @@ class DcaCueView(DcaModelViewTemplate):
         # If there's no name explicitly given to the dca, and only one assign/inherit entry,
         #   then set the name of the dca to the name of that assign.
         if dca_node.inherited() and len(assigns) == 1:
-            dca_node.setData(get_mic_name(assigns[0]), Qt.EditRole)
+            if assigns[0][0] == 'mic':
+                dca_node.setData(get_mic_name(assigns[0][1]), Qt.EditRole)
+            else:
+                dca_node.setData(get_fx_name(assigns[0][1]), Qt.EditRole)
 
         # In no assign or inherit entries remaining in a block, clear the name
         elif not assigns:

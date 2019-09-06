@@ -107,10 +107,10 @@ class DcaTrackingModel(DcaModelTemplate):
             if change[0] == 'assign':
                 block_node = current_assigns[change[1]['dca']]
                 self._add_node(block_node.index(),
-                               ModelsEntry(change[1]['strip'][1], parent=block_node))
+                               ModelsEntry(change[1]['strip'], parent=block_node))
             elif change[0] == 'unassign':
                 block_node = current_assigns[change[1]['dca']]
-                entry_num = block_node.getChildValues().index(change[1]['strip'][1])
+                entry_num = block_node.getChildValues().index(change[1]['strip'])
                 entry_node = block_node.child(entry_num)
                 self._remove_node(entry_node.index())
             elif change[0] == 'rename':
@@ -157,13 +157,13 @@ class DcaTrackingModel(DcaModelTemplate):
             if change[0] == 'assign':
                 block_node = next_assigns[change[1]['dca']]
                 self._add_node(block_node.index(),
-                               ModelsEntry(change[1]['strip'][1],
+                               ModelsEntry(change[1]['strip'],
                                            AssignStateEnum.ASSIGN,
                                            parent=block_node))
             elif change[0] == 'unassign':
                 block_node = next_assigns[change[1]['dca']]
                 self._add_node(block_node.index(),
-                               ModelsEntry(change[1]['strip'][1],
+                               ModelsEntry(change[1]['strip'],
                                            AssignStateEnum.UNASSIGN,
                                            parent=block_node))
             elif change[0] == 'rename':
@@ -246,41 +246,41 @@ class DcaTrackingModel(DcaModelTemplate):
 
 def _calculate_mutes(assign_changes):
     cue_actions = []
-    for input_num, state_change in assign_changes.items():
+    for strip, state_change in assign_changes.items():
         if state_change == 1:
             cue_actions.append([
                 'unmute', {
-                    'strip': ['input', input_num]
+                    'strip': strip
                 }])
         elif state_change == 0:
             cue_actions.append([
                 'mute', {
-                    'strip': ['input', input_num]
+                    'strip': strip
                 }])
     return cue_actions
 
-def _create_assign_action(assign_changes, dca_num, input_num):
-    _update_assign_changes(assign_changes, "assign", input_num)
+def _create_assign_action(assign_changes, dca_num, channel_tuple):
+    _update_assign_changes(assign_changes, "assign", channel_tuple)
     return ['assign', {
-        'strip': ['input', input_num],
+        'strip': channel_tuple,
         'dca': dca_num
     }]
 
 def _create_rename_action(dca_num, new_name):
     return ['rename', {
         'name': new_name,
-        'strip': ['dca', dca_num + 1],
+        'strip': ('dca', dca_num + 1),
         'dca': dca_num
     }]
 
-def _create_unassign_action(assign_changes, dca_num, input_num):
-    _update_assign_changes(assign_changes, "unassign", input_num)
+def _create_unassign_action(assign_changes, dca_num, channel_tuple):
+    _update_assign_changes(assign_changes, "unassign", channel_tuple)
     return ['unassign', {
-        'strip': ['input', input_num],
+        'strip': channel_tuple,
         'dca': dca_num
     }]
 
-def _update_assign_changes(assign_changes, action, input_num):
+def _update_assign_changes(assign_changes, action, channel_tuple):
 
     # Assign changes key:
     #   Not present = No action
@@ -289,15 +289,15 @@ def _update_assign_changes(assign_changes, action, input_num):
     #   -1 = No Action (Keep On - Assign moved from one DCA to another)
 
     if action == "assign":
-        if input_num not in assign_changes:
-            assign_changes[input_num] = 1
-        elif assign_changes[input_num] == 0:
-            assign_changes[input_num] = -1
+        if channel_tuple not in assign_changes:
+            assign_changes[channel_tuple] = 1
+        elif assign_changes[channel_tuple] == 0:
+            assign_changes[channel_tuple] = -1
     elif action == "unassign":
-        if input_num not in assign_changes:
-            assign_changes[input_num] = 0
-        elif assign_changes[input_num] == 1:
-            assign_changes[input_num] = -1
+        if channel_tuple not in assign_changes:
+            assign_changes[channel_tuple] = 0
+        elif assign_changes[channel_tuple] == 1:
+            assign_changes[channel_tuple] = -1
 
 def determine_midi_messages(changes):
     midi_plugin_config = get_plugin('MidiFixtureControl').SessionConfig
@@ -311,7 +311,7 @@ def determine_midi_messages(changes):
     for change in changes:
         command = ""
         args = {
-            "channelType": change[1]['strip'][0],
+            "channelType": 'input' if change[1]['strip'][0] == 'mic' else change[1]['strip'][0],
             "channelNum": change[1]['strip'][1]
         }
 

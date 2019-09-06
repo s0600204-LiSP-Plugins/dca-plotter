@@ -73,5 +73,5 @@ class InputSelectDialog(QDialog):
         """Returns the user-selected entries"""
         items = []
         for item in self.list.selectedItems():
-            items.append(item.data(DataRole))
+            items.append(('mic', item.data(DataRole)))
         return items
