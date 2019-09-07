@@ -114,8 +114,10 @@ class DcaCueView(DcaModelViewTemplate):
         self._input_select_dialog.set_entries(selection_choices)
 
         if self._input_select_dialog.exec_() == self._input_select_dialog.Accepted:
-            for mic_num in self._input_select_dialog.selected_entries():
-                self.model().add_new_entry(selected_node.rownum(), mic_num, AssignStateEnum.ASSIGN)
+            for channel_tuple in self._input_select_dialog.selected_entries():
+                self.model().add_new_entry(selected_node.rownum(),
+                                           channel_tuple,
+                                           AssignStateEnum.ASSIGN)
 
             self._auto_name(selected_node.rownum())
 
@@ -129,9 +131,9 @@ class DcaCueView(DcaModelViewTemplate):
         self._input_select_dialog.set_entries(selection_choices)
 
         if self._input_select_dialog.exec_() == self._input_select_dialog.Accepted:
-            for mic_num in self._input_select_dialog.selected_entries():
+            for channel_tuple in self._input_select_dialog.selected_entries():
                 self.model().add_new_entry(selected_node.rownum(),
-                                           mic_num,
+                                           channel_tuple,
                                            AssignStateEnum.UNASSIGN)
 
     def _remove_entry(self):

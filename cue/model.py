@@ -48,14 +48,14 @@ class DcaCueModel(DcaModelTemplate):
             dca_node = self.root.child(0).child(dca_num)
 
             # Set the Adds and Removes
-            for action, nums in dca_assign_actions.items():
+            for action, channels in dca_assign_actions.items():
                 if action == 'name':
-                    dca_node.deserialiseName(nums)
+                    dca_node.deserialiseName(channels)
                     continue
 
                 assign_action = AssignStateEnum.UNASSIGN if action == 'rem' else AssignStateEnum.ASSIGN
-                for mic_num in nums:
-                    self._add_node(dca_node.index(), ModelsEntry(mic_num, assign_action, parent=dca_node))
+                for channel_tuple in channels:
+                    self._add_node(dca_node.index(), ModelsEntry(channel_tuple, assign_action, parent=dca_node))
 
         # Set the inheritance flags
         for dca_num, dca_node in enumerate(self.root.child(0).children):
@@ -94,9 +94,9 @@ class DcaCueModel(DcaModelTemplate):
             })
         return assigns
 
-    def add_new_entry(self, dca_num, mic_num, assign_state):
+    def add_new_entry(self, dca_num, channel_tuple, assign_state):
         dca_node = self.root.child(0).child(dca_num)
-        self._add_node(dca_node.index(), ModelsEntry(mic_num, assign_state, parent=dca_node))
+        self._add_node(dca_node.index(), ModelsEntry(channel_tuple, assign_state, parent=dca_node))
 
     def inherits_enabled(self):
         return self._inherits_enabled

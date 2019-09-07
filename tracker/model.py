@@ -212,11 +212,11 @@ class DcaTrackingModel(DcaModelTemplate):
                                                                entry.value()))
 
             cue_assigned = dca_node.getChildValues()
-            for input_num in currently_assigned:
-                if input_num not in cue_assigned:
+            for channel_tuple in currently_assigned:
+                if channel_tuple not in cue_assigned:
                     cue_actions.append(_create_unassign_action(assign_changes,
                                                                dca_num,
-                                                               input_num))
+                                                               channel_tuple))
 
         cue_actions.extend(_calculate_mutes(assign_changes))
         return cue_actions
