@@ -311,7 +311,7 @@ def determine_midi_messages(changes):
     for change in changes:
         command = ""
         args = {
-            "channelType": 'input' if change[1]['strip'][0] == 'mic' else change[1]['strip'][0],
+            "channelType": change[1]['strip'][0],
             "channelNum": change[1]['strip'][1]
         }
 

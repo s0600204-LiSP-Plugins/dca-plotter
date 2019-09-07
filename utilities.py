@@ -27,10 +27,11 @@ def build_default_dca_name(num):
     return translate("DcaPlotter", "DCA {0}").format(num)
 
 def build_default_channel_name(channel_tuple):
-    if channel_tuple[0] == 'mic' or channel_tuple[0] == 'input':
+    if channel_tuple[0] == 'input':
         return translate("DcaPlotter", "Microphone {0}").format(channel_tuple[1])
     if channel_tuple[0] == 'fx':
         return translate("DcaPlotter", "FX {0}").format(channel_tuple[1])
+    return str(channel_tuple)
 
 def get_channel_assignment_name(channel_tuple):
     return '{id} : {name}'.format_map({
@@ -39,6 +40,5 @@ def get_channel_assignment_name(channel_tuple):
     })
 
 def get_channel_name(channel_tuple):
-    channel_type = 'input' if channel_tuple[0] == 'mic' else channel_tuple[0]
-    assigns = get_plugin('DcaPlotter').SessionConfig['assigns'][channel_type]
+    assigns = get_plugin('DcaPlotter').SessionConfig['assigns'][channel_tuple[0]]
     return assigns[channel_tuple[1] - 1]['name'] if assigns else build_default_channel_name(channel_tuple)

@@ -65,7 +65,7 @@ class InputSelectDialog(QDialog):
         self.list.clear()
         for mic_num in entries:
             entry_item = QListWidgetItem()
-            entry_item.setText(get_channel_assignment_name(('mic', mic_num)))
+            entry_item.setText(get_channel_assignment_name(('input', mic_num)))
             entry_item.setData(DataRole, mic_num)
             self.list.addItem(entry_item)
 
@@ -73,5 +73,5 @@ class InputSelectDialog(QDialog):
         """Returns the user-selected entries"""
         items = []
         for item in self.list.selectedItems():
-            items.append(('mic', item.data(DataRole)))
+            items.append(('input', item.data(DataRole)))
         return items
