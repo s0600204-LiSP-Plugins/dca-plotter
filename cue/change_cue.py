@@ -40,6 +40,18 @@ class DcaChangeCue(DcaCue):
     dca_changes = Property([])
     dca_names = Property([])
 
+    def update_properties(self, properties):
+
+        # When cue properties are saved, tuples (and lists) become JSON arrays
+        # When the cues are loaded again, JSON arrays become python lists
+        # However, we want tuples. So we turn them back to tuples.
+        if 'dca_changes' in properties:
+            for dca_changes in properties['dca_changes']:
+                dca_changes['add'] = [tuple(channel) for channel in dca_changes['add']]
+                dca_changes['rem'] = [tuple(channel) for channel in dca_changes['rem']]
+
+        super().update_properties(properties)
+
     def validate_assigns(self, assigns_from_mapper):
         active = []
 
