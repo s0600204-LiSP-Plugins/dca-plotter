@@ -36,13 +36,13 @@ class InputSelectDialog(QDialog):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.setWindowTitle('Input Selection')
+        self.setWindowTitle('Assignment Selection')
         self.setMinimumSize(300, 400)
 
         self.setLayout(QVBoxLayout())
 
         self.label = QLabel(self)
-        self.label.setText('Select inputs...')
+        self.label.setText('Select what to assign...')
         font = self.label.font()
         font.setBold(True)
         self.label.setFont(font)
@@ -63,15 +63,15 @@ class InputSelectDialog(QDialog):
     def set_entries(self, entries):
         """Set the entries that should appear in the dialog"""
         self.list.clear()
-        for mic_num in entries:
+        for channel_tuple in entries:
             entry_item = QListWidgetItem()
-            entry_item.setText(get_channel_assignment_name(('input', mic_num)))
-            entry_item.setData(DataRole, mic_num)
+            entry_item.setText(get_channel_assignment_name(channel_tuple))
+            entry_item.setData(DataRole, channel_tuple)
             self.list.addItem(entry_item)
 
     def selected_entries(self):
         """Returns the user-selected entries"""
         items = []
         for item in self.list.selectedItems():
-            items.append(('input', item.data(DataRole)))
+            items.append(item.data(DataRole))
         return items

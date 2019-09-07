@@ -115,11 +115,19 @@ class DcaCueModel(DcaModelTemplate):
         else:
             entry_node.setAssignState(AssignStateEnum.NONE)
 
-    def get_input_selection_choice(self, target_row, target_dca_num, intention):
-        possible_values = [val for val in range(1, get_plugin('DcaPlotter').get_microphone_count() + 1)]
-        for dca_num, dca_node in enumerate(self.root.child(target_row).children):
+    def get_assignable_selection_choice(self, target_dca_num, intention):
+        channel_tuples = []
+
+        for assignable, count in get_plugin('DcaPlotter').get_assignable_count().items():
+            for num in range(count):
+                channel_tuples.append((assignable, num + 1))
+
+        for dca_num, dca_node in enumerate(self.root.child(0).children):
             for entry in dca_node.children:
-                if entry.value()[1] not in possible_values:
+
+                if entry.value() not in channel_tuples:
+                    # If this is true, we have something assigned to more than one DCA.
+                    # Warning the user about this is dealt with elsewhere.
                     continue
 
                 # We filter any assigns/unassigns in the currently selected DCA block
@@ -128,6 +136,6 @@ class DcaCueModel(DcaModelTemplate):
                 if dca_num == target_dca_num or \
                     intention == AssignStateEnum.ASSIGN and entry.assignState() != AssignStateEnum.UNASSIGN or \
                     intention == AssignStateEnum.UNASSIGN and entry.assignState() == AssignStateEnum.UNASSIGN:
-                    possible_values.remove(entry.value()[1])
+                    channel_tuples.remove(entry.value())
 
-        return possible_values
+        return channel_tuples

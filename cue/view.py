@@ -108,9 +108,8 @@ class DcaCueView(DcaModelViewTemplate):
         selected_index = self.selectedIndexes()[0]
         selected_node = selected_index.internalPointer()
 
-        selection_choices = self.model().get_input_selection_choice(0,
-                                                                    selected_node.rownum(),
-                                                                    AssignStateEnum.ASSIGN)
+        selection_choices = self.model().get_assignable_selection_choice(selected_node.rownum(),
+                                                                         AssignStateEnum.ASSIGN)
         self._input_select_dialog.set_entries(selection_choices)
 
         if self._input_select_dialog.exec_() == self._input_select_dialog.Accepted:
@@ -125,9 +124,8 @@ class DcaCueView(DcaModelViewTemplate):
         selected_index = self.selectedIndexes()[0]
         selected_node = selected_index.internalPointer()
 
-        selection_choices = self.model().get_input_selection_choice(0,
-                                                                    selected_node.rownum(),
-                                                                    AssignStateEnum.UNASSIGN)
+        selection_choices = self.model().get_assignable_selection_choice(selected_node.rownum(),
+                                                                         AssignStateEnum.UNASSIGN)
         self._input_select_dialog.set_entries(selection_choices)
 
         if self._input_select_dialog.exec_() == self._input_select_dialog.Accepted:

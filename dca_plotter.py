@@ -172,9 +172,12 @@ class DcaPlotter(Plugin):
             self._mapping_model.remove_cuerow(cue)
             cue.property_changed.disconnect(self._tracking_model.on_cue_update)
 
-    def get_microphone_count(self):
-        count = len(self.SessionConfig['assigns']['input'])
-        return count if count > 0 else self.Config['input_channel_count']
+    def get_assignable_count(self):
+        counts = {}
+        for assignable in ['input', 'fx']:
+            count = len(self.SessionConfig['assigns'][assignable])
+            counts[assignable] = count if count > 0 else self.Config[assignable + '_channel_count']
+        return counts
 
     def mapper_enabled(self):
         return isinstance(self.app.layout, ListLayout)
