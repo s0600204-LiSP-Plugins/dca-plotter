@@ -26,7 +26,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAbstractItemView, QDialog, QDialogButtonBox, QLabel, \
     QListWidget, QListWidgetItem, QVBoxLayout
 
-from .utilities import get_mic_assign_name
+from .utilities import get_channel_assignment_name
 
 DataRole = Qt.UserRole + 1 # pylint: disable=invalid-name
 
@@ -65,7 +65,7 @@ class InputSelectDialog(QDialog):
         self.list.clear()
         for mic_num in entries:
             entry_item = QListWidgetItem()
-            entry_item.setText(get_mic_assign_name(mic_num))
+            entry_item.setText(get_channel_assignment_name(('mic', mic_num)))
             entry_item.setData(DataRole, mic_num)
             self.list.addItem(entry_item)
 

@@ -25,7 +25,6 @@ from lisp.ui.ui_utils import translate
 
 from midi_fixture_control.ui import LabelDelegate
 
-from ..utilities import build_default_fx_name
 from .channel_assign_page import AssignUi
 
 class FxAssignUi(AssignUi):
@@ -57,6 +56,3 @@ class FxAssignUi(AssignUi):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-    def getEntryName(self, num):
-        return build_default_fx_name(num)

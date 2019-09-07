@@ -29,7 +29,7 @@ from PyQt5.QtWidgets import QApplication
 # pylint: disable=import-error
 from lisp.plugins import get_plugin
 
-from .utilities import build_default_dca_name, get_mic_assign_name, get_fx_assign_name
+from .utilities import build_default_dca_name, get_channel_assignment_name
 
 class AssignStateEnum(enum.Enum):
     ASSIGN = enum.auto()
@@ -207,10 +207,7 @@ class ModelsEntry(ModelsLeafNode):
     def data(self, role=Qt.DisplayRole):
         # pylint: disable=too-many-return-statements
         if role == Qt.DisplayRole:
-            if self.value()[0] == 'mic':
-                return get_mic_assign_name(self.value()[1])
-            elif self.value()[0] == 'fx':
-                return get_fx_assign_name(self.value()[1])
+            return get_channel_assignment_name(self.value())
 
         if role == Qt.ForegroundRole: # Text colour:
             if self._assign_state == AssignStateEnum.ASSIGN:

@@ -29,6 +29,8 @@ from lisp.ui.settings.pages import SettingsPage
 
 from midi_fixture_control.ui import SimpleTableView
 
+from ..utilities import build_default_channel_name
+
 class AssignUi(SettingsPage):
     '''Assign UI'''
 
@@ -78,7 +80,7 @@ class AssignUi(SettingsPage):
         while entryCount is not value:
             if entryCount < value:
                 num = entryCount + 1
-                self.entryList.model().appendRow(num, num, self.getEntryName(num))
+                self.entryList.model().appendRow(num, num, build_default_channel_name((self.SessionConfigKey, num)))
             else:
                 self.entryList.model().removeRow(entryCount - 1)
             entryCount = self.entryList.model().rowCount()

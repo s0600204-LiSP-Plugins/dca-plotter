@@ -20,35 +20,25 @@
 # pylint: disable=missing-docstring
 
 # pylint: disable=import-error
-# get_mic_name
 from lisp.plugins import get_plugin
 from lisp.ui.ui_utils import translate
 
 def build_default_dca_name(num):
     return translate("DcaPlotter", "DCA {0}").format(num)
 
-def build_default_mic_name(num):
-    return translate("DcaPlotter", "Microphone {0}").format(num)
+def build_default_channel_name(channel_tuple):
+    if channel_tuple[0] == 'mic' or channel_tuple[0] == 'input':
+        return translate("DcaPlotter", "Microphone {0}").format(channel_tuple[1])
+    if channel_tuple[0] == 'fx':
+        return translate("DcaPlotter", "FX {0}").format(channel_tuple[1])
 
-def build_default_fx_name(num):
-    return translate("DcaPlotter", "FX {0}").format(num)
-
-def get_mic_assign_name(numid):
+def get_channel_assignment_name(channel_tuple):
     return '{id} : {name}'.format_map({
-        'id': numid,
-        'name': get_mic_name(numid)
+        'id': channel_tuple[1],
+        'name': get_channel_name(channel_tuple)
     })
 
-def get_fx_assign_name(numid):
-    return '{id} : {name}'.format_map({
-        'id': numid,
-        'name': get_fx_name(numid)
-    })
-
-def get_mic_name(numid):
-    inputs = get_plugin('DcaPlotter').SessionConfig['assigns']['inputs']
-    return inputs[numid - 1]['name'] if inputs else build_default_mic_name(numid)
-
-def get_fx_name(numid):
-    inputs = get_plugin('DcaPlotter').SessionConfig['assigns']['fx']
-    return inputs[numid - 1]['name'] if inputs else build_default_fx_name(numid)
+def get_channel_name(channel_tuple):
+    channel_type = 'input' if channel_tuple[0] == 'mic' else channel_tuple[0]
+    assigns = get_plugin('DcaPlotter').SessionConfig['assigns'][channel_type]
+    return assigns[channel_tuple[1] - 1]['name'] if assigns else build_default_channel_name(channel_tuple)
