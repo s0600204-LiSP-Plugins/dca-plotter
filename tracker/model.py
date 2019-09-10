@@ -306,12 +306,13 @@ def determine_midi_messages(changes):
         return []
 
     profile = get_plugin('MidiFixtureControl').get_profile(midi_plugin_config['dca_device'])
+    fx_variant = 'fx_return' if 'fx_return' in profile.parameter_values('mute')['channelType'] else 'fx'
 
     messages = []
     for change in changes:
         command = ""
         args = {
-            "channelType": change[1]['strip'][0],
+            "channelType": fx_variant if change[1]['strip'][0] == 'fx' else change[1]['strip'][0],
             "channelNum": change[1]['strip'][1]
         }
 
