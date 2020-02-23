@@ -80,12 +80,21 @@ class DcaPlotter(Plugin):
             dca_mapper.exec_()
 
     def _pre_session_deinitialisation(self, _):
+        '''Called when session is being de-init'd.'''
         layout = self.app.layout
         if isinstance(layout, ListLayout):
             layout.model.item_added.disconnect(self._on_cue_added)
             layout.model.item_moved.disconnect(self._on_cue_moved)
             layout.model.item_removed.disconnect(self._on_cue_removed)
             layout.view.listView.currentItemChanged.disconnect(self._on_cue_selected)
+        if self._tracker_view:
+            self._tracker_view.deinitialise()
+            self._tracker_view = None
+
+    def finalize(self):
+        '''Called when application is closing'''
+        super().finalize()
+        self._tracker_view = None
 
     def _on_session_initialised(self, _):
         """Post-session-initialisation init.

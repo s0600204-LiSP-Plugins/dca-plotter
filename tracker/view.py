@@ -38,6 +38,9 @@ class DcaTrackingView(DcaModelViewTemplate):
         self.setSelectionMode(QAbstractItemView.NoSelection)
         get_plugin('DcaPlotter').initialised.connect(self._post_init_set_model)
 
+    def deinitialise(self):
+        get_plugin('DcaPlotter').initialised.disconnect(self._post_init_set_model)
+
     def _post_init_set_model(self):
         self.setModel(get_plugin('DcaPlotter').tracker())
 
