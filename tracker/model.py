@@ -308,12 +308,20 @@ def determine_midi_messages(changes):
     profile = get_plugin('MidiFixtureControl').get_profile(midi_plugin_config['dca_device'])
     fx_variant = 'fx_return' if 'fx_return' in profile.parameter_values('mute')['channelType'] else 'fx'
 
+    strip_assigns = get_plugin('DcaPlotter').SessionConfig['assigns']
+
     messages = []
     for change in changes:
         command = ""
+
+        strip_type = change[1]['strip'][0]
+        strip_number = change[1]['strip'][1]
+        if strip_type != 'dca':
+            # Support e.g. Microphone 2 being actually Desk Channel 7
+            strip_number = strip_assigns[strip_type][strip_number - 1]['in']
         args = {
-            "channelType": fx_variant if change[1]['strip'][0] == 'fx' else change[1]['strip'][0],
-            "channelNum": change[1]['strip'][1]
+            "channelType": fx_variant if strip_type == 'fx' else strip_type,
+            "channelNum": strip_number
         }
 
         if change[0] == 'assign' or change[0] == 'unassign':
