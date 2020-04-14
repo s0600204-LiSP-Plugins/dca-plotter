@@ -335,7 +335,7 @@ def determine_midi_messages(changes):
 
         elif change[0] == 'rename':
             command = 'setName'
-            args["arbitraryString"] = change[1]['name']
+            args["asciiString"] = change[1]['name']
 
         messages.extend(profile.build_device_command(command, args))
 
