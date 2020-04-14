@@ -25,6 +25,7 @@ from lisp.plugins import get_plugin
 from lisp.ui.settings.pages import SettingsPagesTabWidget
 from lisp.ui.ui_utils import translate
 
+from ..roles.roles_assign import RolesAssignUi
 from .page_fx_assign import FxAssignUi
 from .page_mic_assign import MicAssignUi
 
@@ -35,6 +36,7 @@ class ChannelAssignConfig(SettingsPagesTabWidget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+        self.addPage(RolesAssignUi(parent=self))
         self.addPage(MicAssignUi(parent=self))
         self.addPage(FxAssignUi(parent=self))
 
