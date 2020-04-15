@@ -121,6 +121,11 @@ class RoleRow(ParentRow):
             return Qt.ItemIsEnabled
         return super().flags(col)
 
+    def removeChild(self, child):
+        child = super().removeChild(child)
+        if child.data(1, Qt.CheckStateRole) == Qt.Checked and self.childCount():
+            self.child(0).setData(1, Qt.Checked, Qt.CheckStateRole)
+
     def setData(self, col, data, role):
         # pylint: disable=invalid-name, missing-docstring
         if col == 0 and role == Qt.EditRole:
@@ -131,7 +136,7 @@ class AssignRow(BaseRow):
     def __init__(self, channel_tuple, **kwargs):
         super().__init__(**kwargs)
         self._channel = channel_tuple
-        self._is_default = False
+        self._is_default = self._parent.childCount() == 0
 
     def data(self, col, role=Qt.DisplayRole):
         # pylint: disable=missing-docstring
@@ -154,7 +159,21 @@ class AssignRow(BaseRow):
 
     def setData(self, col, data, role):
         # pylint: disable=invalid-name, missing-docstring
-        pass
+        if col == 1 and role == Qt.CheckStateRole:
+            self._is_default = data == Qt.Checked
+            if data == Qt.Unchecked:
+                return
+
+            for sibling in self._parent.children():
+                if sibling == self:
+                    continue
+                sibling.setData(col, Qt.Unchecked, role)
+
+            model = self._parent.model()
+            model.dataChanged.emit(
+                model.createIndex(0, 1, self),
+                model.createIndex(self._parent.childCount(), 1, self),
+                [Qt.CheckStateRole])
 
     def value(self):
         return (self._channel, self._is_default)
