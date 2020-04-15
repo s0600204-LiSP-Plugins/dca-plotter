@@ -130,6 +130,6 @@ class RolesTreeView(SimpleTreeView):
 
     def removeRole(self):
         selected = self.selectedIndexes()
-        if not selected or selected[0].internalPointer().parent != self.model().root:
+        if not selected or selected[0].internalPointer().parent() != self.model().root():
             return
         self.model().removeRow(selected[0])

@@ -32,7 +32,7 @@ from ..utilities import get_channel_assignment_name
 
 class BaseRow:
     def __init__(self, parent=None):
-        self.parent = parent
+        self._parent = parent
 
     def data(self, col, role):
         # pylint: disable=missing-docstring, no-self-use, unused-argument
@@ -44,38 +44,41 @@ class BaseRow:
 
     def model(self):
         # pylint: disable=missing-docstring
-        return self.parent.model()
+        return self._parent.model()
+
+    def parent(self):
+        return self._parent
 
     def rowNum(self):
         # pylint: disable=invalid-name, missing-docstring
-        if not self.parent:
+        if not self._parent:
             return -1
-        return self.parent.rows.index(self)
+        return self._parent.children().index(self)
 
 
 class ParentRow(BaseRow):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.rows = []
+        self._rows = []
 
     def addChild(self, child):
         # pylint: disable=invalid-name, missing-docstring
-        self.rows.append(child)
+        self._rows.append(child)
 
     def child(self, child_num):
         # pylint: disable=missing-docstring
-        return self.rows[child_num]
+        return self._rows[child_num]
 
     def childCount(self):
         # pylint: disable=invalid-name, missing-docstring
-        return len(self.rows)
+        return len(self._rows)
 
     def children(self):
-        return self.rows
+        return self._rows
 
     def removeChild(self, child):
         # pylint: disable=invalid-name, missing-docstring
-        return self.rows.pop(child)
+        return self._rows.pop(child)
 
 
 class RootRow(ParentRow):
@@ -160,9 +163,9 @@ class AssignRow(BaseRow):
 class RolesTreeModel(QAbstractItemModel):
     def __init__(self):
         super().__init__()
-        self.root = RootRow(self)
-        self.role_count = 0
-        self.columns = [{
+        self._root = RootRow(self)
+        self._role_count = 0
+        self._columns = [{
             'id': 'role_name',
             'label': translate('DcaPlotterSettings', 'Role Name & Assignments'),
         }, {
@@ -177,25 +180,25 @@ class RolesTreeModel(QAbstractItemModel):
         position = role_row.childCount()
 
         self.beginInsertRows(role_index, position, position)
-        self.root.child(role_index.row()).addChild(new_assign)
+        self._root.child(role_index.row()).addChild(new_assign)
         self.endInsertRows()
 
     def addRole(self, name):
         # pylint: disable=invalid-name, missing-docstring
-        uid = 'role#{0}'.format(self.role_count)
-        new_role = RoleRow(uid, name, parent=self.root)
-        row = self.root.childCount()
+        uid = 'role#{0}'.format(self._role_count)
+        new_role = RoleRow(uid, name, parent=self._root)
+        row = self._root.childCount()
 
         self.beginInsertRows(QModelIndex(), row, row)
-        self.root.addChild(new_role)
+        self._root.addChild(new_role)
         self.endInsertRows()
 
-        self.role_count += 1
+        self._role_count += 1
         return self.createIndex(row, 0, new_role)
 
     def columnCount(self, _):
         # pylint: disable=invalid-name, missing-docstring
-        return len(self.columns)
+        return len(self._columns)
 
     def data(self, index, role=Qt.DisplayRole):
         # pylint: disable=missing-docstring, no-self-use
@@ -215,7 +218,7 @@ class RolesTreeModel(QAbstractItemModel):
             return channel_tuples
 
         role_row = role_index.internalPointer()
-        if role_row.parent != self.root:
+        if role_row.parent() != self._root:
             return channel_tuples
 
         already_assigned = []
@@ -233,7 +236,7 @@ class RolesTreeModel(QAbstractItemModel):
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         # pylint: disable=invalid-name, missing-docstring
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-            return self.columns[section]['label']
+            return self._columns[section]['label']
 
         return None
 
@@ -242,7 +245,7 @@ class RolesTreeModel(QAbstractItemModel):
         if not self.hasIndex(row_num, col_num, parent_idx):
             return QModelIndex()
 
-        parent_node = parent_idx.internalPointer() if parent_idx.isValid() else self.root
+        parent_node = parent_idx.internalPointer() if parent_idx.isValid() else self._root
         child_node = parent_node.child(row_num)
 
         if child_node:
@@ -254,8 +257,8 @@ class RolesTreeModel(QAbstractItemModel):
         if not index.isValid():
             return QModelIndex()
 
-        parent = index.internalPointer().parent
-        if parent == self.root:
+        parent = index.internalPointer().parent()
+        if parent == self._root:
             return QModelIndex()
 
         return self.createIndex(parent.rowNum(), 0, parent)
@@ -265,22 +268,25 @@ class RolesTreeModel(QAbstractItemModel):
         if not index.isValid():
             return
 
-        parent = index.internalPointer().parent
+        parent = index.internalPointer().parent()
         parent_index = self.parent(index)
-        if parent != self.root and not parent_index.isValid():
+        if parent != self._root and not parent_index.isValid():
             return
 
         row_num = index.internalPointer().rowNum()
         self.beginRemoveRows(parent_index, row_num, row_num)
-        if parent == self.root:
-            self.root.removeChild(row_num)
+        if parent == self._root:
+            self._root.removeChild(row_num)
         else:
             parent.removeChild(row_num)
         self.endRemoveRows()
 
+    def root(self):
+        return self._root
+
     def rowCount(self, index):
         # pylint: disable=invalid-name, missing-docstring
-        node = index.internalPointer() if index.isValid() else self.root
+        node = index.internalPointer() if index.isValid() else self._root
         return node.childCount()
 
     def setData(self, index, data, role=Qt.DisplayRole):
