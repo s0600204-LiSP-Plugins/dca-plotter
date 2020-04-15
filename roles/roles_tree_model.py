@@ -25,7 +25,10 @@ from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex
 from PyQt5.QtGui import QFont
 
 # pylint: disable=import-error
+from lisp.plugins import get_plugin
 from lisp.ui.ui_utils import translate
+
+from ..utilities import get_channel_assignment_name
 
 class BaseRow:
     def __init__(self, parent=None):
@@ -66,6 +69,9 @@ class ParentRow(BaseRow):
     def childCount(self):
         # pylint: disable=invalid-name, missing-docstring
         return len(self.rows)
+
+    def children(self):
+        return self.rows
 
     def removeChild(self, child):
         # pylint: disable=invalid-name, missing-docstring
@@ -119,15 +125,15 @@ class RoleRow(ParentRow):
 
 
 class AssignRow(BaseRow):
-    def __init__(self, **kwargs):
+    def __init__(self, channel_tuple, **kwargs):
         super().__init__(**kwargs)
-        self._assign = None
+        self._channel = channel_tuple
         self._is_default = False
 
     def data(self, col, role=Qt.DisplayRole):
         # pylint: disable=missing-docstring
         if col == 0 and role == Qt.DisplayRole:
-            return "Hey!"
+            return get_channel_assignment_name(self._channel)
 
         if col == 1 and role == Qt.CheckStateRole:
             return Qt.Checked if self._is_default else Qt.Unchecked
@@ -147,6 +153,9 @@ class AssignRow(BaseRow):
         # pylint: disable=invalid-name, missing-docstring
         pass
 
+    def value(self):
+        return (self._channel, self._is_default)
+
 
 class RolesTreeModel(QAbstractItemModel):
     def __init__(self):
@@ -161,6 +170,16 @@ class RolesTreeModel(QAbstractItemModel):
             'label': translate('DcaPlotterSettings', 'Default'),
         }]
 
+    def addAssign(self, role_index, channel_tuple):
+        role_row = role_index.internalPointer()
+
+        new_assign = AssignRow(channel_tuple, parent=role_row)
+        position = role_row.childCount()
+
+        self.beginInsertRows(role_index, position, position)
+        self.root.child(role_index.row()).addChild(new_assign)
+        self.endInsertRows()
+
     def addRole(self, name):
         # pylint: disable=invalid-name, missing-docstring
         uid = 'role#{0}'.format(self.role_count)
@@ -172,6 +191,7 @@ class RolesTreeModel(QAbstractItemModel):
         self.endInsertRows()
 
         self.role_count += 1
+        return self.createIndex(row, 0, new_role)
 
     def columnCount(self, _):
         # pylint: disable=invalid-name, missing-docstring
@@ -188,6 +208,27 @@ class RolesTreeModel(QAbstractItemModel):
         if not index.isValid():
             return Qt.NoItemFlags
         return index.internalPointer().flags(index.column())
+
+    def get_assignable_selection_choice(self, role_index):
+        channel_tuples = []
+        if not role_index.isValid():
+            return channel_tuples
+
+        role_row = role_index.internalPointer()
+        if role_row.parent != self.root:
+            return channel_tuples
+
+        already_assigned = []
+        for child in role_row.children():
+            already_assigned.append(child.value()[0])
+
+        for assignable, count in get_plugin('DcaPlotter').get_assignable_count().items():
+            for num in range(count):
+                new_tuple = (assignable, num + 1)
+                if new_tuple not in already_assigned:
+                    channel_tuples.append(new_tuple)
+
+        return channel_tuples
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         # pylint: disable=invalid-name, missing-docstring
@@ -219,11 +260,22 @@ class RolesTreeModel(QAbstractItemModel):
 
         return self.createIndex(parent.rowNum(), 0, parent)
 
-    def remRole(self, index):
+    def removeRow(self, index):
         # pylint: disable=invalid-name, missing-docstring
-        row = index.internalPointer().rowNum()
-        self.beginRemoveRows(QModelIndex(), row, row)
-        self.root.removeChild(row)
+        if not index.isValid():
+            return
+
+        parent = index.internalPointer().parent
+        parent_index = self.parent(index)
+        if parent != self.root and not parent_index.isValid():
+            return
+
+        row_num = index.internalPointer().rowNum()
+        self.beginRemoveRows(parent_index, row_num, row_num)
+        if parent == self.root:
+            self.root.removeChild(row_num)
+        else:
+            parent.removeChild(row_num)
         self.endRemoveRows()
 
     def rowCount(self, index):
