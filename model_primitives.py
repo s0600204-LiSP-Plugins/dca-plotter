@@ -67,7 +67,7 @@ class ModelsNode():
         return None
 
     def rownum(self):
-        if self in self.parent.children:
+        if self.parent and self in self.parent.children:
             return self.parent.children.index(self)
         return -1
 
@@ -275,7 +275,7 @@ class DcaModelTemplate(QAbstractItemModel):
     def flags(self, index):
         # pylint: disable=no-self-use
         if not index.isValid():
-            return None
+            return Qt.NoItemFlags
         return index.internalPointer().flags
 
     def index(self, row_num, col_num, parent_idx):

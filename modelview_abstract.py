@@ -441,8 +441,6 @@ class DcaModelViewTemplate(QAbstractItemView):
             index = index.parent()
         walk.reverse()
 
-        # This if...elif... is awkward
-        # TODO: Replace with something better
         if len(walk) == 3:
             return self._cell_sizes[walk[0]]['blocks'][walk[1]]['entries'][walk[2]]
         if len(walk) == 2:

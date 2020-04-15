@@ -23,7 +23,7 @@
 # pylint: disable=missing-docstring, invalid-name
 
 # pylint: disable=no-name-in-module
-from PyQt5.QtWidgets import QFormLayout, QGroupBox, QSpinBox, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QFormLayout, QSpinBox, QVBoxLayout, QWidget
 
 # pylint: disable=import-error
 from lisp.plugins import get_plugin
@@ -44,7 +44,7 @@ class AssignUi(SettingsPage):
         # Options at top
         self.optionsGroup = QWidget(self)
         self.optionsGroup.setLayout(QFormLayout())
-        self.layout().layout().addWidget(self.optionsGroup)
+        self.layout().addWidget(self.optionsGroup)
 
         self.entryCount = QSpinBox(self)
         self.entryCount.setRange(1, self.EntryLimit['num'])
@@ -54,7 +54,7 @@ class AssignUi(SettingsPage):
         # Table
         model = SimpleTableModel(self.TableHeadings)
         self.entryList = SimpleTableView(model, self.TableColumns, parent=self)
-        self.layout().layout().addWidget(self.entryList)
+        self.layout().addWidget(self.entryList)
 
     def getSettings(self):
         model = self.entryList.model()

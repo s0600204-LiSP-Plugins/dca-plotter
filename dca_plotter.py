@@ -151,7 +151,7 @@ class DcaPlotter(Plugin):
         With the "Cart" layout, selecting a cue calls the cue.
         (And there are no other layouts currently.)
         """
-        if current and len(self._mapping_model):
+        if current and self._mapping_model:
             if self._is_supported_cuetype(current.cue.type):
                 self._tracking_model.select_cue(current.cue)
             else:
