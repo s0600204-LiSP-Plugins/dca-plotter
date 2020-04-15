@@ -21,14 +21,14 @@
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
 # pylint: disable=no-name-in-module
-from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 
 # pylint: disable=import-error
 from lisp.ui.qdelegates import LineEditDelegate
 from lisp.ui.settings.pages import SettingsPage
 from lisp.ui.ui_utils import translate
 
-from midi_fixture_control.ui import RadioButtonDelegate
+from midi_fixture_control.ui import RadioButtonHidableDelegate
 
 from ..ui import SimpleTreeView
 from .roles_tree_model import RolesTreeModel
@@ -38,10 +38,10 @@ class RolesAssignUi(SettingsPage):
     Name = translate("DcaPlotter", "Role Assignments")
 
     # Keep this in sync with roles_tree_model.columns
-    TreeColumns = [None, {
+    TreeColumns = [{
         'delegate': LineEditDelegate(max_length=16)
     }, {
-        'delegate': RadioButtonDelegate(),
+        'delegate': RadioButtonHidableDelegate(),
         'width': 64
     }]
 
@@ -61,10 +61,12 @@ class RolesAssignUi(SettingsPage):
 
         self.button_add = QPushButton(self.buttons_group)
         self.button_add.setText("Add New Role")
+        self.button_add.clicked.connect(self._add_role)
         self.buttons_group.layout().addWidget(self.button_add)
 
         self.button_rem = QPushButton(self.buttons_group)
         self.button_rem.setText("Remove Role")
+        self.button_rem.clicked.connect(self._remove_role)
         self.buttons_group.layout().addWidget(self.button_rem)
 
     def getSettings(self):
@@ -74,3 +76,12 @@ class RolesAssignUi(SettingsPage):
     def loadSettings(self, settings):
         # pylint: disable=invalid-name, missing-docstring
         pass
+
+    def _add_role(self):
+        self.tree_model.addRole("...")
+
+    def _remove_role(self):
+        selected = self.tree_view.selectedIndexes()
+        if not selected:
+            return
+        self.tree_model.remRole(selected[0])
