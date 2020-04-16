@@ -71,12 +71,16 @@ class RolesAssignUi(SettingsPage):
         self.buttons_group.layout().addWidget(self.button_rem)
 
     def getSettings(self):
-        # pylint: disable=invalid-name, missing-docstring
-        return {}
+        # pylint: disable=invalid-name
+        '''Gets serialised data from model, ready for saving'''
+        return {
+            "roles": self.tree_model.serialise()
+        }
 
     def loadSettings(self, settings):
-        # pylint: disable=invalid-name, missing-docstring
-        pass
+        # pylint: disable=invalid-name
+        '''Passes loaded data to model to deserialise'''
+        self.tree_model.deserialise(settings["roles"])
 
 
 class RolesTreeView(SimpleTreeView):

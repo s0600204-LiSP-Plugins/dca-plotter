@@ -99,6 +99,9 @@ class RoleRow(ParentRow):
 
     def data(self, col, role=Qt.DisplayRole):
         # pylint: disable=missing-docstring
+        if col == -1 and role == RolesTreeModel.AccessRole:
+            return self._role_id
+
         if col == 0:
             if role in (Qt.DisplayRole, Qt.EditRole):
                 return self._name
@@ -140,6 +143,9 @@ class AssignRow(BaseRow):
 
     def data(self, col, role=Qt.DisplayRole):
         # pylint: disable=missing-docstring
+        if col == -1 and role == RolesTreeModel.AccessRole:
+            return self._channel
+
         if col == 0 and role == Qt.DisplayRole:
             return get_channel_assignment_name(self._channel)
 
@@ -175,11 +181,11 @@ class AssignRow(BaseRow):
                 model.createIndex(self._parent.childCount(), 1, self),
                 [Qt.CheckStateRole])
 
-    def value(self):
-        return (self._channel, self._is_default)
-
 
 class RolesTreeModel(QAbstractItemModel):
+
+    AccessRole = Qt.UserRole + 1
+
     def __init__(self):
         super().__init__()
         self._root = RootRow(self)
@@ -225,6 +231,24 @@ class RolesTreeModel(QAbstractItemModel):
             return None
         return index.internalPointer().data(index.column(), role)
 
+    def deserialise(self, data):
+        if self._root.childCount():
+            logger.error('Attempting to deserialise out of sequence.')
+            return
+
+        for role in data:
+            role_row = RoleRow(role['id'], role['name'], parent=self._root)
+            self._root.addChild(role_row)
+            self._role_count = max(self._role_count, int(role['id'].split('#')[1]))
+
+            for assign in role['assigns']:
+                assign_row = AssignRow(tuple(assign), parent=role_row)
+                role_row.addChild(assign_row)
+                if assign == role['default']:
+                    assign_row.setData(1, Qt.Checked, Qt.CheckStateRole)
+
+        self._role_count += 1
+
     def flags(self, index):
         # pylint: disable=missing-docstring, no-self-use
         if not index.isValid():
@@ -242,7 +266,7 @@ class RolesTreeModel(QAbstractItemModel):
 
         already_assigned = []
         for child in role_row.children():
-            already_assigned.append(child.value()[0])
+            already_assigned.append(child.data(-1, self.AccessRole))
 
         for assignable, count in get_plugin('DcaPlotter').get_assignable_count().items():
             for num in range(count):
@@ -281,6 +305,24 @@ class RolesTreeModel(QAbstractItemModel):
             return QModelIndex()
 
         return self.createIndex(parent.rowNum(), 0, parent)
+
+    def serialise(self):
+        '''Serialises the role assignment data, ready for saving to file.'''
+        data = []
+        for role_row in self._root.children():
+            role = {
+                'id': role_row.data(-1, self.AccessRole),
+                'name': role_row.data(0, Qt.EditRole),
+                'assigns': [],
+                'default': '',
+            }
+            for assign_row in role_row.children():
+                role['assigns'].append(assign_row.data(-1, self.AccessRole))
+                if assign_row.data(1, Qt.CheckStateRole) == Qt.Checked:
+                    role['default'] = role['assigns'][len(role['assigns']) - 1]
+            data.append(role)
+
+        return data
 
     def removeRow(self, index):
         # pylint: disable=invalid-name, missing-docstring
