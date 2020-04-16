@@ -74,13 +74,13 @@ class RolesAssignUi(SettingsPage):
         # pylint: disable=invalid-name
         '''Gets serialised data from model, ready for saving'''
         return {
-            "roles": self.tree_model.serialise()
+            "role": self.tree_model.serialise()
         }
 
     def loadSettings(self, settings):
         # pylint: disable=invalid-name
         '''Passes loaded data to model to deserialise'''
-        self.tree_model.deserialise(settings["roles"])
+        self.tree_model.deserialise(settings["role"])
 
 
 class RolesTreeView(SimpleTreeView):

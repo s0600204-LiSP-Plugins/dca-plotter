@@ -319,9 +319,22 @@ def determine_midi_messages(changes):
 
         strip_type = change[1]['strip'][0]
         strip_number = change[1]['strip'][1]
+
+        # Resolve Role aliasing
+        if strip_type == 'role':
+            role_assign = None
+            for role in strip_assigns['role']:
+                if role['id'] == strip_number:
+                    role_assign = role['default']
+                    break
+
+            strip_type = role_assign[0]
+            strip_number = role_assign[1]
+
         if strip_type != 'dca':
             # Support e.g. Microphone 2 being actually Desk Channel 7
             strip_number = strip_assigns[strip_type][strip_number - 1]['in']
+
         args = {
             "channelType": fx_variant if strip_type == 'fx' else strip_type,
             "channelNum": strip_number

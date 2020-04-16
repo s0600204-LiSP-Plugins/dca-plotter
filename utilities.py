@@ -37,11 +37,21 @@ def build_default_channel_name(channel_tuple):
     return str(channel_tuple)
 
 def get_channel_assignment_name(channel_tuple):
+    if channel_tuple[0] == 'role':
+        return get_role_name(channel_tuple)
+
     return '{id} : {name}'.format_map({
         'id': channel_tuple[1],
         'name': get_channel_name(channel_tuple)
     })
 
 def get_channel_name(channel_tuple):
+    if channel_tuple[0] == 'role':
+        return get_role_name(channel_tuple)
     assigns = get_plugin('DcaPlotter').SessionConfig['assigns'][channel_tuple[0]]
     return assigns[channel_tuple[1] - 1]['name'] if assigns else build_default_channel_name(channel_tuple)
+
+def get_role_name(role_tuple):
+    for role in get_plugin('DcaPlotter').SessionConfig['assigns']['role']:
+        if role['id'] == role_tuple[1]:
+            return role['name']

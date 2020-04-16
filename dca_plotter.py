@@ -178,6 +178,11 @@ class DcaPlotter(Plugin):
     def assignables(self, types):
         """Returns tuples that represent the various assignable elements (microphones, fx-returns, etc)"""
         assignables = []
+
+        if 'role' in types:
+            for role in self.SessionConfig['assigns']['role']:
+                assignables.append(('role', role['id']))
+
         for assignable in ['input', 'fx']:
             if assignable in types:
                 count = len(self.SessionConfig['assigns'][assignable])
