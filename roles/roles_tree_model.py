@@ -256,25 +256,21 @@ class RolesTreeModel(QAbstractItemModel):
         return index.internalPointer().flags(index.column())
 
     def get_assignable_selection_choice(self, role_index):
-        channel_tuples = []
         if not role_index.isValid():
-            return channel_tuples
+            return []
 
         role_row = role_index.internalPointer()
         if role_row.parent() != self._root:
-            return channel_tuples
+            return []
 
-        already_assigned = []
+        assignables = get_plugin('DcaPlotter').assignables(['input', 'fx'])
+
         for child in role_row.children():
-            already_assigned.append(child.data(-1, self.AccessRole))
+            ch_tuple = child.data(-1, self.AccessRole)
+            if ch_tuple in assignables:
+                assignables.remove(ch_tuple)
 
-        for assignable, count in get_plugin('DcaPlotter').get_assignable_count().items():
-            for num in range(count):
-                new_tuple = (assignable, num + 1)
-                if new_tuple not in already_assigned:
-                    channel_tuples.append(new_tuple)
-
-        return channel_tuples
+        return assignables
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         # pylint: disable=invalid-name, missing-docstring
