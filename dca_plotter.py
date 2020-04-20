@@ -33,6 +33,7 @@ from lisp.cues.cue_factory import CueFactory
 from lisp.plugins.list_layout.layout import ListLayout
 from lisp.ui.settings.app_configuration import AppConfigurationDialog
 from lisp.ui.settings.session_configuration import SessionConfigurationDialog
+from lisp.ui.ui_utils import translate
 
 from dca_plotter.config.channel_assign import ChannelAssignConfig
 from dca_plotter.cue.change_cue import DcaChangeCue
@@ -40,6 +41,7 @@ from dca_plotter.cue.reset_cue import DcaResetCue
 from dca_plotter.dca_plotter_settings import DcaPlotterSettings
 from dca_plotter.mapper.dialog import DcaMappingDialog
 from dca_plotter.mapper.model import DcaMappingModel
+from dca_plotter.roles.roles_switcher import RolesSwitcher
 from dca_plotter.tracker.model import DcaTrackingModel
 from dca_plotter.tracker.view import DcaTrackingView
 
@@ -54,6 +56,8 @@ class DcaPlotter(Plugin):
 
     _mapping_menu_action = None
     _mapping_model = None
+    _roles_menu_action = None
+    _roles_switcher = None
     _tracking_model = None
     _tracker_view = None
 
@@ -77,10 +81,19 @@ class DcaPlotter(Plugin):
             CueFactory.register_factory(cue_type.__name__, cue_type)
             app.window.registerSimpleCueMenu(cue_type, self.CueCategory)
 
+        self._roles_menu_action = QAction(translate('dca_plotter', 'Roles Switcher'), self.app.window)
+        self._roles_menu_action.triggered.connect(self._open_switcher_dialog)
+        self.app.window.menuTools.addAction(self._roles_menu_action)
+
     def _open_mapper_dialog(self):
         if self.mapper_enabled():
             dca_mapper = DcaMappingDialog()
             dca_mapper.exec_()
+
+    def _open_switcher_dialog(self):
+        if not self._roles_switcher:
+            self._roles_switcher = RolesSwitcher()
+        self._roles_switcher.open()
 
     def _pre_session_deinitialisation(self, _):
         '''Called when session is being de-init'd.'''

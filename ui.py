@@ -21,7 +21,69 @@
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
 # pylint: disable=no-name-in-module
-from PyQt5.QtWidgets import QHeaderView, QTreeView
+from PyQt5.QtCore import Qt, QEvent, QModelIndex
+from PyQt5.QtGui import QMouseEvent, QPalette
+from PyQt5.QtWidgets import QApplication, QHeaderView, QStyle, QStyleOptionToolButton, QTreeView, QStyledItemDelegate
+
+class ToggleButtonDelegate(QStyledItemDelegate):
+    '''Toggle Button Delegate
+
+    When clicked, the state of the delegate toggles between "checked" and "unchecked".
+    '''
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.last_clicked_index = QModelIndex()
+
+    def createEditor(self, parent, option, index):
+        # pylint: disable=invalid-name, no-self-use, unused-argument,
+        '''Do not create an Editor (on double-click)'''
+        return None
+
+    def editorEvent(self, event, model, option, index):
+        # pylint: disable=invalid-name
+        '''Toggle checked/unchecked on mouse click'''
+        if event.type() == QEvent.MouseButtonPress:
+            self.last_clicked_index = index
+
+        elif event.type() == QEvent.MouseButtonRelease:
+
+            if index.row() is not self.last_clicked_index.row() or \
+               index.column() is not self.last_clicked_index.column():
+                return False
+
+            e = QMouseEvent(event)
+            if int(e.button()) is not int(Qt.LeftButton):
+                return False
+
+            self.last_clicked_index = QModelIndex()
+
+            if index.data(Qt.CheckStateRole) is Qt.Checked:
+                return False
+
+            model.setData(index, Qt.Checked, Qt.CheckStateRole)
+            return True
+
+        return super().editorEvent(event, model, option, index)
+
+    def paint(self, painter, option, index):
+        # pylint: disable=no-self-use
+        '''Draws the button'''
+
+        button_option = QStyleOptionToolButton()
+        button_option.palette = option.palette
+        button_option.rect = option.rect
+        button_option.text = index.data(Qt.DisplayRole)
+
+        if index.data(Qt.CheckStateRole) == Qt.Checked:
+            button_option.palette.setColor(QPalette.Button, option.palette.highlight().color())
+            button_option.palette.setColor(QPalette.ButtonText, option.palette.highlightedText().color())
+            button_option.state |= QStyle.State_On
+        else:
+            button_option.state |= QStyle.State_Off
+
+        QApplication.style().drawPrimitive(QStyle.PE_PanelButtonTool, button_option, painter)
+        QApplication.style().drawControl(QStyle.CE_ToolButtonLabel, button_option, painter)
+
 
 class SimpleTreeView(QTreeView):
     # pylint: disable=too-few-public-methods
