@@ -46,3 +46,6 @@ class RolesSwitcher(QDialog):
         self._view = RolesSwitcherView(parent=self)
         self._view.setModel(self._model)
         self.layout().addWidget(self._view)
+
+    def renew(self):
+        self._model.renew(get_plugin('DcaPlotter').SessionConfig)

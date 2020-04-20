@@ -49,6 +49,10 @@ class RolesSwitcherView(QAbstractItemView):
         self.setItemDelegate(self._button_delegate)
         self.setItemDelegateForColumn(0, self._label_delegate)
 
+    def modelDataRenewed(self):
+        #pylint: disable=invalid-name
+        self._cell_sizes_dirty = True
+
     def horizontalOffset(self): # REQUIRED REQUESTED
         # pylint: disable=invalid-name, no-self-use
         '''Returns the view's horizontal offset.
@@ -145,6 +149,7 @@ class RolesSwitcherView(QAbstractItemView):
         @arg model QAbstractItemModel
         '''
         super().setModel(model)
+        self.model().dataRenewed.connect(self.modelDataRenewed)
         self._cell_sizes_dirty = True
 
     def setSelection(self, *_): # REQUIRED, REQUESTED

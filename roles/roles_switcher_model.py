@@ -23,6 +23,8 @@
 # pylint: disable=no-name-in-module
 from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt
 
+from lisp.core.signal import Signal
+
 from ..utilities import get_channel_name
 
 # Index: (x, y), where
@@ -31,6 +33,8 @@ from ..utilities import get_channel_name
 #                 = y{n>0} = Assigns to that Role
 
 class RolesSwitcherModel(QAbstractItemModel):
+
+    dataRenewed = Signal()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -68,18 +72,26 @@ class RolesSwitcherModel(QAbstractItemModel):
             return
 
         new_roles = []
-        current_role_ids = {role['id']: self._roles.index(role) for role in self._roles}
+        current_role_ids = {role['id']: idx for idx, role in enumerate(self._roles)}
 
         for role in plugin_config['assigns']['role']:
+            new_role = {
+                'id': role['id'],
+                'name': role['name'],
+                'current': role['default'],
+                'assigns': role['assigns']
+            }
+
+            # Retain the old "current"(ly) selected option
             if role['id'] in current_role_ids:
-                new_roles.append(self._roles[current_role_ids[role['id']]])
-                continue
-            new_role = role
-            new_role['current'] = new_role['default']
+                old_current = self._roles[current_role_ids[new_role['id']]]['current']
+                if old_current in role['assigns']:
+                    new_role['current'] = old_current
+
             new_roles.append(new_role)
 
         self._roles = new_roles
-        # TODO: Announce to the view that data has changed
+        self.dataRenewed.emit()
 
     def flags(self, index):
         # pylint: disable=missing-docstring, no-self-use

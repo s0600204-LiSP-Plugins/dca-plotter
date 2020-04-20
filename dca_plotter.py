@@ -125,6 +125,10 @@ class DcaPlotter(Plugin):
         # Instead it tracks which mics are muted and are currently assigned where
         self._tracking_model = DcaTrackingModel(self.mapper_enabled())
 
+        # Renew the options in the Role Switcher
+        if self._roles_switcher:
+            self._roles_switcher.renew()
+
         # If the mapper is not to be used we don't need to have it or its menu option in existence
         if not self.mapper_enabled():
             if self._mapping_menu_action:
@@ -156,6 +160,11 @@ class DcaPlotter(Plugin):
         layout.view.listView.currentItemChanged.connect(self._on_cue_selected)
 
         self.initialised.emit()
+
+    def _on_session_config_altered(self, _):
+        # Renew the options in the Role Switcher
+        if self._roles_switcher:
+            self._roles_switcher.renew()
 
     def _on_cue_selected(self, current, _):
         """Action to take when a cue is selected.
