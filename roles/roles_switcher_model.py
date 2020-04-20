@@ -38,18 +38,19 @@ class RolesSwitcherModel(QAbstractItemModel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._roles = []
+        self._roles = {}
+        self._roles_map = []
 
     def columnCount(self, index):
         # pylint: disable=invalid-name, missing-docstring
         if not index.isValid():
             return 0
-        return len(self._roles[index.row()]['assigns'])
+        idx = self._roles_map[index.row()]
+        return len(self._roles[idx]['assigns'])
 
     def current(self, role_id):
-        for role in self._roles:
-            if role['id'] == role_id:
-                return role['current']
+        if role_id in self._roles:
+            return self._roles[role_id]['current']
         return None
 
     def data(self, index, role=Qt.DisplayRole):
@@ -57,8 +58,8 @@ class RolesSwitcherModel(QAbstractItemModel):
         if not index.isValid():
             return None
 
-        role_num = index.row()
-        role_data = self._roles[role_num]
+        idx = self._roles_map[index.row()]
+        role_data = self._roles[idx]
         if index.column() == 0:
             if role == Qt.DisplayRole:
                 return role_data['name']
@@ -77,26 +78,24 @@ class RolesSwitcherModel(QAbstractItemModel):
         if 'role' not in plugin_config['assigns']:
             return
 
-        new_roles = []
-        current_role_ids = {role['id']: idx for idx, role in enumerate(self._roles)}
-
+        new_roles = {}
         for role in plugin_config['assigns']['role']:
-            new_role = {
-                'id': role['id'],
+            new_dict = {
                 'name': role['name'],
                 'current': role['default'],
-                'assigns': role['assigns']
+                'assigns': role['assigns'],
             }
 
             # Retain the old "current"(ly) selected option
-            if role['id'] in current_role_ids:
-                old_current = self._roles[current_role_ids[new_role['id']]]['current']
+            if role['id'] in self._roles:
+                old_current = self._roles[role['id']]['current']
                 if old_current in role['assigns']:
-                    new_role['current'] = old_current
+                    new_dict['current'] = old_current
 
-            new_roles.append(new_role)
+            new_roles[role['id']] = new_dict
 
         self._roles = new_roles
+        self._roles_map = list(new_roles.keys())
         self.dataRenewed.emit()
 
     def flags(self, index):
@@ -115,7 +114,11 @@ class RolesSwitcherModel(QAbstractItemModel):
 
     def index(self, row, col):
         # pylint: disable=missing-docstring
-        if row < 0 or row >= len(self._roles) or col < 0 or col > len(self._roles[row]['assigns']):
+        if row < 0 or row >= len(self._roles) or col < 0:
+            return QModelIndex()
+
+        idx = self._roles_map[row]
+        if col > len(self._roles[idx]['assigns']):
             return QModelIndex()
 
         return self.createIndex(row, col)
@@ -147,7 +150,8 @@ class RolesSwitcherModel(QAbstractItemModel):
         if row >= self.rowCount(index) or col > self.columnCount(index) or col < 1:
             return False
 
-        self._roles[row]['current'] = self._roles[row]['assigns'][col - 1]
+        idx = self._roles_map[row]
+        self._roles[idx]['current'] = self._roles[idx]['assigns'][col - 1]
         self.dataChanged.emit(
             self.createIndex(row, 1),
             self.createIndex(row, self.columnCount(index)),
