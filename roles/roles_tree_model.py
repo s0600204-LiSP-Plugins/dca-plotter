@@ -133,6 +133,8 @@ class RoleRow(ParentRow):
         # pylint: disable=invalid-name, missing-docstring
         if col == 0 and role == Qt.EditRole:
             self._name = data
+            return True
+        return False
 
 
 class AssignRow(BaseRow):
@@ -168,7 +170,7 @@ class AssignRow(BaseRow):
         if col == 1 and role == Qt.CheckStateRole:
             self._is_default = data == Qt.Checked
             if data == Qt.Unchecked:
-                return
+                return False
 
             for sibling in self._parent.children():
                 if sibling == self:
@@ -180,7 +182,8 @@ class AssignRow(BaseRow):
                 model.createIndex(0, 1, self),
                 model.createIndex(self._parent.childCount(), 1, self),
                 [Qt.CheckStateRole])
-
+            return True
+        return False
 
 class RolesTreeModel(QAbstractItemModel):
 
@@ -349,5 +352,5 @@ class RolesTreeModel(QAbstractItemModel):
     def setData(self, index, data, role=Qt.DisplayRole):
         # pylint: disable=invalid-name, missing-docstring, no-self-use
         if not index.isValid():
-            return
-        index.internalPointer().setData(index.column(), data, role)
+            return False
+        return index.internalPointer().setData(index.column(), data, role)
