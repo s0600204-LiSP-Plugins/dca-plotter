@@ -46,6 +46,12 @@ class RolesSwitcherModel(QAbstractItemModel):
             return 0
         return len(self._roles[index.row()]['assigns'])
 
+    def current(self, role_id):
+        for role in self._roles:
+            if role['id'] == role_id:
+                return role['current']
+        return None
+
     def data(self, index, role=Qt.DisplayRole):
         # pylint: disable=missing-docstring, no-self-use
         if not index.isValid():

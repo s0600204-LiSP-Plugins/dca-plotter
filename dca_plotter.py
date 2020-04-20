@@ -220,6 +220,18 @@ class DcaPlotter(Plugin):
     def mapper(self):
         return self._mapping_model
 
+    def resolve_role(self, role_id):
+        if self._roles_switcher:
+            current = self._roles_switcher.current(role_id)
+            if current:
+                return current
+
+        for role in self.SessionConfig['assigns']['role']:
+            if role['id'] == role_id:
+                return role['default']
+
+        return None
+
     def tracker(self):
         return self._tracking_model
 

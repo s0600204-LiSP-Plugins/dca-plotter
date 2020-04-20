@@ -322,12 +322,7 @@ def determine_midi_messages(changes):
 
         # Resolve Role aliasing
         if strip_type == 'role':
-            role_assign = None
-            for role in strip_assigns['role']:
-                if role['id'] == strip_number:
-                    role_assign = role['default']
-                    break
-
+            role_assign = get_plugin('DcaPlotter').resolve_role(strip_number)
             strip_type = role_assign[0]
             strip_number = role_assign[1]
 
