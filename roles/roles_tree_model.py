@@ -239,10 +239,10 @@ class RolesTreeModel(QAbstractItemModel):
             logger.error('Attempting to deserialise out of sequence.')
             return
 
-        for role in data:
-            role_row = RoleRow(role['id'], role['name'], parent=self._root)
+        for role_id, role in data.items():
+            role_row = RoleRow(role_id, role['name'], parent=self._root)
             self._root.addChild(role_row)
-            self._role_count = max(self._role_count, int(role['id'].split('#')[1]))
+            self._role_count = max(self._role_count, int(role_id.split('#')[1]))
 
             for assign in role['assigns']:
                 assign_row = AssignRow(tuple(assign), parent=role_row)
@@ -307,10 +307,9 @@ class RolesTreeModel(QAbstractItemModel):
 
     def serialise(self):
         '''Serialises the role assignment data, ready for saving to file.'''
-        data = []
+        data = {}
         for role_row in self._root.children():
             role = {
-                'id': role_row.data(-1, self.AccessRole),
                 'name': role_row.data(0, Qt.EditRole),
                 'assigns': [],
                 'default': '',
@@ -319,7 +318,9 @@ class RolesTreeModel(QAbstractItemModel):
                 role['assigns'].append(assign_row.data(-1, self.AccessRole))
                 if assign_row.data(1, Qt.CheckStateRole) == Qt.Checked:
                     role['default'] = role['assigns'][len(role['assigns']) - 1]
-            data.append(role)
+
+            role_id = role_row.data(-1, self.AccessRole)
+            data[role_id] = role
 
         return data
 

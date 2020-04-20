@@ -52,6 +52,5 @@ def get_channel_name(channel_tuple):
     return assigns[channel_tuple[1] - 1]['name'] if assigns else build_default_channel_name(channel_tuple)
 
 def get_role_name(role_tuple):
-    for role in get_plugin('DcaPlotter').SessionConfig['assigns']['role']:
-        if role['id'] == role_tuple[1]:
-            return role['name']
+    role_id = role_tuple[1]
+    return get_plugin('DcaPlotter').SessionConfig['assigns']['role'][role_id]['name']

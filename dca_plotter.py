@@ -202,8 +202,8 @@ class DcaPlotter(Plugin):
         assignables = []
 
         if 'role' in types:
-            for role in self.SessionConfig['assigns']['role']:
-                assignables.append(('role', role['id']))
+            for role_id in self.SessionConfig['assigns']['role']:
+                assignables.append(('role', role_id))
 
         for assignable in ['input', 'fx']:
             if assignable in types:
@@ -226,9 +226,8 @@ class DcaPlotter(Plugin):
             if current:
                 return current
 
-        for role in self.SessionConfig['assigns']['role']:
-            if role['id'] == role_id:
-                return role['default']
+        if role_id in self.SessionConfig['assigns']['role']:
+            return self.SessionConfig['assigns']['role'][role_id]['default']
 
         return None
 
