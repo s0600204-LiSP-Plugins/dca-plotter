@@ -80,7 +80,8 @@ class RolesAssignUi(SettingsPage):
     def loadSettings(self, settings):
         # pylint: disable=invalid-name
         '''Passes loaded data to model to deserialise'''
-        self.tree_model.deserialise(settings["role"])
+        if "role" in settings:
+            self.tree_model.deserialise(settings["role"])
 
 
 class RolesTreeView(SimpleTreeView):

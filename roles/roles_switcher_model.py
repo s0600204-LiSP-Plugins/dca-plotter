@@ -77,6 +77,9 @@ class RolesSwitcherModel(QAbstractItemModel):
 
     def renew(self, plugin_config):
         if 'role' not in plugin_config['assigns']:
+            self._roles = {}
+            self._roles_map = []
+            self.dataRenewed.emit()
             return
 
         new_roles = {}
