@@ -180,7 +180,6 @@ class DcaModelViewTemplate(QAbstractItemView):
             return
         self._cell_sizes_dirty = True
         self._recalculate_cell_size()
-        self.updateGeometries()
 
     def rowsAboutToBeRemoved(self, parent, start, end):
         '''This slot is called when rows from start to end under parent are about to be removed
@@ -410,6 +409,7 @@ class DcaModelViewTemplate(QAbstractItemView):
         self._ideal_height = running_y + self.CUEHEADER_MARGIN * 2
         self._ideal_width = CUEROW_WIDTH
         self.viewport().update()
+        self.updateGeometries()
 
     def _paint_outline(self, painter, rect):
         rect = rect.adjusted(0, 0, -1, -1)

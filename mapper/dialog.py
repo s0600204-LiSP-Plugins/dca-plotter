@@ -33,15 +33,16 @@ from .view import DcaMappingView
 
 class DcaMappingDialog(QDialog):
 
-    def __init__(self, **kwargs):
+    def __init__(self, view_model, **kwargs):
         super().__init__(**kwargs)
 
         self.setWindowTitle('DCA Mapping')
         self.setMinimumSize(1280, 800)
         self.setLayout(QVBoxLayout())
 
-        self.model = get_plugin('DcaPlotter').mapper()
-
         self.view = DcaMappingView()
-        self.view.setModel(self.model)
+        self.view.setModel(view_model)
         self.layout().addWidget(self.view)
+
+    def setModel(self, model):
+        self.view.setModel(model)

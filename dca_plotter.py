@@ -53,6 +53,7 @@ class DcaPlotter(Plugin):
     CueCategory = QT_TRANSLATE_NOOP("CueCategory", "DCA/VCA Manipulation")
 
     _mapping_menu_action = None
+    _mapping_dialog = None
     _mapping_model = None
     _tracking_model = None
     _tracker_view = None
@@ -78,9 +79,11 @@ class DcaPlotter(Plugin):
             app.window.registerSimpleCueMenu(cue_type, self.CueCategory)
 
     def _open_mapper_dialog(self):
-        if self.mapper_enabled():
-            dca_mapper = DcaMappingDialog()
-            dca_mapper.exec_()
+        if not self.mapper_enabled():
+            return
+        if not self._mapping_dialog:
+            self._mapping_dialog = DcaMappingDialog(self._mapping_model)
+        self._mapping_dialog.open()
 
     def _pre_session_deinitialisation(self, _):
         '''Called when session is being de-init'd.'''
@@ -118,6 +121,8 @@ class DcaPlotter(Plugin):
                 self.app.window.menuTools.removeAction(self._mapping_menu_action)
             self._mapping_menu_action = None
             self._mapping_model = None
+            if self._mapping_dialog:
+                self._mapping_dialog.close()
             self.initialised.emit()
             return
 
@@ -129,6 +134,8 @@ class DcaPlotter(Plugin):
         # This model *does* contain cues - or references to them - and with the
         # aid of the listeners below gets updated when certain cues are updated.
         self._mapping_model = DcaMappingModel()
+        if self._mapping_dialog:
+            self._mapping_dialog.setModel(self._mapping_model)
 
         # Create an entry in the "Tools" menu
         if not self._mapping_menu_action:
