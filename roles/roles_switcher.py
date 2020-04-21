@@ -32,7 +32,7 @@ from .roles_switcher_view import RolesSwitcherView
 
 class RolesSwitcher(QDialog):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, view_model, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.setWindowTitle(translate('dca_plotter', 'Role Switcher'))
@@ -40,15 +40,6 @@ class RolesSwitcher(QDialog):
         self.setSizePolicy(self.sizePolicy().horizontalPolicy(), QSizePolicy.Minimum)
         self.setLayout(QVBoxLayout())
 
-        self._model = RolesSwitcherModel()
-        self._model.renew(get_plugin('DcaPlotter').SessionConfig)
-
         self._view = RolesSwitcherView(parent=self)
-        self._view.setModel(self._model)
+        self._view.setModel(view_model)
         self.layout().addWidget(self._view)
-
-    def current(self, role_id):
-        return self._model.current(role_id)
-
-    def renew(self):
-        self._model.renew(get_plugin('DcaPlotter').SessionConfig)

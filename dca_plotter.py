@@ -42,6 +42,7 @@ from dca_plotter.dca_plotter_settings import DcaPlotterSettings
 from dca_plotter.mapper.dialog import DcaMappingDialog
 from dca_plotter.mapper.model import DcaMappingModel
 from dca_plotter.roles.roles_switcher import RolesSwitcher
+from dca_plotter.roles.roles_switcher_model import RolesSwitcherModel
 from dca_plotter.tracker.model import DcaTrackingModel
 from dca_plotter.tracker.view import DcaTrackingView
 
@@ -57,7 +58,8 @@ class DcaPlotter(Plugin):
     _mapping_menu_action = None
     _mapping_model = None
     _roles_menu_action = None
-    _roles_switcher = None
+    _roles_switcher_dialog = None
+    _roles_switcher_model = None
     _tracking_model = None
     _tracker_view = None
 
@@ -81,6 +83,7 @@ class DcaPlotter(Plugin):
             CueFactory.register_factory(cue_type.__name__, cue_type)
             app.window.registerSimpleCueMenu(cue_type, self.CueCategory)
 
+        self._roles_switcher_model = RolesSwitcherModel()
         self._roles_menu_action = QAction(translate('dca_plotter', 'Roles Switcher'), self.app.window)
         self._roles_menu_action.triggered.connect(self._open_switcher_dialog)
         self.app.window.menuTools.addAction(self._roles_menu_action)
@@ -91,9 +94,9 @@ class DcaPlotter(Plugin):
             dca_mapper.exec_()
 
     def _open_switcher_dialog(self):
-        if not self._roles_switcher:
-            self._roles_switcher = RolesSwitcher()
-        self._roles_switcher.open()
+        if not self._roles_switcher_dialog:
+            self._roles_switcher_dialog = RolesSwitcher(self._roles_switcher_model)
+        self._roles_switcher_dialog.open()
 
     def _pre_session_deinitialisation(self, _):
         '''Called when session is being de-init'd.'''
@@ -126,8 +129,7 @@ class DcaPlotter(Plugin):
         self._tracking_model = DcaTrackingModel(self.mapper_enabled())
 
         # Renew the options in the Role Switcher
-        if self._roles_switcher:
-            self._roles_switcher.renew()
+        self._roles_switcher_model.renew(self.SessionConfig)
 
         # If the mapper is not to be used we don't need to have it or its menu option in existence
         if not self.mapper_enabled():
@@ -163,8 +165,7 @@ class DcaPlotter(Plugin):
 
     def _on_session_config_altered(self, _):
         # Renew the options in the Role Switcher
-        if self._roles_switcher:
-            self._roles_switcher.renew()
+        self._roles_switcher_model.renew(self.SessionConfig)
 
     def _on_cue_selected(self, current, _):
         """Action to take when a cue is selected.
@@ -221,10 +222,9 @@ class DcaPlotter(Plugin):
         return self._mapping_model
 
     def resolve_role(self, role_id):
-        if self._roles_switcher:
-            current = self._roles_switcher.current(role_id)
-            if current:
-                return current
+        current = self._roles_switcher_model.current(role_id)
+        if current:
+            return current
 
         if role_id in self.SessionConfig['assigns']['role']:
             return self.SessionConfig['assigns']['role'][role_id]['default']
