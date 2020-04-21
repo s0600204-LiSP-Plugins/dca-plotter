@@ -101,6 +101,7 @@ class DcaPlotter(Plugin):
     def _pre_session_deinitialisation(self, _):
         '''Called when session is being de-init'd.'''
         layout = self.app.layout
+        self._roles_switcher_model.roleUpdated.disconnect(self._tracking_model.role_assign_swap)
         if isinstance(layout, ListLayout):
             layout.model.item_added.disconnect(self._on_cue_added)
             layout.model.item_moved.disconnect(self._on_cue_moved)
@@ -130,6 +131,7 @@ class DcaPlotter(Plugin):
 
         # Renew the options in the Role Switcher
         self._roles_switcher_model.renew(self.SessionConfig)
+        self._roles_switcher_model.roleUpdated.connect(self._tracking_model.role_assign_swap)
 
         # If the mapper is not to be used we don't need to have it or its menu option in existence
         if not self.mapper_enabled():

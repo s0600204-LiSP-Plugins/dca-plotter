@@ -247,6 +247,31 @@ class DcaTrackingModel(DcaModelTemplate):
         cue_actions.extend(_calculate_mutes(assign_changes))
         return cue_actions
 
+    def role_assign_swap(self, role_id, old_assign, new_assign):
+        '''Swaps from one assign to another within the same Role
+
+        Note: this transmits MIDI immediately if a swap is needed
+        '''
+        role_tuple = ('role', role_id)
+        actions = []
+        changes = {}
+
+        # Find current active use of Role, and prep assign change
+        for dca_num, dca in enumerate(self.root.child(0).children):
+            if role_tuple in dca.getChildValues():
+                actions.append(_create_unassign_action(changes, dca_num, old_assign))
+                actions.append(_create_assign_action(changes, dca_num, new_assign))
+
+        # If the Role not currently active, then no assign change necessary
+        if not changes:
+            return
+        actions.extend(_calculate_mutes(changes))
+
+        # Transmit change
+        midi_messages = determine_midi_messages(actions)
+        for dict_msg in midi_messages:
+            self._midi_out.send(midi_from_dict(dict_msg))
+
 def _calculate_mutes(assign_changes):
     cue_actions = []
     for strip, state_change in assign_changes.items():

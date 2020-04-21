@@ -35,6 +35,7 @@ from ..utilities import get_channel_name
 class RolesSwitcherModel(QAbstractItemModel):
 
     dataRenewed = Signal()
+    roleUpdated = Signal()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -151,7 +152,10 @@ class RolesSwitcherModel(QAbstractItemModel):
             return False
 
         idx = self._roles_map[row]
+        former_current = self._roles[idx]['current']
         self._roles[idx]['current'] = self._roles[idx]['assigns'][col - 1]
+
+        self.roleUpdated.emit(idx, former_current, self._roles[idx]['current'])
         self.dataChanged.emit(
             self.createIndex(row, 1),
             self.createIndex(row, self.columnCount(index)),
