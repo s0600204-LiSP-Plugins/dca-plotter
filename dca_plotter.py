@@ -227,7 +227,7 @@ class DcaPlotter(Plugin):
             return current
 
         if role_id in self.SessionConfig['assigns']['role']:
-            return self.SessionConfig['assigns']['role'][role_id]['default']
+            return tuple(self.SessionConfig['assigns']['role'][role_id]['default'])
 
         return None
 

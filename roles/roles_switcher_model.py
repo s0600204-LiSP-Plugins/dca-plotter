@@ -82,8 +82,8 @@ class RolesSwitcherModel(QAbstractItemModel):
         for role_id, role in plugin_config['assigns']['role'].items():
             new_dict = {
                 'name': role['name'],
-                'current': role['default'],
-                'assigns': role['assigns'],
+                'current': tuple(role['default']),
+                'assigns': [tuple(assign) for assign in role['assigns']],
             }
 
             # Retain the old "current"(ly) selected option
