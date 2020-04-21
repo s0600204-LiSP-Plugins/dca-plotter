@@ -36,8 +36,7 @@ class RolesSwitcher(QDialog):
         super().__init__(*args, **kwargs)
 
         self.setWindowTitle(translate('dca_plotter', 'Role Switcher'))
-        self.setMinimumSize(200, 600)
-        self.setSizePolicy(self.sizePolicy().horizontalPolicy(), QSizePolicy.Minimum)
+        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.setLayout(QVBoxLayout())
 
         self._view = RolesSwitcherView(parent=self)

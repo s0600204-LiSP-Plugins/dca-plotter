@@ -21,7 +21,7 @@
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
 # pylint: disable=no-name-in-module
-from PyQt5.QtCore import QModelIndex, QRect, Qt
+from PyQt5.QtCore import QModelIndex, QRect, QSize, Qt
 from PyQt5.QtGui import QFontMetrics, QPainter, QPen, QRegion
 from PyQt5.QtWidgets import QAbstractItemView
 
@@ -31,10 +31,8 @@ from ..ui import ToggleButtonDelegate
 
 class RolesSwitcherView(QAbstractItemView):
 
-    _MinWidth = 200
     _Margin = 4
     _cell_sizes = []
-    _cell_sizes_dirty = False
     _ideal_height = 0
 
     def __init__(self, *args, **kwargs):
@@ -51,7 +49,7 @@ class RolesSwitcherView(QAbstractItemView):
 
     def modelDataRenewed(self):
         #pylint: disable=invalid-name
-        self._cell_sizes_dirty = True
+        self._recalculate_cell_size()
 
     def horizontalOffset(self): # REQUIRED REQUESTED
         # pylint: disable=invalid-name, no-self-use
@@ -132,7 +130,6 @@ class RolesSwitcherView(QAbstractItemView):
         '''
         if not self.model():
             return
-        self._cell_sizes_dirty = True
         self._recalculate_cell_size()
 
     def scrollTo(self, *_): # REQUIRED, REQUESTED
@@ -150,7 +147,7 @@ class RolesSwitcherView(QAbstractItemView):
         '''
         super().setModel(model)
         self.model().dataRenewed.connect(self.modelDataRenewed)
-        self._cell_sizes_dirty = True
+        self._recalculate_cell_size()
 
     def setSelection(self, *_): # REQUIRED, REQUESTED
         # pylint: disable=invalid-name, no-self-use
@@ -202,8 +199,6 @@ class RolesSwitcherView(QAbstractItemView):
         return region
 
     def _recalculate_cell_size(self):
-        if not self._cell_sizes_dirty:
-            return
         self._cell_sizes = []
 
         font_height = self._fontmetrics.height()
@@ -252,8 +247,11 @@ class RolesSwitcherView(QAbstractItemView):
             # Gap 'tween the groupings
             running_y += self._Margin
 
-        self._cell_sizes_dirty = False
         self._ideal_height = running_y
+        self.updateGeometry()
+
+    def minimumSizeHint(self):
+        return QSize(200, self._ideal_height)
 
     def _paint_line(self, painter, rect):
         painter.save()
