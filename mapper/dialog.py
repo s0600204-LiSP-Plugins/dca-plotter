@@ -23,6 +23,7 @@
 # pylint: disable=missing-docstring, invalid-name
 
 # pylint: disable=no-name-in-module
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QDialog, QVBoxLayout
 
 # pylint: disable=import-error
@@ -38,7 +39,15 @@ class DcaMappingDialog(QDialog):
 
         self.setWindowTitle('DCA Mapping')
         self.setMinimumSize(1280, 800)
+        self.setSizeGripEnabled(True)
         self.setLayout(QVBoxLayout())
+
+        # Set flags so we get the min & max buttons
+        # (and so they actually function)
+        flags = self.windowFlags()
+        flags ^= Qt.Dialog
+        flags |= Qt.WindowMinMaxButtonsHint
+        self.setWindowFlags(flags)
 
         self.view = DcaMappingView()
         self.view.setModel(view_model)
