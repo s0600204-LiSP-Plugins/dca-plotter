@@ -247,6 +247,31 @@ class DcaTrackingModel(DcaModelTemplate):
         cue_actions.extend(_calculate_mutes(assign_changes))
         return cue_actions
 
+    def role_assign_swap(self, role_id, old_assign, new_assign):
+        '''Swaps from one assign to another within the same Role
+
+        Note: this transmits MIDI immediately if a swap is needed
+        '''
+        role_tuple = ('role', role_id)
+        actions = []
+        changes = {}
+
+        # Find current active use of Role, and prep assign change
+        for dca_num, dca in enumerate(self.root.child(0).children):
+            if role_tuple in dca.getChildValues():
+                actions.append(_create_unassign_action(changes, dca_num, old_assign))
+                actions.append(_create_assign_action(changes, dca_num, new_assign))
+
+        # If the Role not currently active, then no assign change necessary
+        if not changes:
+            return
+        actions.extend(_calculate_mutes(changes))
+
+        # Transmit change
+        midi_messages = determine_midi_messages(actions)
+        for dict_msg in midi_messages:
+            self._midi_out.send(midi_from_dict(dict_msg))
+
 def _calculate_mutes(assign_changes):
     cue_actions = []
     for strip, state_change in assign_changes.items():
@@ -319,9 +344,17 @@ def determine_midi_messages(changes):
 
         strip_type = change[1]['strip'][0]
         strip_number = change[1]['strip'][1]
+
+        # Resolve Role aliasing
+        if strip_type == 'role':
+            role_assign = get_plugin('DcaPlotter').resolve_role(strip_number)
+            strip_type = role_assign[0]
+            strip_number = role_assign[1]
+
         if strip_type != 'dca':
             # Support e.g. Microphone 2 being actually Desk Channel 7
             strip_number = strip_assigns[strip_type][strip_number - 1]['in']
+
         args = {
             "channelType": fx_variant if strip_type == 'fx' else strip_type,
             "channelNum": strip_number

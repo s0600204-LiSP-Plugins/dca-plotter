@@ -33,6 +33,7 @@ from lisp.cues.cue_factory import CueFactory
 from lisp.plugins.list_layout.layout import ListLayout
 from lisp.ui.settings.app_configuration import AppConfigurationDialog
 from lisp.ui.settings.session_configuration import SessionConfigurationDialog
+from lisp.ui.ui_utils import translate
 
 from dca_plotter.config.channel_assign import ChannelAssignConfig
 from dca_plotter.cue.change_cue import DcaChangeCue
@@ -40,6 +41,8 @@ from dca_plotter.cue.reset_cue import DcaResetCue
 from dca_plotter.dca_plotter_settings import DcaPlotterSettings
 from dca_plotter.mapper.dialog import DcaMappingDialog
 from dca_plotter.mapper.model import DcaMappingModel
+from dca_plotter.roles.roles_switcher import RolesSwitcher
+from dca_plotter.roles.roles_switcher_model import RolesSwitcherModel
 from dca_plotter.tracker.model import DcaTrackingModel
 from dca_plotter.tracker.view import DcaTrackingView
 
@@ -55,6 +58,9 @@ class DcaPlotter(Plugin):
     _mapping_menu_action = None
     _mapping_dialog = None
     _mapping_model = None
+    _roles_menu_action = None
+    _roles_switcher_dialog = None
+    _roles_switcher_model = None
     _tracking_model = None
     _tracker_view = None
 
@@ -78,6 +84,11 @@ class DcaPlotter(Plugin):
             CueFactory.register_factory(cue_type.__name__, cue_type)
             app.window.registerSimpleCueMenu(cue_type, self.CueCategory)
 
+        self._roles_switcher_model = RolesSwitcherModel()
+        self._roles_menu_action = QAction(translate('dca_plotter', 'Roles Switcher'), self.app.window)
+        self._roles_menu_action.triggered.connect(self._open_switcher_dialog)
+        self.app.window.menuTools.addAction(self._roles_menu_action)
+
     def _open_mapper_dialog(self):
         if not self.mapper_enabled():
             return
@@ -85,9 +96,15 @@ class DcaPlotter(Plugin):
             self._mapping_dialog = DcaMappingDialog(self._mapping_model)
         self._mapping_dialog.open()
 
+    def _open_switcher_dialog(self):
+        if not self._roles_switcher_dialog:
+            self._roles_switcher_dialog = RolesSwitcher(self._roles_switcher_model)
+        self._roles_switcher_dialog.open()
+
     def _pre_session_deinitialisation(self, _):
         '''Called when session is being de-init'd.'''
         layout = self.app.layout
+        self._roles_switcher_model.roleUpdated.disconnect(self._tracking_model.role_assign_swap)
         if isinstance(layout, ListLayout):
             layout.model.item_added.disconnect(self._on_cue_added)
             layout.model.item_moved.disconnect(self._on_cue_moved)
@@ -114,6 +131,10 @@ class DcaPlotter(Plugin):
         # This model does not contain cues.
         # Instead it tracks which mics are muted and are currently assigned where
         self._tracking_model = DcaTrackingModel(self.mapper_enabled())
+
+        # Renew the options in the Role Switcher
+        self._roles_switcher_model.renew(self.SessionConfig)
+        self._roles_switcher_model.roleUpdated.connect(self._tracking_model.role_assign_swap)
 
         # If the mapper is not to be used we don't need to have it or its menu option in existence
         if not self.mapper_enabled():
@@ -151,6 +172,10 @@ class DcaPlotter(Plugin):
 
         self.initialised.emit()
 
+    def _on_session_config_altered(self, _):
+        # Renew the options in the Role Switcher
+        self._roles_switcher_model.renew(self.SessionConfig)
+
     def _on_cue_selected(self, current, _):
         """Action to take when a cue is selected.
 
@@ -182,18 +207,38 @@ class DcaPlotter(Plugin):
             self._mapping_model.remove_cuerow(cue)
             cue.property_changed.disconnect(self._tracking_model.on_cue_update)
 
-    def get_assignable_count(self):
-        counts = {}
+    def assignables(self, types):
+        """Returns tuples that represent the various assignable elements (microphones, fx-returns, etc)"""
+        assignables = []
+
+        if 'role' in types:
+            for role_id in self.SessionConfig['assigns']['role']:
+                assignables.append(('role', role_id))
+
         for assignable in ['input', 'fx']:
-            count = len(self.SessionConfig['assigns'][assignable])
-            counts[assignable] = count if count > 0 else self.Config[assignable + '_channel_count']
-        return counts
+            if assignable in types:
+                count = len(self.SessionConfig['assigns'][assignable])
+                if count == 0:
+                    count = self.Config[assignable + '_channel_count']
+                assignables.extend([(assignable, num + 1) for num in range(count)])
+
+        return assignables
 
     def mapper_enabled(self):
         return isinstance(self.app.layout, ListLayout)
 
     def mapper(self):
         return self._mapping_model
+
+    def resolve_role(self, role_id):
+        current = self._roles_switcher_model.current(role_id)
+        if current:
+            return current
+
+        if role_id in self.SessionConfig['assigns']['role']:
+            return tuple(self.SessionConfig['assigns']['role'][role_id]['default'])
+
+        return None
 
     def tracker(self):
         return self._tracking_model

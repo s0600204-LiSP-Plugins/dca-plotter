@@ -119,11 +119,7 @@ class DcaCueModel(DcaModelTemplate):
             entry_node.setAssignState(AssignStateEnum.NONE)
 
     def get_assignable_selection_choice(self, target_dca_num, intention):
-        channel_tuples = []
-
-        for assignable, count in get_plugin('DcaPlotter').get_assignable_count().items():
-            for num in range(count):
-                channel_tuples.append((assignable, num + 1))
+        channel_tuples = get_plugin('DcaPlotter').assignables(['role', 'input', 'fx'])
 
         for dca_num, dca_node in enumerate(self.root.child(0).children):
             for entry in dca_node.children:
