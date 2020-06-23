@@ -348,6 +348,9 @@ def determine_midi_messages(changes):
         # Resolve Role aliasing
         if strip_type == 'role':
             role_assign = get_plugin('DcaPlotter').resolve_role(strip_number)
+            if not role_assign:
+                logger.warning("A role has just been used that does not have anything assigned to it.")
+                continue
             strip_type = role_assign[0]
             strip_number = role_assign[1]
 

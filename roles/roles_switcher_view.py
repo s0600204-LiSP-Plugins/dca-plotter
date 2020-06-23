@@ -67,6 +67,8 @@ class RolesSwitcherView(QAbstractItemView):
         self._recalculate_cell_size()
 
         for row, row_dimensions in enumerate(self._cell_sizes):
+            if not row_dimensions:
+                continue
 
             if row_dimensions['assigns_rect'].contains(point):
                 for col, rect in enumerate(row_dimensions['assigns']):
@@ -105,6 +107,8 @@ class RolesSwitcherView(QAbstractItemView):
         self._recalculate_cell_size()
 
         for role_num in range(model.rowCount(model.index(0, 0))):
+            if not self._cell_sizes[role_num]:
+                continue
 
             # Role Name
             role_viewoptions = self.viewOptions()
@@ -208,6 +212,13 @@ class RolesSwitcherView(QAbstractItemView):
 
         running_y = self._Margin * 2
         for role_num in range(self.model().rowCount(self.model().index(0, 0))):
+
+            # If a role only has one assign (or doesn't have any) there's no point in displaying it
+            assign_count = self.model().columnCount(self.model().index(role_num, 0))
+            if assign_count < 2:
+                self._cell_sizes.append(None)
+                continue
+
             role_dimen = {}
 
             # Name
@@ -233,7 +244,7 @@ class RolesSwitcherView(QAbstractItemView):
 
             # Assigns
             role_dimen['assigns'] = []
-            for _ in range(self.model().columnCount(self.model().index(role_num, 0))):
+            for _ in range(assign_count):
                 role_dimen['assigns'].append(QRect(self._Margin,
                                              running_y,
                                              general_width,
