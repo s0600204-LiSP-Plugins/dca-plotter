@@ -376,6 +376,6 @@ def determine_midi_messages(changes):
             command = 'setName'
             args["asciiString"] = change[1]['name']
 
-        messages.extend(profile.build_device_command(command, args))
+        messages.extend(profile.build_command(command, args))
 
     return messages
