@@ -21,123 +21,24 @@
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
 # pylint: disable=no-name-in-module
-from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex
-from PyQt5.QtGui import QFont
+from PyQt5.QtCore import Qt
 
 # pylint: disable=import-error
-from lisp.plugins import get_plugin
 from lisp.ui.ui_utils import translate
 
+from ..config.concept_assign_model import BaseRow, ConceptTreeModel, GroupRow
 from ..utilities import get_channel_assignment_name
 
-class BaseRow:
-    def __init__(self, parent=None):
-        self._parent = parent
 
-    def data(self, col, role):
-        # pylint: disable=missing-docstring, no-self-use, unused-argument
-        return None
+COLUMNS = ({
+    'id': 'role_name',
+    'label': translate('DcaPlotterSettings', 'Role Name & Assignments'),
+}, {
+    'id': 'default_indicator',
+    'label': translate('DcaPlotterSettings', 'Default'),
+})
 
-    def flags(self, col):
-        # pylint: disable=missing-docstring, no-self-use, unused-argument
-        return Qt.NoItemFlags
-
-    def model(self):
-        # pylint: disable=missing-docstring
-        return self._parent.model()
-
-    def parent(self):
-        return self._parent
-
-    def rowNum(self):
-        # pylint: disable=invalid-name, missing-docstring
-        if not self._parent:
-            return -1
-        return self._parent.children().index(self)
-
-
-class ParentRow(BaseRow):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._rows = []
-
-    def addChild(self, child):
-        # pylint: disable=invalid-name, missing-docstring
-        self._rows.append(child)
-
-    def child(self, child_num):
-        # pylint: disable=missing-docstring
-        return self._rows[child_num]
-
-    def childCount(self):
-        # pylint: disable=invalid-name, missing-docstring
-        return len(self._rows)
-
-    def children(self):
-        return self._rows
-
-    def removeChild(self, child):
-        # pylint: disable=invalid-name, missing-docstring
-        return self._rows.pop(child)
-
-
-class RootRow(ParentRow):
-    def __init__(self, model, **kwargs):
-        super().__init__(**kwargs)
-        self._model = model
-
-    def model(self):
-        # pylint: disable=missing-docstring
-        return self._model
-
-
-class RoleRow(ParentRow):
-    def __init__(self, role_id, name, **kwargs):
-        super().__init__(**kwargs)
-        self._role_id = role_id
-        self._name = name
-
-    def data(self, col, role=Qt.DisplayRole):
-        # pylint: disable=missing-docstring
-        if col == -1 and role == RolesTreeModel.AccessRole:
-            return self._role_id
-
-        if col == 0:
-            if role in (Qt.DisplayRole, Qt.EditRole):
-                return self._name
-
-            if role == Qt.FontRole:
-                font = QFont()
-                font.setWeight(QFont.Bold)
-                return font
-
-        if col == 1 and role == Qt.EditRole:
-            return -1
-
-        return super().data(col, role)
-
-    def flags(self, col):
-        # pylint: disable=missing-docstring
-        if col == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
-        if col == 1:
-            return Qt.ItemIsEnabled
-        return super().flags(col)
-
-    def removeChild(self, child):
-        child = super().removeChild(child)
-        if child.data(1, Qt.CheckStateRole) == Qt.Checked and self.childCount():
-            self.child(0).setData(1, Qt.Checked, Qt.CheckStateRole)
-
-    def setData(self, col, data, role):
-        # pylint: disable=invalid-name, missing-docstring
-        if col == 0 and role == Qt.EditRole:
-            self._name = data
-            return True
-        return False
-
-
-class AssignRow(BaseRow):
+class RoleAssignRow(BaseRow):
     def __init__(self, channel_tuple, **kwargs):
         super().__init__(**kwargs)
         self._channel = channel_tuple
@@ -145,7 +46,7 @@ class AssignRow(BaseRow):
 
     def data(self, col, role=Qt.DisplayRole):
         # pylint: disable=missing-docstring
-        if col == -1 and role == RolesTreeModel.AccessRole:
+        if col == -1 and role == ConceptTreeModel.AccessRole:
             return self._channel
 
         if col == 0 and role == Qt.DisplayRole:
@@ -185,173 +86,45 @@ class AssignRow(BaseRow):
             return True
         return False
 
-class RolesTreeModel(QAbstractItemModel):
 
-    AccessRole = Qt.UserRole + 1
+class RolesTreeModel(ConceptTreeModel):
 
     def __init__(self):
-        super().__init__()
-        self._root = RootRow(self)
-        self._role_count = 0
-        self._columns = [{
-            'id': 'role_name',
-            'label': translate('DcaPlotterSettings', 'Role Name & Assignments'),
-        }, {
-            'id': 'default_indicator',
-            'label': translate('DcaPlotterSettings', 'Default'),
-        }]
-
-    def addAssign(self, role_index, channel_tuple):
-        role_row = role_index.internalPointer()
-
-        new_assign = AssignRow(channel_tuple, parent=role_row)
-        position = role_row.childCount()
-
-        self.beginInsertRows(role_index, position, position)
-        self._root.child(role_index.row()).addChild(new_assign)
-        self.endInsertRows()
-
-    def addRole(self, name):
-        # pylint: disable=invalid-name, missing-docstring
-        uid = 'role#{0}'.format(self._role_count)
-        new_role = RoleRow(uid, name, parent=self._root)
-        row = self._root.childCount()
-
-        self.beginInsertRows(QModelIndex(), row, row)
-        self._root.addChild(new_role)
-        self.endInsertRows()
-
-        self._role_count += 1
-        return self.createIndex(row, 0, new_role)
-
-    def columnCount(self, _):
-        # pylint: disable=invalid-name, missing-docstring
-        return len(self._columns)
-
-    def data(self, index, role=Qt.DisplayRole):
-        # pylint: disable=missing-docstring, no-self-use
-        if not index.isValid():
-            return None
-        return index.internalPointer().data(index.column(), role)
+        super().__init__('role#{0}', COLUMNS, RoleAssignRow, ['input', 'fx'], True)
 
     def deserialise(self, data):
         if self._root.childCount():
             logger.error('Attempting to deserialise out of sequence.')
             return
 
-        for role_id, role in data.items():
-            role_row = RoleRow(role_id, role['name'], parent=self._root)
-            self._root.addChild(role_row)
-            self._role_count = max(self._role_count, int(role_id.split('#')[1]))
+        for group_id, group in data.items():
+            group_row = GroupRow(group_id, group['name'], parent=self._root)
+            self._root.addChild(group_row)
+            self._group_count = max(self._group_count, int(group_id.split('#')[1]))
 
-            for assign in role['assigns']:
-                assign_row = AssignRow(tuple(assign), parent=role_row)
-                role_row.addChild(assign_row)
-                if assign == role['default']:
+            for assign in group['assigns']:
+                assign_row = RoleAssignRow(tuple(assign), parent=group_row)
+                group_row.addChild(assign_row)
+                if assign == group['default']:
                     assign_row.setData(1, Qt.Checked, Qt.CheckStateRole)
 
-        self._role_count += 1
-
-    def flags(self, index):
-        # pylint: disable=missing-docstring, no-self-use
-        if not index.isValid():
-            return Qt.NoItemFlags
-        return index.internalPointer().flags(index.column())
-
-    def get_assignable_selection_choice(self, role_index):
-        if not role_index.isValid():
-            return []
-
-        role_row = role_index.internalPointer()
-        if role_row.parent() != self._root:
-            return []
-
-        assignables = get_plugin('DcaPlotter').assignables(['input', 'fx'])
-
-        for child in role_row.children():
-            ch_tuple = child.data(-1, self.AccessRole)
-            if ch_tuple in assignables:
-                assignables.remove(ch_tuple)
-
-        return assignables
-
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        # pylint: disable=invalid-name, missing-docstring
-        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-            return self._columns[section]['label']
-
-        return None
-
-    def index(self, row_num, col_num, parent_idx):
-        # pylint: disable=missing-docstring
-        if not self.hasIndex(row_num, col_num, parent_idx):
-            return QModelIndex()
-
-        parent_node = parent_idx.internalPointer() if parent_idx.isValid() else self._root
-        child_node = parent_node.child(row_num)
-
-        if child_node:
-            return self.createIndex(row_num, col_num, child_node)
-        return QModelIndex()
-
-    def parent(self, index):
-        # pylint: disable=missing-docstring
-        if not index.isValid():
-            return QModelIndex()
-
-        parent = index.internalPointer().parent()
-        if parent == self._root:
-            return QModelIndex()
-
-        return self.createIndex(parent.rowNum(), 0, parent)
+        self._group_count += 1
 
     def serialise(self):
         '''Serialises the role assignment data, ready for saving to file.'''
         data = {}
-        for role_row in self._root.children():
-            role = {
-                'name': role_row.data(0, Qt.EditRole),
+        for group_row in self._root.children():
+            group = {
+                'name': group_row.data(0, Qt.EditRole),
                 'assigns': [],
                 'default': '',
             }
-            for assign_row in role_row.children():
-                role['assigns'].append(assign_row.data(-1, self.AccessRole))
+            for assign_row in group_row.children():
+                group['assigns'].append(assign_row.data(-1, self.AccessRole))
                 if assign_row.data(1, Qt.CheckStateRole) == Qt.Checked:
-                    role['default'] = role['assigns'][len(role['assigns']) - 1]
+                    group['default'] = group['assigns'][len(group['assigns']) - 1]
 
-            role_id = role_row.data(-1, self.AccessRole)
-            data[role_id] = role
+            group_id = group_row.data(-1, self.AccessRole)
+            data[group_id] = group
 
         return data
-
-    def removeRow(self, index):
-        # pylint: disable=invalid-name, missing-docstring
-        if not index.isValid():
-            return
-
-        parent = index.internalPointer().parent()
-        parent_index = self.parent(index)
-        if parent != self._root and not parent_index.isValid():
-            return
-
-        row_num = index.internalPointer().rowNum()
-        self.beginRemoveRows(parent_index, row_num, row_num)
-        if parent == self._root:
-            self._root.removeChild(row_num)
-        else:
-            parent.removeChild(row_num)
-        self.endRemoveRows()
-
-    def root(self):
-        return self._root
-
-    def rowCount(self, index):
-        # pylint: disable=invalid-name, missing-docstring
-        node = index.internalPointer() if index.isValid() else self._root
-        return node.childCount()
-
-    def setData(self, index, data, role=Qt.DisplayRole):
-        # pylint: disable=invalid-name, missing-docstring, no-self-use
-        if not index.isValid():
-            return False
-        return index.internalPointer().setData(index.column(), data, role)

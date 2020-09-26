@@ -21,18 +21,18 @@
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
 # pylint: disable=no-name-in-module
-from PyQt5.QtWidgets import QAction, QHBoxLayout, QMenu, QPushButton, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 
 # pylint: disable=import-error
 from lisp.ui.qdelegates import LineEditDelegate
 from lisp.ui.settings.pages import SettingsPage
 from lisp.ui.ui_utils import translate
 
-from midi_fixture_control.ui import LabelDelegate, RadioButtonHidableDelegate
+from midi_fixture_control.ui import RadioButtonHidableDelegate
 
-from ..input_select_dialog import InputSelectDialog
-from ..ui import SimpleTreeView
-from .roles_tree_model import AssignRow, RoleRow, RolesTreeModel
+from ..config.concept_assign_model import GroupRow
+from ..config.concept_assign_view import ConceptTreeView
+from .roles_tree_model import RoleAssignRow, RolesTreeModel
 
 class RolesAssignUi(SettingsPage):
     '''Parts Assign UI'''
@@ -62,12 +62,12 @@ class RolesAssignUi(SettingsPage):
 
         self.button_add = QPushButton(self.buttons_group)
         self.button_add.setText("Add New Role")
-        self.button_add.clicked.connect(self.tree_view.addRole)
+        self.button_add.clicked.connect(self.tree_view.addGroup)
         self.buttons_group.layout().addWidget(self.button_add)
 
         self.button_rem = QPushButton(self.buttons_group)
         self.button_rem.setText("Remove Role")
-        self.button_rem.clicked.connect(self.tree_view.removeRole)
+        self.button_rem.clicked.connect(self.tree_view.removeGroup)
         self.buttons_group.layout().addWidget(self.button_rem)
 
     def getSettings(self):
@@ -84,35 +84,7 @@ class RolesAssignUi(SettingsPage):
             self.tree_model.deserialise(settings["role"])
 
 
-class RolesTreeView(SimpleTreeView):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._assign_select_dialog = InputSelectDialog(parent=self)
-        self._menu = QMenu(self)
-
-    def _assign_to_role(self):
-        index = self.selectedIndexes()[0]
-        node = index.internalPointer()
-
-        selection_choices = self.model().get_assignable_selection_choice(index)
-        self._assign_select_dialog.set_entries(selection_choices)
-
-        if self._assign_select_dialog.exec_() == self._assign_select_dialog.Accepted:
-            for channel_tuple in self._assign_select_dialog.selected_entries():
-                self.model().addAssign(index, channel_tuple)
-
-    def _create_menu_action(self, caption, slot):
-        new_action = QAction(caption, parent=self._menu)
-        new_action.triggered.connect(slot)
-        self._menu.addAction(new_action)
-
-    def _remove_from_role(self):
-        index = self.selectedIndexes()[0]
-        self.model().removeRow(index)
-
-    def addRole(self):
-        index = self.model().addRole("-")
-        self.setExpanded(index, True)
+class RolesTreeView(ConceptTreeView):
 
     def contextMenuEvent(self, event):
         indexes = self.selectedIndexes()
@@ -124,17 +96,11 @@ class RolesTreeView(SimpleTreeView):
         current_node = current_index.internalPointer()
         self._menu.clear()
 
-        if isinstance(current_node, AssignRow):
-            self._create_menu_action('Remove Assignment', self._remove_from_role)
+        if isinstance(current_node, RoleAssignRow):
+            self._create_menu_action('Remove Assignment', self._remove_from_group)
 
-        elif isinstance(current_node, RoleRow):
-            self._create_menu_action('Assign to Role', self._assign_to_role)
+        elif isinstance(current_node, GroupRow):
+            self._create_menu_action('Assign to Role', self._assign_to_group)
 
         self._menu.popup(event.globalPos())
         super().contextMenuEvent(event)
-
-    def removeRole(self):
-        selected = self.selectedIndexes()
-        if not selected or selected[0].internalPointer().parent() != self.model().root():
-            return
-        self.model().removeRow(selected[0])
