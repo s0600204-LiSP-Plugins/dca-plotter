@@ -346,6 +346,10 @@ def determine_midi_messages(changes):
         strip_type = change[1]['strip'][0]
         strip_number = change[1]['strip'][1]
 
+        # Temporarily skip choir groupings
+        if strip_type == 'choir':
+            continue
+
         # Resolve Role aliasing
         if strip_type == 'role':
             role_assign = get_plugin('DcaPlotter').resolve_role(strip_number)

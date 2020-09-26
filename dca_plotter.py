@@ -211,9 +211,10 @@ class DcaPlotter(Plugin):
         """Returns tuples that represent the various assignable elements (microphones, fx-returns, etc)"""
         assignables = []
 
-        if 'role' in types:
-            for role_id in self.SessionConfig['assigns']['role']:
-                assignables.append(('role', role_id))
+        for group in ['role', 'choir']:
+            if group in types:
+                for role_id in self.SessionConfig['assigns'][group]:
+                    assignables.append((group, role_id))
 
         for assignable in ['input', 'fx']:
             if assignable in types:
