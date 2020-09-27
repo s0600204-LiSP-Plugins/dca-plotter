@@ -241,6 +241,10 @@ class DcaPlotter(Plugin):
 
         return None
 
+    def resolve_choir(self, choir_id):
+        choir_assigns = self.SessionConfig['assigns']['choir'][choir_id]['assigns']
+        return [tuple(assign) for assign in choir_assigns]
+
     def tracker(self):
         return self._tracking_model
 
