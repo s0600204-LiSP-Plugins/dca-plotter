@@ -197,8 +197,10 @@ class DcaTrackingModel(DcaModelTemplate):
 
         cue_actions = []
         assign_changes = {}
+        explicit_singular_assigns = []
         choirs = []
 
+        # Create assigns if not already assigned and explicit unassigns for single-assignments.
         for dca_num, dca_node in enumerate(cuerow.children):
 
             choirs.append({})
@@ -213,6 +215,9 @@ class DcaTrackingModel(DcaModelTemplate):
                     choirs[dca_num][entry.value()[1]] = entry.assignState()
                     continue
 
+                if entry.assignState() != AssignStateEnum.UNASSIGN:
+                    explicit_singular_assigns.append(entry.value())
+
                 if entry.value() not in currently_assigned:
                     if entry.assignState() != AssignStateEnum.UNASSIGN:
                         cue_actions.append(_create_assign_action(assign_changes,
@@ -223,15 +228,19 @@ class DcaTrackingModel(DcaModelTemplate):
                                                                dca_num,
                                                                entry.value()))
 
+        # Create assigns if not already assigned and explicit unassigns for the members
+        # of group-assignments, so long as they aren't already assigned out-of-group.
         for dca_num, dca_node in enumerate(cuerow.children):
 
             currently_assigned = current_assigns[dca_num].getChildValues()
-            cue_assigned = dca_node.getChildValues()
+            assigned_by_cue = dca_node.getChildValues()
 
             for choir_id, assign_action in choirs[dca_num].items():
                 assigns = get_plugin('DcaPlotter').resolve_choir(choir_id)
                 for assign in assigns:
-                    cue_assigned.append(assign)
+                    if assign in explicit_singular_assigns:
+                        continue
+                    assigned_by_cue.append(assign)
 
                     if assign not in currently_assigned:
                         if assign_action != AssignStateEnum.UNASSIGN:
@@ -245,7 +254,7 @@ class DcaTrackingModel(DcaModelTemplate):
 
             # Unassign things that shouldn't be assigned
             for channel_tuple in currently_assigned:
-                if channel_tuple not in cue_assigned:
+                if channel_tuple not in assigned_by_cue:
                     cue_actions.append(_create_unassign_action(assign_changes,
                                                                dca_num,
                                                                channel_tuple))
