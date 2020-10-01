@@ -263,24 +263,54 @@ class DcaTrackingModel(DcaModelTemplate):
         return cue_actions
 
     def calculate_diff(self, new_assigns):
-
         cue_actions = []
         current_assigns = self.root.child(0).children
         assign_changes = {}
+        full_assigned = []
+        choirs = {'add': [], 'rem': []}
 
         for dca_num, dca in enumerate(new_assigns):
             if dca['name'] and current_assigns[dca_num].data() != dca['name']:
                 cue_actions.append(_create_rename_action(dca_num, dca['name']))
 
+            full_assigned.extend(current_assigns[dca_num].getChildValues())
+
             for to_add in dca['add']:
+                if to_add[0] == 'choir':
+                    choirs['add'].append((to_add[1], dca_num))
+                    continue
                 if to_add in current_assigns[dca_num].getChildValues():
                     continue
+                if to_add in full_assigned:
+                    for inner_dca_num in range(len(current_assigns)):
+                        if to_add in current_assigns[inner_dca_num].getChildValues():
+                            cue_actions.append(_create_unassign_action(assign_changes, inner_dca_num, to_add))
+                else:
+                    full_assigned.append(to_add)
                 cue_actions.append(_create_assign_action(assign_changes, dca_num, to_add))
 
             for to_rem in dca['rem']:
+                if to_rem[0] == 'choir':
+                    choirs['rem'].append((to_rem[1], dca_num))
+                    continue
                 if to_rem not in current_assigns[dca_num].getChildValues():
                     continue
+                full_assigned.remove(to_rem)
                 cue_actions.append(_create_unassign_action(assign_changes, dca_num, to_rem))
+
+        for choir_id, dca_num in choirs['add']:
+            assigns = get_plugin('DcaPlotter').resolve_choir(choir_id)
+            for assign in assigns:
+                if assign in full_assigned:
+                    continue
+                cue_actions.append(_create_assign_action(assign_changes, dca_num, assign))
+
+        for choir_id, dca_num in choirs['rem']:
+            assigns = get_plugin('DcaPlotter').resolve_choir(choir_id)
+            for assign in assigns:
+                if assign not in current_assigns[dca_num].getChildValues():
+                    continue
+                cue_actions.append(_create_unassign_action(assign_changes, dca_num, assign))
 
         cue_actions.extend(_calculate_mutes(assign_changes))
         return cue_actions
