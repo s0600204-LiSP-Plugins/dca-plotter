@@ -175,6 +175,7 @@ class DcaPlotter(Plugin):
     def _on_session_config_altered(self, _):
         # Renew the options in the Role Switcher
         self._roles_switcher_model.renew(self.SessionConfig)
+        self._tracking_model.regenerate_current()
 
     def _on_cue_selected(self, current, _):
         """Action to take when a cue is selected.

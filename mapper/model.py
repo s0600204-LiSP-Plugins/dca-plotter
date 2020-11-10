@@ -64,6 +64,8 @@ class DcaMappingModel(DcaModelTemplate):
         # Update the cuerows beyond it.
         self._change_tuples_cascade_apply(cuerow, changes)
 
+        get_plugin('DcaPlotter').tracker().regenerate_current()
+
     def append_cuerow(self, cue):
         '''Append a cue-row to the model
 

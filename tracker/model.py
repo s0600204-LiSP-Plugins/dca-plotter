@@ -138,6 +138,12 @@ class DcaTrackingModel(DcaModelTemplate):
             self._clear_node(block_node.index())
             block_node.setData("", Qt.EditRole)
 
+    def regenerate_current(self):
+        cue_model = Application().cue_model
+        cue_next = cue_model.get(self._last_selected_cue_id)
+        if cue_next:
+            self.select_cue(cue_next)
+
     def select_cue(self, cue):
         self._last_selected_cue_id = cue.id
 
