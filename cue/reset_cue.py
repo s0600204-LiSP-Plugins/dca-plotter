@@ -24,7 +24,7 @@
 
 # pylint: disable=no-name-in-module
 from PyQt5.QtCore import QT_TRANSLATE_NOOP
-from PyQt5.QtWidgets import QFormLayout, QLabel, QLineEdit
+from PyQt5.QtWidgets import QCheckBox, QFormLayout, QLabel, QLineEdit
 
 # pylint: disable=import-error
 from lisp.core.has_properties import Property
@@ -38,6 +38,7 @@ class DcaResetCue(DcaCue):
     Name = QT_TRANSLATE_NOOP('CueName', 'DCA/VCA Reset Cue')
 
     new_dca_name = Property('-')
+    force_clear = Property(False)
 
 class DcaResetCueSettings(SettingsPage):
     Name = QT_TRANSLATE_NOOP('SettingsPageName', 'DCA/VCA Reset Settings')
@@ -51,10 +52,23 @@ class DcaResetCueSettings(SettingsPage):
         self.textInput = QLineEdit(self)
         self.layout().addRow(self.textLabel, self.textInput)
 
+        self.forceLabel = QLabel(self)
+        self.forceLabel.setText('Force Clear:')
+        self.forceCheckbox = QCheckBox(self)
+        self.forceCheckbox.setToolTip(
+            'Clear all possible assignments, instead of just those determined to be active.\n'
+            'WARNING: This will cause a lot of MIDI to be sent in one go. Use sparingly.'
+        )
+        self.layout().addRow(self.forceLabel, self.forceCheckbox)
+
     def getSettings(self):
-        return {'new_dca_name': self.textInput.text()}
+        return {
+            'new_dca_name': self.textInput.text(),
+            'force_clear': self.forceCheckbox.isChecked(),
+        }
 
     def loadSettings(self, settings):
         self.textInput.setText(settings.get('new_dca_name', '-'))
+        self.forceCheckbox.setChecked(settings.get('force_clear', False))
 
 CueSettingsRegistry().add(DcaResetCueSettings, DcaResetCue)

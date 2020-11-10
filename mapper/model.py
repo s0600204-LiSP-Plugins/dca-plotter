@@ -38,6 +38,10 @@ from ..utilities import build_default_dca_name
 class DcaMappingModel(DcaModelTemplate):
 
     def amend_cuerow(self, cue, property_name, property_value):
+        if property_name == 'force_clear':
+            get_plugin('DcaPlotter').tracker().regenerate_current()
+            return
+
         if property_name not in ('dca_changes', 'new_dca_name'):
             return
 
