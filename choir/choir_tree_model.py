@@ -66,7 +66,7 @@ class ChoirAssignRow(BaseRow):
 class ChoirTreeModel(ConceptTreeModel):
 
     def __init__(self):
-        super().__init__('choir#{0}', COLUMNS, ChoirAssignRow, ['input'], False)
+        super().__init__('choir#{0}', COLUMNS, ChoirAssignRow, ['role', 'input'], False)
 
     def deserialise(self, data):
         if self._root.childCount():
