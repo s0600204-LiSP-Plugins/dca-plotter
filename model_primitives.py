@@ -32,6 +32,7 @@ from PyQt5.QtWidgets import QApplication
 # pylint: disable=import-error
 from lisp.plugins import get_plugin
 
+from .ui import BASE_TEXT_BRUSH
 from .utilities import build_default_dca_name, get_channel_assignment_name
 
 class AssignStateEnum(enum.Enum):
@@ -171,7 +172,7 @@ class ModelsBlock(ModelsBranchNode):
             return self._given_name or self._inherited_name
 
         if role == Qt.ForegroundRole and not self._given_name:
-            return QBrush(QApplication.palette().dark().color())
+            return BASE_TEXT_BRUSH
 
         if role == Qt.TextAlignmentRole:
             return Qt.AlignHCenter | Qt.AlignBottom
@@ -218,7 +219,7 @@ class ModelsEntry(ModelsLeafNode):
             if self._assign_state == AssignStateEnum.UNASSIGN:
                 return QBrush(Qt.red)
             if self._assign_state == AssignStateEnum.NONE and self._is_inherited:
-                return QBrush(QApplication.palette().dark().color())
+                return BASE_TEXT_BRUSH
 
         if role == Qt.FontRole and self._assign_state == AssignStateEnum.UNASSIGN:
             font = QFont()

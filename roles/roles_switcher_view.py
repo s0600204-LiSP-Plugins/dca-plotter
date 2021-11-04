@@ -22,12 +22,12 @@
 
 # pylint: disable=no-name-in-module
 from PyQt5.QtCore import QModelIndex, QRect, QSize, Qt
-from PyQt5.QtGui import QFontMetrics, QPainter, QPen, QRegion
+from PyQt5.QtGui import QFontMetrics, QPainter, QRegion
 from PyQt5.QtWidgets import QAbstractItemView
 
 from midi_fixture_control.ui import LabelDelegate
 
-from ..ui import ToggleButtonDelegate
+from ..ui import LINE_PEN, ToggleButtonDelegate
 
 class RolesSwitcherView(QAbstractItemView):
 
@@ -266,6 +266,6 @@ class RolesSwitcherView(QAbstractItemView):
 
     def _paint_line(self, painter, rect):
         painter.save()
-        painter.setPen(QPen(self.palette().dark().color(), 0.5))
+        painter.setPen(LINE_PEN)
         painter.drawLine(rect.topLeft(), rect.bottomRight())
         painter.restore()

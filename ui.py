@@ -22,8 +22,14 @@
 
 # pylint: disable=no-name-in-module
 from PyQt5.QtCore import Qt, QEvent, QModelIndex
-from PyQt5.QtGui import QMouseEvent, QPalette
+from PyQt5.QtGui import QBrush, QMouseEvent, QPalette, QPen
 from PyQt5.QtWidgets import QApplication, QHeaderView, QStyle, QStyleOptionToolButton, QTreeView, QStyledItemDelegate
+
+LINE_COLOR = QApplication.palette().light().color()
+LINE_PEN = QPen(LINE_COLOR, 0.5)
+
+BASE_TEXT_COLOR = QApplication.palette().light().color()
+BASE_TEXT_BRUSH = QBrush(BASE_TEXT_COLOR)
 
 class ToggleButtonDelegate(QStyledItemDelegate):
     '''Toggle Button Delegate

@@ -24,11 +24,13 @@
 
 # pylint: disable=no-name-in-module
 from PyQt5.QtCore import QItemSelection, QModelIndex, QRect
-from PyQt5.QtGui import QFontMetrics, QPainter, QPen, QRegion
+from PyQt5.QtGui import QFontMetrics, QPainter, QRegion
 from PyQt5.QtWidgets import QAbstractItemView, QApplication, QStyle
 
 # pylint: disable=import-error
 from lisp.plugins import get_plugin
+
+from .ui import LINE_PEN
 
 class DcaModelViewTemplate(QAbstractItemView):
 
@@ -414,13 +416,13 @@ class DcaModelViewTemplate(QAbstractItemView):
     def _paint_outline(self, painter, rect):
         rect = rect.adjusted(0, 0, -1, -1)
         painter.save()
-        painter.setPen(QPen(self.palette().dark().color(), 0.5))
+        painter.setPen(LINE_PEN)
         painter.drawRect(rect)
         painter.restore()
 
     def _paint_line(self, painter, rect):
         painter.save()
-        painter.setPen(QPen(self.palette().dark().color(), 0.5))
+        painter.setPen(LINE_PEN)
         painter.drawLine(rect.topLeft(), rect.bottomRight())
         painter.restore()
 
