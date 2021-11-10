@@ -234,12 +234,14 @@ class DcaTrackingModel(DcaModelTemplate):
         cue_actions = []
         assign_changes = {}
         explicit_singular_assigns = []
+        explicit_singular_unassigns = []
         choirs = []
 
         # Create assigns if not already assigned and explicit unassigns for single-assignments.
         for dca_num, dca_node in enumerate(cuerow.children):
 
             choirs.append({})
+            explicit_singular_unassigns.append([])
 
             if dca_node.data() and current_assigns[dca_num].data() != dca_node.data():
                 cue_actions.append(_create_rename_action(dca_num, dca_node.data()))
@@ -253,6 +255,8 @@ class DcaTrackingModel(DcaModelTemplate):
 
                 if entry.assignState() != AssignStateEnum.UNASSIGN:
                     explicit_singular_assigns.append(entry.value())
+                else:
+                    explicit_singular_unassigns[dca_num].append(entry.value())
 
                 if entry.value() not in currently_assigned:
                     if entry.assignState() != AssignStateEnum.UNASSIGN:
@@ -287,6 +291,16 @@ class DcaTrackingModel(DcaModelTemplate):
                         cue_actions.append(_create_unassign_action(assign_changes,
                                                                    dca_num,
                                                                    assign))
+
+                    # Special case for when transitioning from separate assigns to
+                    # a choir-grouping containing those assigns on the same DCA.
+                    elif assign in explicit_singular_unassigns[dca_num]:
+                        _update_assign_changes(assign_changes, "assign", assign)
+                        cue_actions.remove(
+                            _create_unassign_action(assign_changes,
+                                                    dca_num,
+                                                    assign,
+                                                    True))
 
             # Unassign things that shouldn't be assigned
             for channel_tuple in currently_assigned:
@@ -405,8 +419,9 @@ def _create_rename_action(dca_num, new_name):
         'dca': dca_num
     }]
 
-def _create_unassign_action(assign_changes, dca_num, channel_tuple):
-    _update_assign_changes(assign_changes, "unassign", channel_tuple)
+def _create_unassign_action(assign_changes, dca_num, channel_tuple, dry_run=False):
+    if not dry_run:
+        _update_assign_changes(assign_changes, "unassign", channel_tuple)
     return ['unassign', {
         'strip': channel_tuple,
         'dca': dca_num
