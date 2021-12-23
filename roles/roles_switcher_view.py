@@ -20,6 +20,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
+from math import trunc
+
 # pylint: disable=no-name-in-module
 from PyQt5.QtCore import QModelIndex, QRect, QSize, Qt
 from PyQt5.QtGui import QFontMetrics, QPainter, QRegion
@@ -208,7 +210,7 @@ class RolesSwitcherView(QAbstractItemView):
         font_height = self._fontmetrics.height()
         general_width = self.viewport().width() - self._Margin * 2
         line_breadth = 1
-        assign_height = font_height * 2.5
+        assign_height = trunc(font_height * 2.5)
 
         running_y = self._Margin * 2
         for role_num in range(self.model().rowCount(self.model().index(0, 0))):
@@ -227,11 +229,11 @@ class RolesSwitcherView(QAbstractItemView):
                                             general_width,
                                             font_height)
 
-            running_y += font_height / 2 + self._Margin
+            running_y += trunc(font_height / 2) + self._Margin
 
             # Lines
             name_width = self._fontmetrics.boundingRect(self.model().data(self.model().index(role_num, 0))).width()
-            line_length = (general_width - name_width) / 2 - self._Margin
+            line_length = trunc((general_width - name_width) / 2 - self._Margin)
             role_dimen['line_rects'] = [QRect(self._Margin,
                                               running_y,
                                               line_length,
@@ -240,7 +242,7 @@ class RolesSwitcherView(QAbstractItemView):
                                               running_y,
                                               line_length,
                                               line_breadth)]
-            running_y += font_height / 2
+            running_y += trunc(font_height / 2)
 
             # Assigns
             role_dimen['assigns'] = []

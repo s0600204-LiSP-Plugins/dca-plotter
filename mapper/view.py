@@ -22,6 +22,8 @@
 
 # pylint: disable=missing-docstring, invalid-name
 
+from math import trunc
+
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QAbstractItemView
 
@@ -42,7 +44,7 @@ class DcaMappingView(DcaModelViewTemplate):
 
     def updateGeometries(self):
         self.verticalScrollBar().setRange(0, max(0, self._ideal_height - self.viewport().height()))
-        self.verticalScrollBar().setSingleStep(self._fontmetrics.height() / 3)
+        self.verticalScrollBar().setSingleStep(trunc(self._fontmetrics.height() / 3))
         self.verticalScrollBar().setPageStep(self.viewport().height())
 
     def verticalOffset(self):

@@ -22,6 +22,8 @@
 
 # pylint: disable=missing-docstring, invalid-name
 
+from math import trunc
+
 # pylint: disable=no-name-in-module
 from PyQt5.QtCore import QItemSelection, QModelIndex, QRect
 from PyQt5.QtGui import QFontMetrics, QPainter, QRegion
@@ -328,7 +330,7 @@ class DcaModelViewTemplate(QAbstractItemView):
         FONT_HEIGHT = self._fontmetrics.height()
         BLOCK_INDENT = (FONT_HEIGHT * 3) if self.DRAW_CUEHEADER else 0
         BLOCK_WIDTH = max(self.MINIMUM_BLOCK_WIDTH,
-                          (self.viewport().width() - BLOCK_INDENT) / DCA_COUNT)
+                          trunc((self.viewport().width() - BLOCK_INDENT) / DCA_COUNT))
         CUEROW_WIDTH = DCA_COUNT * BLOCK_WIDTH + BLOCK_INDENT
         CUEROW_HEADER_WIDTH = CUEROW_WIDTH - self.CUEHEADER_MARGIN * 2
         BLOCK_HEADER_WIDTH = BLOCK_WIDTH - self.BLOCK_MARGIN * 2
