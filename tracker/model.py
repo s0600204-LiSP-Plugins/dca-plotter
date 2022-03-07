@@ -233,13 +233,27 @@ class DcaTrackingModel(DcaModelTemplate):
 
         cue_actions = []
         assign_changes = {}
+        explicit_singular_assigns = []
+        choirs = []
 
+        # Create assigns if not already assigned and explicit unassigns for single-assignments.
         for dca_num, dca_node in enumerate(cuerow.children):
+
+            choirs.append({})
+
             if dca_node.data() and current_assigns[dca_num].data() != dca_node.data():
                 cue_actions.append(_create_rename_action(dca_num, dca_node.data()))
 
             currently_assigned = current_assigns[dca_num].getChildValues()
             for entry in dca_node.children:
+
+                if entry.value()[0] == 'choir':
+                    choirs[dca_num][entry.value()[1]] = entry.assignState()
+                    continue
+
+                if entry.assignState() != AssignStateEnum.UNASSIGN:
+                    explicit_singular_assigns.append(entry.value())
+
                 if entry.value() not in currently_assigned:
                     if entry.assignState() != AssignStateEnum.UNASSIGN:
                         cue_actions.append(_create_assign_action(assign_changes,
@@ -250,9 +264,33 @@ class DcaTrackingModel(DcaModelTemplate):
                                                                dca_num,
                                                                entry.value()))
 
-            cue_assigned = dca_node.getChildValues()
+        # Create assigns if not already assigned and explicit unassigns for the members
+        # of group-assignments, so long as they aren't already assigned out-of-group.
+        for dca_num, dca_node in enumerate(cuerow.children):
+
+            currently_assigned = current_assigns[dca_num].getChildValues()
+            assigned_by_cue = dca_node.getChildValues()
+
+            for choir_id, assign_action in choirs[dca_num].items():
+                assigns = get_plugin('DcaPlotter').resolve_choir(choir_id)
+                for assign in assigns:
+                    if assign in explicit_singular_assigns:
+                        continue
+                    assigned_by_cue.append(assign)
+
+                    if assign not in currently_assigned:
+                        if assign_action != AssignStateEnum.UNASSIGN:
+                            cue_actions.append(_create_assign_action(assign_changes,
+                                                                     dca_num,
+                                                                     assign))
+                    elif assign_action == AssignStateEnum.UNASSIGN:
+                        cue_actions.append(_create_unassign_action(assign_changes,
+                                                                   dca_num,
+                                                                   assign))
+
+            # Unassign things that shouldn't be assigned
             for channel_tuple in currently_assigned:
-                if channel_tuple not in cue_assigned:
+                if channel_tuple not in assigned_by_cue:
                     cue_actions.append(_create_unassign_action(assign_changes,
                                                                dca_num,
                                                                channel_tuple))
@@ -261,24 +299,54 @@ class DcaTrackingModel(DcaModelTemplate):
         return cue_actions
 
     def calculate_diff(self, new_assigns):
-
         cue_actions = []
         current_assigns = self.root.child(0).children
         assign_changes = {}
+        full_assigned = []
+        choirs = {'add': [], 'rem': []}
 
         for dca_num, dca in enumerate(new_assigns):
             if dca['name'] and current_assigns[dca_num].data() != dca['name']:
                 cue_actions.append(_create_rename_action(dca_num, dca['name']))
 
+            full_assigned.extend(current_assigns[dca_num].getChildValues())
+
             for to_add in dca['add']:
+                if to_add[0] == 'choir':
+                    choirs['add'].append((to_add[1], dca_num))
+                    continue
                 if to_add in current_assigns[dca_num].getChildValues():
                     continue
+                if to_add in full_assigned:
+                    for inner_dca_num in range(len(current_assigns)):
+                        if to_add in current_assigns[inner_dca_num].getChildValues():
+                            cue_actions.append(_create_unassign_action(assign_changes, inner_dca_num, to_add))
+                else:
+                    full_assigned.append(to_add)
                 cue_actions.append(_create_assign_action(assign_changes, dca_num, to_add))
 
             for to_rem in dca['rem']:
+                if to_rem[0] == 'choir':
+                    choirs['rem'].append((to_rem[1], dca_num))
+                    continue
                 if to_rem not in current_assigns[dca_num].getChildValues():
                     continue
+                full_assigned.remove(to_rem)
                 cue_actions.append(_create_unassign_action(assign_changes, dca_num, to_rem))
+
+        for choir_id, dca_num in choirs['add']:
+            assigns = get_plugin('DcaPlotter').resolve_choir(choir_id)
+            for assign in assigns:
+                if assign in full_assigned:
+                    continue
+                cue_actions.append(_create_assign_action(assign_changes, dca_num, assign))
+
+        for choir_id, dca_num in choirs['rem']:
+            assigns = get_plugin('DcaPlotter').resolve_choir(choir_id)
+            for assign in assigns:
+                if assign not in current_assigns[dca_num].getChildValues():
+                    continue
+                cue_actions.append(_create_unassign_action(assign_changes, dca_num, assign))
 
         cue_actions.extend(_calculate_mutes(assign_changes))
         return cue_actions
@@ -381,6 +449,10 @@ def determine_midi_messages(changes):
 
         strip_type = change[1]['strip'][0]
         strip_number = change[1]['strip'][1]
+
+        # Temporarily skip choir groupings
+        if strip_type == 'choir':
+            continue
 
         # Resolve Role aliasing
         if strip_type == 'role':

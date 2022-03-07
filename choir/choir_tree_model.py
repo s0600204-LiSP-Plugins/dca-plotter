@@ -31,18 +31,15 @@ from ..utilities import get_channel_assignment_name
 
 
 COLUMNS = ({
-    'id': 'role_name',
-    'label': translate('DcaPlotterSettings', 'Role Name & Assignments'),
-}, {
-    'id': 'default_indicator',
-    'label': translate('DcaPlotterSettings', 'Default'),
-})
+    'id': 'choir_name',
+    'label': translate('DcaPlotterSettings', 'Choir Part & Assignments'),
+},)
 
-class RoleAssignRow(BaseRow):
+
+class ChoirAssignRow(BaseRow):
     def __init__(self, channel_tuple, **kwargs):
         super().__init__(**kwargs)
         self._channel = channel_tuple
-        self._is_default = self._parent.childCount() == 0
 
     def data(self, col, role=Qt.DisplayRole):
         # pylint: disable=missing-docstring
@@ -52,9 +49,6 @@ class RoleAssignRow(BaseRow):
         if col == 0 and role == Qt.DisplayRole:
             return get_channel_assignment_name(self._channel)
 
-        if col == 1 and role == Qt.CheckStateRole:
-            return Qt.Checked if self._is_default else Qt.Unchecked
-
         return super().data(col, role)
 
     def flags(self, col):
@@ -62,35 +56,17 @@ class RoleAssignRow(BaseRow):
         flags = Qt.ItemNeverHasChildren | Qt.ItemIsEnabled | Qt.ItemIsSelectable
         if col == 0:
             return flags
-        if col == 1:
-            return flags | Qt.ItemIsEditable | Qt.ItemIsUserCheckable
         return super().flags(col)
 
-    def setData(self, col, data, role):
-        # pylint: disable=invalid-name, missing-docstring
-        if col == 1 and role == Qt.CheckStateRole:
-            self._is_default = data == Qt.Checked
-            if data == Qt.Unchecked:
-                return False
-
-            for sibling in self._parent.children():
-                if sibling == self:
-                    continue
-                sibling.setData(col, Qt.Unchecked, role)
-
-            model = self._parent.model()
-            model.dataChanged.emit(
-                model.createIndex(0, 1, self),
-                model.createIndex(self._parent.childCount(), 1, self),
-                [Qt.CheckStateRole])
-            return True
+    def setData(self, *_):
+        # pylint: disable=invalid-name, missing-docstring, no-self-use
         return False
 
 
-class RolesTreeModel(ConceptTreeModel):
+class ChoirTreeModel(ConceptTreeModel):
 
     def __init__(self):
-        super().__init__('role#{0}', COLUMNS, RoleAssignRow, ['input', 'fx'], True)
+        super().__init__('choir#{0}', COLUMNS, ChoirAssignRow, ['input'], False)
 
     def deserialise(self, data):
         if self._root.childCount():
@@ -103,10 +79,8 @@ class RolesTreeModel(ConceptTreeModel):
             self._group_count = max(self._group_count, int(group_id.split('#')[1]))
 
             for assign in group['assigns']:
-                assign_row = RoleAssignRow(tuple(assign), parent=group_row)
+                assign_row = ChoirAssignRow(tuple(assign), parent=group_row)
                 group_row.addChild(assign_row)
-                if assign == group['default']:
-                    assign_row.setData(1, Qt.Checked, Qt.CheckStateRole)
 
         self._group_count += 1
 
@@ -117,12 +91,9 @@ class RolesTreeModel(ConceptTreeModel):
             group = {
                 'name': group_row.data(0, Qt.EditRole),
                 'assigns': [],
-                'default': '',
             }
             for assign_row in group_row.children():
                 group['assigns'].append(assign_row.data(-1, self.AccessRole))
-                if assign_row.data(1, Qt.CheckStateRole) == Qt.Checked:
-                    group['default'] = group['assigns'][len(group['assigns']) - 1]
 
             group_id = group_row.data(-1, self.AccessRole)
             data[group_id] = group

@@ -37,8 +37,8 @@ def build_default_channel_name(channel_tuple):
     return str(channel_tuple)
 
 def get_channel_assignment_name(channel_tuple):
-    if channel_tuple[0] == 'role':
-        return get_role_name(channel_tuple)
+    if channel_tuple[0] in ['choir', 'role']:
+        return get_channel_name(channel_tuple)
 
     return '{id} : {name}'.format_map({
         'id': channel_tuple[1],
@@ -46,11 +46,14 @@ def get_channel_assignment_name(channel_tuple):
     })
 
 def get_channel_name(channel_tuple):
+    if channel_tuple[0] == 'choir':
+        return get_group_name(channel_tuple, 'choir')
     if channel_tuple[0] == 'role':
-        return get_role_name(channel_tuple)
+        return get_group_name(channel_tuple, 'role')
+
     assigns = get_plugin('DcaPlotter').SessionConfig['assigns'][channel_tuple[0]]
     return assigns[channel_tuple[1] - 1]['name'] if assigns else build_default_channel_name(channel_tuple)
 
-def get_role_name(role_tuple):
-    role_id = role_tuple[1]
-    return get_plugin('DcaPlotter').SessionConfig['assigns']['role'][role_id]['name']
+def get_group_name(channel_tuple, group):
+    assign_id = channel_tuple[1]
+    return get_plugin('DcaPlotter').SessionConfig['assigns'][group][assign_id]['name']

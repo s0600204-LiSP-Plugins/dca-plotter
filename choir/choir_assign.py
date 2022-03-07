@@ -28,22 +28,17 @@ from lisp.ui.qdelegates import LineEditDelegate
 from lisp.ui.settings.pages import SettingsPage
 from lisp.ui.ui_utils import translate
 
-from midi_fixture_control.ui import RadioButtonHidableDelegate
-
 from ..config.concept_assign_model import GroupRow
 from ..config.concept_assign_view import ConceptTreeView
-from .roles_tree_model import RoleAssignRow, RolesTreeModel
+from .choir_tree_model import ChoirAssignRow, ChoirTreeModel
 
-class RolesAssignUi(SettingsPage):
-    '''Parts Assign UI'''
-    Name = translate("DcaPlotter", "Role Assignments")
+class ChoirAssignUi(SettingsPage):
+    '''Choir Groups Assign UI'''
+    Name = translate("DcaPlotter", "Choir Assignment")
 
     # Keep this in sync with roles_tree_model.columns
     TreeColumns = [{
         'delegate': LineEditDelegate(max_length=16)
-    }, {
-        'delegate': RadioButtonHidableDelegate(),
-        'width': 64
     }]
 
     def __init__(self, **kwargs):
@@ -51,8 +46,8 @@ class RolesAssignUi(SettingsPage):
         self.setLayout(QVBoxLayout())
 
         # Tree
-        self.tree_model = RolesTreeModel()
-        self.tree_view = RolesTreeView(self.tree_model, self.TreeColumns, parent=self)
+        self.tree_model = ChoirTreeModel()
+        self.tree_view = ChoirTreeView(self.tree_model, self.TreeColumns, parent=self)
         self.layout().addWidget(self.tree_view)
 
         # Buttons at bottom
@@ -61,12 +56,12 @@ class RolesAssignUi(SettingsPage):
         self.layout().addWidget(self.buttons_group)
 
         self.button_add = QPushButton(self.buttons_group)
-        self.button_add.setText("Add New Role")
+        self.button_add.setText("Add New Choir Grouping")
         self.button_add.clicked.connect(self.tree_view.addGroup)
         self.buttons_group.layout().addWidget(self.button_add)
 
         self.button_rem = QPushButton(self.buttons_group)
-        self.button_rem.setText("Remove Role")
+        self.button_rem.setText("Remove Choir Grouping")
         self.button_rem.clicked.connect(self.tree_view.removeGroup)
         self.buttons_group.layout().addWidget(self.button_rem)
 
@@ -74,17 +69,17 @@ class RolesAssignUi(SettingsPage):
         # pylint: disable=invalid-name
         '''Gets serialised data from model, ready for saving'''
         return {
-            "role": self.tree_model.serialise()
+            "choir": self.tree_model.serialise()
         }
 
     def loadSettings(self, settings):
         # pylint: disable=invalid-name
         '''Passes loaded data to model to deserialise'''
-        if "role" in settings:
-            self.tree_model.deserialise(settings["role"])
+        if "choir" in settings:
+            self.tree_model.deserialise(settings["choir"])
 
 
-class RolesTreeView(ConceptTreeView):
+class ChoirTreeView(ConceptTreeView):
 
     def contextMenuEvent(self, event):
         indexes = self.selectedIndexes()
@@ -96,11 +91,11 @@ class RolesTreeView(ConceptTreeView):
         current_node = current_index.internalPointer()
         self._menu.clear()
 
-        if isinstance(current_node, RoleAssignRow):
+        if isinstance(current_node, ChoirAssignRow):
             self._create_menu_action('Remove Assignment', self._remove_from_group)
 
         elif isinstance(current_node, GroupRow):
-            self._create_menu_action('Assign to Role', self._assign_to_group)
+            self._create_menu_action('Assign to Choir Grouping', self._assign_to_group)
 
         self._menu.popup(event.globalPos())
         super().contextMenuEvent(event)
