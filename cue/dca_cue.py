@@ -29,8 +29,8 @@ from lisp.ui.ui_utils import translate
 
 class DcaCue(Cue):
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.name = translate('CueName', self.Name)
 
     def __start__(self, _):

@@ -29,7 +29,6 @@ from PyQt5.QtWidgets import QAction
 # pylint: disable=import-error
 from lisp.core.plugin import Plugin
 from lisp.core.signal import Signal
-from lisp.cues.cue_factory import CueFactory
 from lisp.plugins.list_layout.layout import ListLayout
 from lisp.ui.settings.app_configuration import AppConfigurationDialog
 from lisp.ui.settings.session_configuration import SessionConfigurationDialog
@@ -81,7 +80,7 @@ class DcaPlotter(Plugin):
 
         # Register our cue types
         for cue_type in self._cue_types:
-            CueFactory.register_factory(cue_type.__name__, cue_type)
+            app.cue_factory.register_factory(cue_type.__name__, cue_type)
             app.window.registerSimpleCueMenu(cue_type, self.CueCategory)
 
         self._roles_switcher_model = RolesSwitcherModel()
