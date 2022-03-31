@@ -23,7 +23,7 @@
 # pylint: disable=missing-docstring, invalid-name
 
 # pylint: disable=no-name-in-module
-from PyQt5.QtWidgets import QVBoxLayout, QFormLayout, QSpinBox, QGroupBox
+from PyQt5.QtWidgets import QVBoxLayout, QFormLayout, QLineEdit, QSpinBox, QGroupBox
 
 # pylint: disable=import-error
 from lisp.ui.settings.pages import SettingsPage
@@ -48,12 +48,17 @@ class DcaPlotterSettings(SettingsPage):
         self.fxCount.setRange(1, 16)
         self.settingsGroup.layout().addRow('Default Effects Unit Count', self.fxCount)
 
+        self.blankingText = QLineEdit(self)
+        self.settingsGroup.layout().addRow('Set name of empty DCAs to', self.blankingText)
+
     def getSettings(self):
         return {
             'input_channel_count': self.inputCount.value(),
             'fx_channel_count': self.fxCount.value(),
+            'blanking_text': self.blankingText.text(),
         }
 
     def loadSettings(self, settings):
         self.inputCount.setValue(settings['input_channel_count'])
         self.fxCount.setValue(settings['fx_channel_count'])
+        self.blankingText.setText(settings['blanking_text'])
