@@ -35,6 +35,7 @@ from lisp.plugins.midi.midi_utils import midi_from_dict
 # pylint: disable=relative-beyond-top-level
 from ..cue.change_cue import DcaChangeCue
 from ..model_primitives import AssignStateEnum, DcaModelTemplate, ModelsAssignRow, ModelsEntry
+from ..utilities import get_blank_dca_name
 
 logger = logging.getLogger(__name__) # pylint: disable=invalid-name
 
@@ -94,9 +95,9 @@ class DcaTrackingModel(DcaModelTemplate):
             else:
                 changes = self.calculate_diff(cue.dca_changes)
         elif cue.properties().get('force_clear'):
-            changes = self.cancel_everything(cue.new_dca_name)
+            changes = self.cancel_everything(get_blank_dca_name())
         else:
-            changes = self.cancel_current(cue.new_dca_name)
+            changes = self.cancel_current(get_blank_dca_name())
 
         # Here we have the MIDI sends...
         # Alternatively, as this is a *tracking* model, the diff change could be passed back
@@ -165,9 +166,9 @@ class DcaTrackingModel(DcaModelTemplate):
             else:
                 self._cached_changes = self.calculate_diff(cue.dca_changes)
         elif cue.properties().get('force_clear'):
-            self._cached_changes = self.cancel_everything(cue.new_dca_name)
+            self._cached_changes = self.cancel_everything(get_blank_dca_name())
         else:
-            self._cached_changes = self.cancel_current(cue.new_dca_name)
+            self._cached_changes = self.cancel_current(get_blank_dca_name())
 
         next_assigns = self.root.child(1).children
         for change in self._cached_changes:

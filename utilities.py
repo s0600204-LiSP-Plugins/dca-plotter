@@ -36,6 +36,9 @@ def build_default_channel_name(channel_tuple):
         return translate("DcaPlotter", "FX {0}").format(channel_tuple[1])
     return str(channel_tuple)
 
+def get_blank_dca_name():
+    return get_plugin('DcaPlotter').Config['blanking_text']
+
 def get_channel_assignment_name(channel_tuple):
     if channel_tuple[0] in ['choir', 'role']:
         return get_channel_name(channel_tuple)

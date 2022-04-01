@@ -30,6 +30,7 @@ from lisp.plugins import get_plugin
 # pylint: disable=relative-beyond-top-level
 from ..model_primitives import AssignStateEnum, DcaModelTemplate, \
     ModelsAssignRow, ModelsEntry
+from ..utilities import get_blank_dca_name
 
 logger = logging.getLogger(__name__) # pylint: disable=invalid-name
 
@@ -68,7 +69,7 @@ class DcaCueModel(DcaModelTemplate):
                     if previous_cuerow.cue.type == "DcaChangeCue":
                         dca_node.setInherited(previous_cuerow.child(dca_num).data())
                     else:
-                        dca_node.setInherited(previous_cuerow.cue.new_dca_name)
+                        dca_node.setInherited(get_blank_dca_name())
 
                 for entry in cuerow.child(dca_num).children:
                     values = dca_node.getChildValues()
