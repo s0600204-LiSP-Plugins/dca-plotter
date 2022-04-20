@@ -197,7 +197,10 @@ class DcaTrackingModel(DcaModelTemplate):
         cue_actions = []
         assign_changes = {}
         for dca_num, dca_node in enumerate(self.root.child(0).children):
-            cue_actions.append(_create_rename_action(dca_num, new_name))
+            # Only create a rename action if it's different
+            if dca_node.data(Qt.DisplayRole) != new_name:
+                cue_actions.append(_create_rename_action(dca_num, new_name))
+
             for entry_node in dca_node.children:
                 cue_actions.append(_create_unassign_action(assign_changes,
                                                            dca_num,
@@ -211,6 +214,8 @@ class DcaTrackingModel(DcaModelTemplate):
         assign_changes = {}
 
         for dca_num, dca_node in enumerate(self.root.child(0).children):
+            # We don't rename conditionally here (as we do above), as this method is intended
+            # to aid getting back in sync with the target device.
             cue_actions.append(_create_rename_action(dca_num, new_name))
 
             mic_count = len(get_plugin('DcaPlotter').SessionConfig['assigns']['input'])
