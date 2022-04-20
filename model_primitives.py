@@ -165,7 +165,6 @@ class ModelsBlock(ModelsBranchNode):
         super().__init__(**kwargs)
         self._given_name = False
         self._inherited_name = get_blank_dca_name()
-        self._flags |= Qt.ItemIsEditable
 
     def addChild(self, child):
         self.children.insert(self.getInsertPoint(child.value()), child)
@@ -183,6 +182,11 @@ class ModelsBlock(ModelsBranchNode):
             return Qt.AlignHCenter | Qt.AlignBottom
 
         return super().data(role)
+
+    def flags(self):
+        if self.functionallyEmpty():
+            return self._flags
+        return self._flags | Qt.ItemIsEditable
 
     # Returns True if this block is functionally empty, eg:
     # a.) It has no children, or
