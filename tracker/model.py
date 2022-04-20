@@ -72,6 +72,7 @@ class DcaTrackingModel(DcaModelTemplate):
     _midi_out = None
     _predictive_row_enabled = False
     _cue_in_progress = False
+    hideEmptyDcaNames = False
 
     def __init__(self, show_predictive_row):
         super().__init__()
