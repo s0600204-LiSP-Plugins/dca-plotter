@@ -45,7 +45,7 @@ class ModelsNode():
     '''Abstract parent class'''
     def __init__(self, parent=None):
         self.parent = parent
-        self.flags = Qt.ItemFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+        self._flags = Qt.ItemFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
 
     def data(self, role=Qt.DisplayRole):
         # pylint: disable=no-self-use, unused-argument
@@ -53,6 +53,9 @@ class ModelsNode():
 
     def index(self):
         return self.model().createIndex(self.rownum(), 0, self)
+
+    def flags(self):
+        return self._flags
 
     def model(self):
         return self.parent.model()
@@ -115,7 +118,7 @@ class ModelsLeafNode(ModelsNode):
     '''Leaf parent class'''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.flags |= Qt.ItemNeverHasChildren
+        self._flags |= Qt.ItemNeverHasChildren
 
     def childCount(self):
         # pylint: disable=no-self-use
@@ -162,7 +165,7 @@ class ModelsBlock(ModelsBranchNode):
         super().__init__(**kwargs)
         self._given_name = False
         self._inherited_name = build_default_dca_name(self.parent.childCount() + 1)
-        self.flags |= Qt.ItemIsEditable
+        self._flags |= Qt.ItemIsEditable
 
     def addChild(self, child):
         self.children.insert(self.getInsertPoint(child.value()), child)
@@ -277,7 +280,7 @@ class DcaModelTemplate(QAbstractItemModel):
         # pylint: disable=no-self-use
         if not index.isValid():
             return Qt.NoItemFlags
-        return index.internalPointer().flags
+        return index.internalPointer().flags()
 
     def index(self, row_num, col_num, parent_idx):
         if not self.hasIndex(row_num, col_num, parent_idx):
