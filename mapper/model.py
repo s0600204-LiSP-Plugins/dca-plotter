@@ -159,14 +159,6 @@ class DcaMappingModel(DcaModelTemplate):
         # And remove the cuerow from the model
         self._remove_node(cuerow.index())
 
-    def update_blanking(self):
-        for cuerow in self.root.children:
-            if cuerow.cue.type == "DcaResetCue":
-                changes = _change_tuples_clear(_change_tuples_derive(cuerow.prev_sibling()))
-                for dca_num in range(get_plugin('DcaPlotter').SessionConfig['dca_count']):
-                    changes.append((dca_num, get_blank_dca_name(), 'Name'))
-                self._change_tuples_cascade_apply(cuerow, changes)
-
     def _change_tuples_apply(self, cuerow, changes):
 
         if cuerow.cue.type == "DcaResetCue":

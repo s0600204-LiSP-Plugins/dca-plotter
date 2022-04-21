@@ -175,8 +175,6 @@ class DcaPlotter(Plugin):
     def _on_config_update(self, args):
         if 'blanking_text' in args:
             self._tracking_model.regenerate_current()
-            if self._mapping_model:
-                self._mapping_model.update_blanking()
 
     def _on_session_config_altered(self, _):
         # Renew the options in the Role Switcher
