@@ -33,7 +33,7 @@ from PyQt5.QtWidgets import QApplication
 from lisp.plugins import get_plugin
 
 from .ui import BASE_TEXT_BRUSH
-from .utilities import get_blank_dca_name, get_channel_assignment_name
+from .utilities import get_name_for_empty_dca, get_channel_assignment_name
 
 class AssignStateEnum(enum.Enum):
     ASSIGN = enum.auto()
@@ -164,7 +164,7 @@ class ModelsBlock(ModelsBranchNode):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._given_name = False
-        self._inherited_name = get_blank_dca_name()
+        self._inherited_name = get_name_for_empty_dca()
 
     def addChild(self, child):
         self.children.insert(self.getInsertPoint(child.value()), child)
@@ -172,7 +172,7 @@ class ModelsBlock(ModelsBranchNode):
     def data(self, role=Qt.DisplayRole):
         if role in (Qt.DisplayRole, Qt.EditRole):
             if self.model().hideEmptyDcaNames and self.functionallyEmpty():
-                return get_blank_dca_name()
+                return get_name_for_empty_dca()
             return self._given_name or self._inherited_name
 
         if role == Qt.ForegroundRole and not self._given_name:
