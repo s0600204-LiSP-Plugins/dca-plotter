@@ -33,7 +33,7 @@ from lisp.plugins import get_plugin
 # pylint: disable=relative-beyond-top-level
 from ..model_primitives import AssignStateEnum, DcaModelTemplate, ModelsAssignRow, \
     ModelsEntry, ModelsResetRow
-from ..utilities import build_default_dca_name, get_blank_dca_name
+
 
 class DcaMappingModel(DcaModelTemplate):
 
@@ -49,8 +49,7 @@ class DcaMappingModel(DcaModelTemplate):
         changes = []
 
         if cue.type == "DcaResetCue":
-            for dca_num in range(get_plugin('DcaPlotter').SessionConfig['dca_count']):
-                changes.append((dca_num, property_value, 'Name'))
+            pass
         else:
             before = _change_tuples_derive(cuerow)
 
@@ -107,10 +106,10 @@ class DcaMappingModel(DcaModelTemplate):
             changes = _change_tuples_invert(_change_tuples_derive(cuerow))
         elif cuerow.prev_sibling():
             changes = _change_tuples_derive(cuerow.prev_sibling())
-        else:
+        else: # DCA Reset Cue
             changes = []
             for dca_num in range(get_plugin('DcaPlotter').SessionConfig['dca_count']):
-                changes.append((dca_num, build_default_dca_name(dca_num + 1), 'Name'))
+                changes.append((dca_num, None, 'Name'))
         self._change_tuples_cascade_apply(cuerow, changes)
 
         # When moving down, all other things move up. In this case, the new index is one out.
@@ -139,7 +138,7 @@ class DcaMappingModel(DcaModelTemplate):
         if cuerow.cue.type == "DcaResetCue":
             changes = _change_tuples_clear(_change_tuples_derive(cuerow.prev_sibling()))
             for dca_num in range(get_plugin('DcaPlotter').SessionConfig['dca_count']):
-                changes.append((dca_num, get_blank_dca_name(), 'Name'))
+                changes.append((dca_num, None, 'Name'))
         else:
             changes = _change_tuples_derive(cuerow)
         self._change_tuples_cascade_apply(cuerow, changes)
@@ -250,7 +249,7 @@ def _change_tuples_derive(cuerow):
 
     if cuerow.cue.type == "DcaResetCue":
         for dca_num in range(get_plugin('DcaPlotter').SessionConfig['dca_count']):
-            changes.append((dca_num, get_blank_dca_name(), 'Name'))
+            changes.append((dca_num, None, 'Name'))
         return changes
 
     for dca_num, dca_node in enumerate(cuerow.children):
