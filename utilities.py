@@ -57,3 +57,11 @@ def get_channel_name(channel_tuple):
 def get_group_name(channel_tuple, group):
     assign_id = channel_tuple[1]
     return get_plugin('DcaPlotter').SessionConfig['assigns'][group][assign_id]['name']
+
+def get_channel_group_name(channel_type):
+    return {
+        "input": translate("DcaPlotter", "Microphones"),
+        "fx": translate("DcaPlotter", "Effect Units"),
+        "role": translate("DcaPlotter", "Named Roles"),
+        "choir": translate("DcaPlotter", "Choir Groupings"),
+    }.get(channel_type, channel_type)

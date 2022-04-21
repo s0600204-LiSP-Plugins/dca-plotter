@@ -29,7 +29,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAbstractItemView, QDialog, QDialogButtonBox, QLabel, \
     QListWidget, QListWidgetItem, QVBoxLayout
 
-from .utilities import get_channel_assignment_name
+from .utilities import get_channel_assignment_name, get_channel_group_name
 
 DataRole = Qt.UserRole + 1 # pylint: disable=invalid-name
 
@@ -63,14 +63,35 @@ class InputSelectDialog(QDialog):
         self.buttons.accepted.connect(self.accept)
         self.buttons.rejected.connect(self.reject)
 
+    def _create_list_header(self, channel_type):
+        header = QListWidgetItem()
+        header.setText(get_channel_group_name(channel_type))
+        header.setFlags(Qt.NoItemFlags)
+        font = header.font()
+        font.setBold(True)
+        header.setFont(font)
+        return header
+
+    def _create_list_item(self, channel_tuple):
+        item = QListWidgetItem()
+        item.setText(get_channel_assignment_name(channel_tuple))
+        item.setData(DataRole, channel_tuple)
+        return item
+
     def set_entries(self, entries):
-        """Set the entries that should appear in the dialog"""
+        """Set the entries that should appear in the dialog, auto-grouping by type."""
         self.list.clear()
+
+        groupings = {}
         for channel_tuple in entries:
-            entry_item = QListWidgetItem()
-            entry_item.setText(get_channel_assignment_name(channel_tuple))
-            entry_item.setData(DataRole, channel_tuple)
-            self.list.addItem(entry_item)
+            if channel_tuple[0] not in groupings:
+                groupings[channel_tuple[0]] = []
+            groupings[channel_tuple[0]].append(channel_tuple)
+
+        for group_type, group_entries in groupings.items():
+            self.list.addItem(self._create_list_header(group_type))
+            for channel_tuple in group_entries:
+                self.list.addItem(self._create_list_item(channel_tuple))
 
     def selected_entries(self):
         """Returns the user-selected entries"""
