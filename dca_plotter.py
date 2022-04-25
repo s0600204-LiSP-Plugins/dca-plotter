@@ -75,6 +75,7 @@ class DcaPlotter(Plugin):
         # Register the settings widget
         AppConfigurationDialog.registerSettingsPage(
             'plugins.dca_plotter', DcaPlotterSettings, DcaPlotter.Config)
+        DcaPlotter.Config.updated.connect(self._on_config_update)
 
         # Register the session-level configuration of inputs
         SessionConfigurationDialog.registerSettingsPage(
@@ -191,6 +192,10 @@ class DcaPlotter(Plugin):
         layout.view.listView.currentItemChanged.connect(self._on_cue_selected)
 
         self.initialised.emit()
+
+    def _on_config_update(self, args):
+        if 'blanking_text' in args:
+            self._tracking_model.regenerate_current()
 
     def _on_session_config_altered(self, _):
         # Renew the options in the Role Switcher

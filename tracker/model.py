@@ -35,6 +35,7 @@ from lisp.plugins.midi.midi_utils import midi_from_dict
 # pylint: disable=relative-beyond-top-level
 from ..cue.change_cue import DcaChangeCue
 from ..model_primitives import AssignStateEnum, DcaModelTemplate, ModelsAssignRow, ModelsEntry
+from ..utilities import get_name_for_empty_dca
 
 logger = logging.getLogger(__name__) # pylint: disable=invalid-name
 
@@ -71,6 +72,7 @@ class DcaTrackingModel(DcaModelTemplate):
     _midi_out = None
     _predictive_row_enabled = False
     _cue_in_progress = False
+    hideEmptyDcaNames = False
 
     def __init__(self, show_predictive_row):
         super().__init__()
@@ -94,9 +96,9 @@ class DcaTrackingModel(DcaModelTemplate):
             else:
                 changes = self.calculate_diff(cue.dca_changes)
         elif cue.properties().get('force_clear'):
-            changes = self.cancel_everything(cue.new_dca_name)
+            changes = self.cancel_everything()
         else:
-            changes = self.cancel_current(cue.new_dca_name)
+            changes = self.cancel_current()
 
         # Here we have the MIDI sends...
         # Alternatively, as this is a *tracking* model, the diff change could be passed back
@@ -165,9 +167,9 @@ class DcaTrackingModel(DcaModelTemplate):
             else:
                 self._cached_changes = self.calculate_diff(cue.dca_changes)
         elif cue.properties().get('force_clear'):
-            self._cached_changes = self.cancel_everything(cue.new_dca_name)
+            self._cached_changes = self.cancel_everything()
         else:
-            self._cached_changes = self.cancel_current(cue.new_dca_name)
+            self._cached_changes = self.cancel_current()
 
         next_assigns = self.root.child(1).children
         for change in self._cached_changes:
@@ -192,11 +194,16 @@ class DcaTrackingModel(DcaModelTemplate):
             return
         self.select_cue(cue)
 
-    def cancel_current(self, new_name):
+    def cancel_current(self):
         cue_actions = []
         assign_changes = {}
+        new_name = get_name_for_empty_dca()
+
         for dca_num, dca_node in enumerate(self.root.child(0).children):
-            cue_actions.append(_create_rename_action(dca_num, new_name))
+            # Only create a rename action if it's different
+            if dca_node.data(Qt.DisplayRole) != new_name:
+                cue_actions.append(_create_rename_action(dca_num, new_name))
+
             for entry_node in dca_node.children:
                 cue_actions.append(_create_unassign_action(assign_changes,
                                                            dca_num,
@@ -205,11 +212,14 @@ class DcaTrackingModel(DcaModelTemplate):
         cue_actions.extend(_calculate_mutes(assign_changes))
         return cue_actions
 
-    def cancel_everything(self, new_name):
+    def cancel_everything(self):
         cue_actions = []
         assign_changes = {}
+        new_name = get_name_for_empty_dca()
 
         for dca_num, dca_node in enumerate(self.root.child(0).children):
+            # We don't rename conditionally here (as we do above), as this method is intended
+            # to aid getting back in sync with the target device.
             cue_actions.append(_create_rename_action(dca_num, new_name))
 
             mic_count = len(get_plugin('DcaPlotter').SessionConfig['assigns']['input'])

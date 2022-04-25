@@ -33,7 +33,7 @@ from PyQt5.QtWidgets import QApplication
 from lisp.plugins import get_plugin
 
 from .ui import BASE_TEXT_BRUSH
-from .utilities import build_default_dca_name, get_channel_assignment_name
+from .utilities import get_name_for_empty_dca, get_channel_assignment_name
 
 class AssignStateEnum(enum.Enum):
     ASSIGN = enum.auto()
@@ -45,7 +45,7 @@ class ModelsNode():
     '''Abstract parent class'''
     def __init__(self, parent=None):
         self.parent = parent
-        self.flags = Qt.ItemFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+        self._flags = Qt.ItemFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
 
     def data(self, role=Qt.DisplayRole):
         # pylint: disable=no-self-use, unused-argument
@@ -53,6 +53,9 @@ class ModelsNode():
 
     def index(self):
         return self.model().createIndex(self.rownum(), 0, self)
+
+    def flags(self):
+        return self._flags
 
     def model(self):
         return self.parent.model()
@@ -115,7 +118,7 @@ class ModelsLeafNode(ModelsNode):
     '''Leaf parent class'''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.flags |= Qt.ItemNeverHasChildren
+        self._flags |= Qt.ItemNeverHasChildren
 
     def childCount(self):
         # pylint: disable=no-self-use
@@ -161,14 +164,15 @@ class ModelsBlock(ModelsBranchNode):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._given_name = False
-        self._inherited_name = build_default_dca_name(self.parent.childCount() + 1)
-        self.flags |= Qt.ItemIsEditable
+        self._inherited_name = get_name_for_empty_dca()
 
     def addChild(self, child):
         self.children.insert(self.getInsertPoint(child.value()), child)
 
     def data(self, role=Qt.DisplayRole):
         if role in (Qt.DisplayRole, Qt.EditRole):
+            if self.model().hideEmptyDcaNames and self.functionallyEmpty():
+                return get_name_for_empty_dca()
             return self._given_name or self._inherited_name
 
         if role == Qt.ForegroundRole and not self._given_name:
@@ -178,6 +182,23 @@ class ModelsBlock(ModelsBranchNode):
             return Qt.AlignHCenter | Qt.AlignBottom
 
         return super().data(role)
+
+    def flags(self):
+        if self.functionallyEmpty():
+            return self._flags
+        return self._flags | Qt.ItemIsEditable
+
+    # Returns True if this block is functionally empty, eg:
+    # a.) It has no children, or
+    # b.) All children are Unassigns.
+    def functionallyEmpty(self):
+        if len(self.children) == 0:
+            return True
+
+        for child in self.children:
+            if child.assignState() != AssignStateEnum.UNASSIGN:
+                return False
+        return True
 
     def inherited(self):
         return self._given_name is False
@@ -246,6 +267,9 @@ class ModelsEntry(ModelsLeafNode):
 
 ### MODEL
 class DcaModelTemplate(QAbstractItemModel):
+
+    hideEmptyDcaNames = True
+
     def __init__(self):
         super().__init__()
         self.root = ModelsRootNode(model=self)
@@ -277,7 +301,7 @@ class DcaModelTemplate(QAbstractItemModel):
         # pylint: disable=no-self-use
         if not index.isValid():
             return Qt.NoItemFlags
-        return index.internalPointer().flags
+        return index.internalPointer().flags()
 
     def index(self, row_num, col_num, parent_idx):
         if not self.hasIndex(row_num, col_num, parent_idx):

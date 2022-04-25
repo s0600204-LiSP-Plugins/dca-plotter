@@ -37,7 +37,6 @@ from .dca_cue import DcaCue
 class DcaResetCue(DcaCue):
     Name = QT_TRANSLATE_NOOP('CueName', 'DCA/VCA Reset Cue')
 
-    new_dca_name = Property('-')
     force_clear = Property(False)
 
 class DcaResetCueSettings(SettingsPage):
@@ -46,11 +45,6 @@ class DcaResetCueSettings(SettingsPage):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.setLayout(QFormLayout())
-
-        self.textLabel = QLabel(self)
-        self.textLabel.setText('Set DCA Names to:')
-        self.textInput = QLineEdit(self)
-        self.layout().addRow(self.textLabel, self.textInput)
 
         self.forceLabel = QLabel(self)
         self.forceLabel.setText('Force Clear:')
@@ -63,12 +57,10 @@ class DcaResetCueSettings(SettingsPage):
 
     def getSettings(self):
         return {
-            'new_dca_name': self.textInput.text(),
             'force_clear': self.forceCheckbox.isChecked(),
         }
 
     def loadSettings(self, settings):
-        self.textInput.setText(settings.get('new_dca_name', '-'))
         self.forceCheckbox.setChecked(settings.get('force_clear', False))
 
 CueSettingsRegistry().add(DcaResetCueSettings, DcaResetCue)
