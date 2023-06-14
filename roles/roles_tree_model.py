@@ -90,7 +90,7 @@ class RoleAssignRow(BaseRow):
 class RolesTreeModel(ConceptTreeModel):
 
     def __init__(self):
-        super().__init__('role#{0}', COLUMNS, RoleAssignRow, ['input', 'fx'], True)
+        super().__init__('role#{0:02}', COLUMNS, RoleAssignRow, ['input', 'fx'], True)
 
     def deserialise(self, data):
         if self._root.childCount():
