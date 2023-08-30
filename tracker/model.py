@@ -69,14 +69,14 @@ class DcaTrackingModel(DcaModelTemplate):
 
     _cached_changes = []
     _last_selected_cue_id = None
-    _midi_out = None
     _predictive_row_enabled = False
     _cue_in_progress = False
     hideEmptyDcaNames = False
 
     def __init__(self, show_predictive_row):
         super().__init__()
-        self._midi_out = get_plugin('Midi').output
+        self._midi = get_plugin('Midi')
+        self._fixture_control = get_plugin('MidiFixtureControl')
 
         # Current/Active Assigns
         self._add_node(self.createIndex(0, 0, self.root), ModelsAssignRow(parent=self.root))
@@ -105,8 +105,10 @@ class DcaTrackingModel(DcaModelTemplate):
         #   and the calling cue handles sending the MIDI.
         # Then again, we don't want update the 'currently active' if sending fails... so...
         midi_messages = determine_midi_messages(changes)
+        midi_patch = self._fixture_control.get_patched_output(
+            self._fixture_control.SessionConfig['dca_device'])
         for dict_msg in midi_messages:
-            self._midi_out.send(midi_from_dict(dict_msg))
+            self._midi.send(midi_patch, midi_from_dict(dict_msg))
 
         # Update the currently active
         current_assigns = self.root.child(0).children
@@ -397,8 +399,10 @@ class DcaTrackingModel(DcaModelTemplate):
 
         # Transmit change
         midi_messages = determine_midi_messages(actions)
+        midi_patch = self._fixture_control.get_patched_output(
+            self._fixture_control.SessionConfig['dca_device'])
         for dict_msg in midi_messages:
-            self._midi_out.send(midi_from_dict(dict_msg))
+            self._midi.send(midi_patch, midi_from_dict(dict_msg))
 
 def _calculate_mutes(assign_changes):
     cue_actions = []
