@@ -27,7 +27,6 @@ import enum
 # pylint: disable=no-name-in-module
 from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex
 from PyQt5.QtGui import QBrush, QFont
-from PyQt5.QtWidgets import QApplication
 
 # pylint: disable=import-error
 from lisp.plugins import get_plugin
@@ -142,7 +141,7 @@ class ModelsResetRow(ModelsBranchNode):
 
     def data(self, role=Qt.DisplayRole):
         if role == Qt.DisplayRole and self.cue:
-            return "{} : {}".format(self.cue.index + 1, self.cue.name)
+            return f"{self.cue.index + 1} : {self.cue.name}"
         return super().data(role)
 
     def value(self):

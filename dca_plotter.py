@@ -85,7 +85,8 @@ class DcaPlotter(Plugin):
             app.window.registerSimpleCueMenu(cue_type, self.CueCategory)
 
         self._roles_switcher_model = RolesSwitcherModel()
-        self._roles_menu_action = QAction(translate('dca_plotter', 'Roles Switcher'), self.app.window)
+        self._roles_menu_action = QAction(translate('dca_plotter', 'Roles Switcher'),
+                                          self.app.window)
         self._roles_menu_action.triggered.connect(self._open_switcher_dialog)
         self.app.window.menuTools.addAction(self._roles_menu_action)
 
@@ -213,7 +214,10 @@ class DcaPlotter(Plugin):
             cue.property_changed.disconnect(self._tracking_model.on_cue_update)
 
     def assignables(self, types):
-        """Returns tuples that represent the various assignable elements (microphones, fx-returns, etc)"""
+        """
+        Returns tuples that represent the various assignable elements
+        (microphones, fx-returns, etc).
+        """
         assignables = []
 
         for group in ['role', 'choir']:

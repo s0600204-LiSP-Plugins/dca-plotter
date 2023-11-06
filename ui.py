@@ -23,7 +23,14 @@
 # pylint: disable=no-name-in-module
 from PyQt5.QtCore import Qt, QEvent, QModelIndex
 from PyQt5.QtGui import QBrush, QMouseEvent, QPalette, QPen
-from PyQt5.QtWidgets import QApplication, QHeaderView, QStyle, QStyleOptionToolButton, QTreeView, QStyledItemDelegate
+from PyQt5.QtWidgets import (
+    QApplication,
+    QHeaderView,
+    QStyle,
+    QStyledItemDelegate,
+    QStyleOptionToolButton,
+    QTreeView,
+)
 
 LINE_COLOR = QApplication.palette().light().color()
 LINE_PEN = QPen(LINE_COLOR, 0.5)
@@ -81,8 +88,10 @@ class ToggleButtonDelegate(QStyledItemDelegate):
         button_option.text = index.data(Qt.DisplayRole)
 
         if index.data(Qt.CheckStateRole) == Qt.Checked:
-            button_option.palette.setColor(QPalette.Button, option.palette.highlight().color())
-            button_option.palette.setColor(QPalette.ButtonText, option.palette.highlightedText().color())
+            button_option.palette.setColor(QPalette.Button,
+                                           option.palette.highlight().color())
+            button_option.palette.setColor(QPalette.ButtonText,
+                                           option.palette.highlightedText().color())
             button_option.state |= QStyle.State_On
         else:
             button_option.state |= QStyle.State_Off
