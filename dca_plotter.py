@@ -42,7 +42,6 @@ from dca_plotter.mapper.dialog import DcaMappingDialog
 from dca_plotter.mapper.model import DcaMappingModel
 from dca_plotter.roles.roles_switcher import RolesSwitcher
 from dca_plotter.roles.roles_switcher_model import RolesSwitcherModel
-from dca_plotter.tracker.dialog import FloatingTrackerDialog
 from dca_plotter.tracker.model import DcaTrackingModel
 from dca_plotter.tracker.view import DcaTrackingView
 
@@ -61,7 +60,6 @@ class DcaPlotter(Plugin):
     _roles_menu_action = None
     _roles_switcher_dialog = None
     _roles_switcher_model = None
-    _tracker_floating_dialog = None
     _tracking_model = None
     _tracker_view = None
 
@@ -113,10 +111,6 @@ class DcaPlotter(Plugin):
             layout.model.item_removed.disconnect(self._on_cue_removed)
             layout.view.listView.currentItemChanged.disconnect(self._on_cue_selected)
         if self._tracker_view:
-            if self._tracker_floating_dialog:
-                self._tracker_floating_dialog.close()
-                self._tracker_floating_dialog.deleteLater()
-                self._tracker_floating_dialog = None
             self._tracker_view.deinitialise()
             self._tracker_view = None
 
@@ -142,25 +136,6 @@ class DcaPlotter(Plugin):
         self._roles_switcher_model.renew(self.SessionConfig)
         self._roles_switcher_model.roleUpdated.connect(self._tracking_model.role_assign_swap)
 
-        # Determine parent widget/layout for Tracker UI
-        if isinstance(layout, ListLayout):
-            tracker_parent = layout.view.parent()
-        else:
-            self._tracker_floating_dialog = FloatingTrackerDialog()
-            tracker_parent = self._tracker_floating_dialog
-
-        # Init the Tracker UI
-        self._tracker_view = DcaTrackingView(parent=tracker_parent)
-
-        # Draw the Tracker
-        #   Unfortunately, the Cart Layout doesn't allow integration within the UI,
-        #   so it is in an unclosable dialog window instead.
-        if isinstance(layout, ListLayout):
-            layout.view.layout().addWidget(self._tracker_view)
-        else:
-            self._tracker_floating_dialog.layout().addWidget(self._tracker_view)
-            self._tracker_floating_dialog.open()
-
         # If the mapper is not to be used we don't need to have it or its menu option in existence
         if not self.mapper_enabled():
             if self._mapping_menu_action:
@@ -171,6 +146,10 @@ class DcaPlotter(Plugin):
                 self._mapping_dialog.close()
             self.initialised.emit()
             return
+
+        # Draw the tracker
+        self._tracker_view = DcaTrackingView(parent=layout.view.parent())
+        layout.view.layout().addWidget(self._tracker_view)
 
         # Create the mapping model.
         # This model *does* contain cues - or references to them - and with the
