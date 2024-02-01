@@ -1,0 +1,10 @@
+choir usr/lib/python3/dist-packages/lisp/plugins/dca_plotter
+config usr/lib/python3/dist-packages/lisp/plugins/dca_plotter
+cue usr/lib/python3/dist-packages/lisp/plugins/dca_plotter
+mapper usr/lib/python3/dist-packages/lisp/plugins/dca_plotter
+roles usr/lib/python3/dist-packages/lisp/plugins/dca_plotter
+tracker usr/lib/python3/dist-packages/lisp/plugins/dca_plotter
+
+*.json usr/lib/python3/dist-packages/lisp/plugins/dca_plotter
+*.py usr/lib/python3/dist-packages/lisp/plugins/dca_plotter
+

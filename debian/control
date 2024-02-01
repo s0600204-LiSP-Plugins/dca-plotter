@@ -1,0 +1,18 @@
+Source: dca-plotter
+Section: sound
+Priority: optional
+Maintainer: s0600204 <dev@s0600204>
+Rules-Requires-Root: no
+Build-Depends:
+ debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Homepage: https://github.com/s0600204-lisp-plugins/dca-plotter.git
+
+Package: linux-show-player-dca-plotter
+Architecture: all
+Depends:
+ ${misc:Depends},
+ linux-show-player-midi-fixture-control
+Description: DCA Plotter
+ This plugin adds the ability to program in VCA/DCA changes that are then
+ transmitted to a Sound Desk via MIDI.
