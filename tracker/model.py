@@ -508,7 +508,7 @@ def determine_midi_messages(changes):
         }
 
         if change[0] == 'assign' or change[0] == 'unassign':
-            command = 'dcaAssign'
+            command = 'assignToDca'
             args['assignAction'] = 'assign' if change[0] == 'assign' else 'unassign'
             args['dcaNum'] = change[1]['dca'] + 1
 
