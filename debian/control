@@ -13,6 +13,8 @@ Architecture: all
 Depends:
  ${misc:Depends},
  linux-show-player-midi-fixture-control
+Suggests:
+ linux-show-player
 Description: DCA Plotter
  This plugin adds the ability to program in VCA/DCA changes that are then
  transmitted to a Sound Desk via MIDI.
