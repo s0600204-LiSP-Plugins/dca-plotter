@@ -247,6 +247,7 @@ class DcaTrackingModel(DcaModelTemplate):
         assign_changes = {}
         explicit_singular_assigns = []
         explicit_singular_unassigns = []
+        resolved_role_assignations = {}
         choirs = []
 
         # Create assigns if not already assigned and explicit unassigns for single-assignments.
@@ -267,6 +268,10 @@ class DcaTrackingModel(DcaModelTemplate):
 
                 if entry.assignState() != AssignStateEnum.UNASSIGN:
                     explicit_singular_assigns.append(entry.value())
+                    if entry.value()[0] == 'role':
+                        role_assign = get_plugin('DcaPlotter').resolve_role(entry.value()[1])
+                        if role_assign:
+                            resolved_role_assignations[role_assign] = entry.value()
                 else:
                     explicit_singular_unassigns[dca_num].append(entry.value())
 
@@ -283,6 +288,18 @@ class DcaTrackingModel(DcaModelTemplate):
         # Create assigns if not already assigned and explicit unassigns for the members
         # of group-assignments, so long as they aren't already assigned out-of-group.
         for dca_num, dca_node in enumerate(cuerow.children):
+
+            # Resolve when switching between two roles that have the same input assigned to them
+            for unassign in explicit_singular_unassigns[dca_num]:
+                if unassign[0] != "role":
+                    continue
+                resolved_unassign = get_plugin('DcaPlotter').resolve_role(unassign[1])
+                for resolved_assign in resolved_role_assignations:
+                    if resolved_assign == resolved_unassign:
+                        _update_assign_changes(assign_changes, "assign", unassign)
+                        _update_assign_changes(assign_changes,
+                                               "unassign",
+                                               resolved_role_assignations[resolved_assign])
 
             currently_assigned = current_assigns[dca_num].getChildValues()
             assigned_by_cue = dca_node.getChildValues()
@@ -329,6 +346,7 @@ class DcaTrackingModel(DcaModelTemplate):
         current_assigns = self.root.child(0).children
         assign_changes = {}
         full_assigned = []
+        roles = {'add': {}, 'rem': {}}
         choirs = {'add': [], 'rem': []}
 
         for dca_num, dca in enumerate(new_assigns):
@@ -349,6 +367,10 @@ class DcaTrackingModel(DcaModelTemplate):
                             cue_actions.append(_create_unassign_action(assign_changes, inner_dca_num, to_add))
                 else:
                     full_assigned.append(to_add)
+                    if to_add[0] == 'role':
+                        resolved_role = get_plugin('DcaPlotter').resolve_role(to_add[1])
+                        if resolved_role:
+                            roles['add'][resolved_role] = to_add
                 cue_actions.append(_create_assign_action(assign_changes, dca_num, to_add))
 
             for to_rem in dca['rem']:
@@ -358,7 +380,17 @@ class DcaTrackingModel(DcaModelTemplate):
                 if to_rem not in current_assigns[dca_num].getChildValues():
                     continue
                 full_assigned.remove(to_rem)
+                if to_rem[0] == 'role':
+                    resolved_role = get_plugin('DcaPlotter').resolve_role(to_rem[1])
+                    if resolved_role:
+                        roles['rem'][resolved_role] = to_rem
                 cue_actions.append(_create_unassign_action(assign_changes, dca_num, to_rem))
+
+        for to_rem in roles['rem']:
+            for to_add in roles['add']:
+                if to_add == to_rem:
+                    _update_assign_changes(assign_changes, 'assign', roles['rem'][to_rem])
+                    _update_assign_changes(assign_changes, 'unassign', roles['add'][to_add])
 
         for choir_id, dca_num in choirs['add']:
             assigns = get_plugin('DcaPlotter').resolve_choir(choir_id)
