@@ -30,7 +30,7 @@ from lisp.plugins import get_plugin
 from lisp.ui.qmodels import SimpleTableModel
 from lisp.ui.settings.pages import SettingsPage
 
-from midi_fixture_control.ui import SimpleTableView
+from plugins.midi_fixture_control.ui import SimpleTableView
 
 from ..utilities import build_default_channel_name
 
