@@ -7,4 +7,3 @@ tracker usr/lib/python3/dist-packages/lisp/plugins/dca_plotter
 
 *.json usr/lib/python3/dist-packages/lisp/plugins/dca_plotter
 *.py usr/lib/python3/dist-packages/lisp/plugins/dca_plotter
-

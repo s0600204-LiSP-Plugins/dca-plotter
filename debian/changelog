@@ -1,3 +1,10 @@
+dca-plotter (0.3.0) UNRELEASED; urgency=medium
+
+  * Support edgecase where two roles have the same assignment
+  * Correct import statements
+
+ -- s0600204 <dev@s0600204>  Sun, 25 Jan 2026 19:45:00 +0000
+
 dca-plotter (0.2.0) UNRELEASED; urgency=medium
 
   * Update to use v0.16.0 of underlying library
