@@ -1,3 +1,10 @@
+dca-plotter (0.4.0) UNRELEASED; urgency=medium
+
+  * Consider Roles when determining Choirs comprising of mics/fx
+  * General Linting
+
+ -- s0600204 <dev@s0600204>  Wed, 28 Jan 2026 17:15:00 +0000
+
 dca-plotter (0.3.0) UNRELEASED; urgency=medium
 
   * Support edgecase where two roles have the same assignment
