@@ -307,7 +307,7 @@ class DcaTrackingModel(DcaModelTemplate):
             for choir_id, assign_action in choirs[dca_num].items():
                 assigns = get_plugin('DcaPlotter').resolve_choir(choir_id)
                 for assign in assigns:
-                    if assign in explicit_singular_assigns:
+                    if assign in explicit_singular_assigns or assign in resolved_role_assignations:
                         continue
                     assigned_by_cue.append(assign)
 
