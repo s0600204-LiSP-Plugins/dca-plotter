@@ -20,9 +20,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=missing-docstring, invalid-name
-
-# pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QFormLayout, QSpinBox, QVBoxLayout, QWidget
 
 # pylint: disable=import-error
@@ -33,6 +30,7 @@ from lisp.ui.settings.pages import SettingsPage
 from plugins.midi_fixture_control.ui import SimpleTableView
 
 from ..utilities import build_default_channel_name
+
 
 class AssignUi(SettingsPage):
     '''Assign UI'''

@@ -20,12 +20,13 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=missing-docstring, invalid-name, too-few-public-methods
+# pylint: disable=too-few-public-methods
 
 # pylint: disable=import-error
 from lisp.cues.cue import Cue
 from lisp.plugins import get_plugin
 from lisp.ui.ui_utils import translate
+
 
 class DcaCue(Cue):
 

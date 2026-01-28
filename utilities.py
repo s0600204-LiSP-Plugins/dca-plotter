@@ -20,11 +20,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=missing-docstring
-
 # pylint: disable=import-error
 from lisp.plugins import get_plugin
 from lisp.ui.ui_utils import translate
+
 
 def build_default_dca_name(num):
     return translate("DcaPlotter", "DCA {0}").format(num)

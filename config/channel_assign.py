@@ -30,6 +30,7 @@ from ..roles.roles_assign import RolesAssignUi
 from .page_fx_assign import FxAssignUi
 from .page_mic_assign import MicAssignUi
 
+
 class ChannelAssignConfig(SettingsPagesTabWidget):
     '''Channel Assignment Setup'''
     Name = translate("DcaPlotter", "Channel Assignments")

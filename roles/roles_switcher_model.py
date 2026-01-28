@@ -20,17 +20,18 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=no-name-in-module
 from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt
 
 from lisp.core.signal import Signal
 
 from ..utilities import get_channel_name
 
+
 # Index: (x, y), where
 #     x (rows)    = Role
 #     y (columns) = y0     = Role Name
 #                 = y{n>0} = Assigns to that Role
+
 
 class RolesSwitcherModel(QAbstractItemModel):
 
@@ -43,7 +44,6 @@ class RolesSwitcherModel(QAbstractItemModel):
         self._roles_map = []
 
     def columnCount(self, index):
-        # pylint: disable=invalid-name, missing-docstring
         if not index.isValid():
             return 0
         idx = self._roles_map[index.row()]
@@ -55,7 +55,6 @@ class RolesSwitcherModel(QAbstractItemModel):
         return None
 
     def data(self, index, role=Qt.DisplayRole):
-        # pylint: disable=missing-docstring, no-self-use
         if not index.isValid():
             return None
 
@@ -103,7 +102,6 @@ class RolesSwitcherModel(QAbstractItemModel):
         self.dataRenewed.emit()
 
     def flags(self, index):
-        # pylint: disable=missing-docstring, no-self-use
         if not index.isValid():
             return Qt.NoItemFlags
 
@@ -117,7 +115,6 @@ class RolesSwitcherModel(QAbstractItemModel):
         return base_flags | Qt.ItemIsEditable | Qt.ItemIsUserCheckable
 
     def index(self, row, col):
-        # pylint: disable=missing-docstring
         if row < 0 or row >= len(self._roles) or col < 0:
             return QModelIndex()
 
@@ -128,7 +125,6 @@ class RolesSwitcherModel(QAbstractItemModel):
         return self.createIndex(row, col)
 
     def parent(self, index):
-        # pylint: disable=missing-docstring
         if not index.isValid():
             return QModelIndex()
 
@@ -139,13 +135,11 @@ class RolesSwitcherModel(QAbstractItemModel):
         return self.index(index.column(), 0)
 
     def rowCount(self, index):
-        # pylint: disable=invalid-name, missing-docstring
         if not index.isValid():
             return 0
         return len(self._roles)
 
     def setData(self, index, data, role=Qt.DisplayRole):
-        # pylint: disable=invalid-name, missing-docstring, no-self-use
         if not index.isValid() or role != Qt.CheckStateRole or data != Qt.Checked:
             return False
 

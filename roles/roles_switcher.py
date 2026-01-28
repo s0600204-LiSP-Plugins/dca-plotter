@@ -20,15 +20,16 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=no-name-in-module
 from PyQt5.Qt import QSizePolicy
 from PyQt5.QtWidgets import QDialog, QVBoxLayout
 
+# pylint: disable=import-error
 from lisp.plugins import get_plugin
 from lisp.ui.ui_utils import translate
 
 from .roles_switcher_model import RolesSwitcherModel
 from .roles_switcher_view import RolesSwitcherView
+
 
 class RolesSwitcher(QDialog):
 

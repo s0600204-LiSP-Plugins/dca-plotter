@@ -20,11 +20,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=missing-docstring, invalid-name
-
 import logging
 
-# pylint: disable=no-name-in-module
 from PyQt5.QtCore import Qt
 
 # pylint: disable=import-error
@@ -32,12 +29,12 @@ from lisp.application import Application
 from lisp.plugins import get_plugin
 from lisp.plugins.midi.midi_utils import midi_from_dict
 
-# pylint: disable=relative-beyond-top-level
 from ..cue.change_cue import DcaChangeCue
 from ..model_primitives import AssignStateEnum, DcaModelTemplate, ModelsAssignRow, ModelsEntry
 from ..utilities import get_name_for_empty_dca
 
-logger = logging.getLogger(__name__) # pylint: disable=invalid-name
+logger = logging.getLogger(__name__)
+
 
 # This model does not contain cues.
 #
@@ -79,11 +76,11 @@ class DcaTrackingModel(DcaModelTemplate):
         self._fixture_control = get_plugin('MidiFixtureControl')
 
         # Current/Active Assigns
-        self._add_node(self.createIndex(0, 0, self.root), ModelsAssignRow(parent=self.root))
+        self._addNode(self.createIndex(0, 0, self.root), ModelsAssignRow(parent=self.root))
 
         # Predicted assign changes (ListLayout only)
         if show_predictive_row:
-            self._add_node(self.createIndex(1, 0, self.root), ModelsAssignRow(parent=self.root))
+            self._addNode(self.createIndex(1, 0, self.root), ModelsAssignRow(parent=self.root))
             self._predictive_row_enabled = True
 
     def call_cue(self, cue):
@@ -115,8 +112,8 @@ class DcaTrackingModel(DcaModelTemplate):
         for change in changes:
             if change[0] == 'assign':
                 block_node = current_assigns[change[1]['dca']]
-                self._add_node(block_node.index(),
-                               ModelsEntry(change[1]['strip'], parent=block_node))
+                self._addNode(block_node.index(),
+                              ModelsEntry(change[1]['strip'], parent=block_node))
             elif change[0] == 'unassign':
                 block_node = current_assigns[change[1]['dca']]
                 try:
@@ -125,7 +122,7 @@ class DcaTrackingModel(DcaModelTemplate):
                     pass
                 else:
                     entry_node = block_node.child(entry_num)
-                    self._remove_node(entry_node.index())
+                    self._removeNode(entry_node.index())
             elif change[0] == 'rename':
                 current_assigns[change[1]['dca']].setData(change[1]['name'], Qt.EditRole)
                 if self._predictive_row_enabled:
@@ -145,7 +142,7 @@ class DcaTrackingModel(DcaModelTemplate):
         '''Clears current diff state.'''
         next_assigns = self.root.child(1).children
         for block_node in next_assigns:
-            self._clear_node(block_node.index())
+            self._clearNode(block_node.index())
             block_node.setData("", Qt.EditRole)
 
     def regenerate_current(self):
@@ -177,16 +174,16 @@ class DcaTrackingModel(DcaModelTemplate):
         for change in self._cached_changes:
             if change[0] == 'assign':
                 block_node = next_assigns[change[1]['dca']]
-                self._add_node(block_node.index(),
-                               ModelsEntry(change[1]['strip'],
-                                           AssignStateEnum.ASSIGN,
-                                           parent=block_node))
+                self._addNode(block_node.index(),
+                              ModelsEntry(change[1]['strip'],
+                                          AssignStateEnum.ASSIGN,
+                                          parent=block_node))
             elif change[0] == 'unassign':
                 block_node = next_assigns[change[1]['dca']]
-                self._add_node(block_node.index(),
-                               ModelsEntry(change[1]['strip'],
-                                           AssignStateEnum.UNASSIGN,
-                                           parent=block_node))
+                self._addNode(block_node.index(),
+                              ModelsEntry(change[1]['strip'],
+                                          AssignStateEnum.UNASSIGN,
+                                          parent=block_node))
             elif change[0] == 'rename':
                 block_node = next_assigns[change[1]['dca']]
                 block_node.setData(change[1]['name'], Qt.EditRole)
@@ -240,7 +237,7 @@ class DcaTrackingModel(DcaModelTemplate):
         return cue_actions
 
     def calculate_diff_from_mapper(self, cue_id):
-        cuerow = get_plugin('DcaPlotter').mapper().find_cuerow(cue_id)
+        cuerow = get_plugin('DcaPlotter').mapper.find_cuerow(cue_id)
         current_assigns = self.root.child(0).children
 
         cue_actions = []
@@ -269,7 +266,7 @@ class DcaTrackingModel(DcaModelTemplate):
                 if entry.assignState() != AssignStateEnum.UNASSIGN:
                     explicit_singular_assigns.append(entry.value())
                     if entry.value()[0] == 'role':
-                        role_assign = get_plugin('DcaPlotter').resolve_role(entry.value()[1])
+                        role_assign = get_plugin('DcaPlotter').resolveRole(entry.value()[1])
                         if role_assign:
                             resolved_role_assignations[role_assign] = entry.value()
                 else:
@@ -293,7 +290,7 @@ class DcaTrackingModel(DcaModelTemplate):
             for unassign in explicit_singular_unassigns[dca_num]:
                 if unassign[0] != "role":
                     continue
-                resolved_unassign = get_plugin('DcaPlotter').resolve_role(unassign[1])
+                resolved_unassign = get_plugin('DcaPlotter').resolveRole(unassign[1])
                 for resolved_assign in resolved_role_assignations:
                     if resolved_assign == resolved_unassign:
                         _update_assign_changes(assign_changes, "assign", unassign)
@@ -305,7 +302,7 @@ class DcaTrackingModel(DcaModelTemplate):
             assigned_by_cue = dca_node.getChildValues()
 
             for choir_id, assign_action in choirs[dca_num].items():
-                assigns = get_plugin('DcaPlotter').resolve_choir(choir_id)
+                assigns = get_plugin('DcaPlotter').resolveChoir(choir_id)
                 for assign in assigns:
                     if assign in explicit_singular_assigns or assign in resolved_role_assignations:
                         continue
@@ -368,7 +365,7 @@ class DcaTrackingModel(DcaModelTemplate):
                 else:
                     full_assigned.append(to_add)
                     if to_add[0] == 'role':
-                        resolved_role = get_plugin('DcaPlotter').resolve_role(to_add[1])
+                        resolved_role = get_plugin('DcaPlotter').resolveRole(to_add[1])
                         if resolved_role:
                             roles['add'][resolved_role] = to_add
                 cue_actions.append(_create_assign_action(assign_changes, dca_num, to_add))
@@ -381,7 +378,7 @@ class DcaTrackingModel(DcaModelTemplate):
                     continue
                 full_assigned.remove(to_rem)
                 if to_rem[0] == 'role':
-                    resolved_role = get_plugin('DcaPlotter').resolve_role(to_rem[1])
+                    resolved_role = get_plugin('DcaPlotter').resolveRole(to_rem[1])
                     if resolved_role:
                         roles['rem'][resolved_role] = to_rem
                 cue_actions.append(_create_unassign_action(assign_changes, dca_num, to_rem))
@@ -393,14 +390,14 @@ class DcaTrackingModel(DcaModelTemplate):
                     _update_assign_changes(assign_changes, 'unassign', roles['add'][to_add])
 
         for choir_id, dca_num in choirs['add']:
-            assigns = get_plugin('DcaPlotter').resolve_choir(choir_id)
+            assigns = get_plugin('DcaPlotter').resolveChoir(choir_id)
             for assign in assigns:
                 if assign in full_assigned:
                     continue
                 cue_actions.append(_create_assign_action(assign_changes, dca_num, assign))
 
         for choir_id, dca_num in choirs['rem']:
-            assigns = get_plugin('DcaPlotter').resolve_choir(choir_id)
+            assigns = get_plugin('DcaPlotter').resolveChoir(choir_id)
             for assign in assigns:
                 if assign not in current_assigns[dca_num].getChildValues():
                     continue
@@ -517,7 +514,7 @@ def determine_midi_messages(changes):
 
         # Resolve Role aliasing
         if strip_type == 'role':
-            role_assign = get_plugin('DcaPlotter').resolve_role(strip_number)
+            role_assign = get_plugin('DcaPlotter').resolveRole(strip_number)
             if not role_assign:
                 logger.warning("A role has just been used that does not have anything assigned to it.")
                 continue

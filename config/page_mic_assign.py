@@ -28,6 +28,7 @@ from plugins.midi_fixture_control.ui import LabelDelegate
 
 from .channel_assign_page import AssignUi
 
+
 class MicAssignUi(AssignUi):
     '''Microphone Assign UI'''
     Name = translate("DcaPlotter", "Microphone Assignments")

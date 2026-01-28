@@ -20,17 +20,14 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=missing-docstring, invalid-name
-
-# pylint: disable=no-name-in-module
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAbstractItemView
 
 # pylint: disable=import-error
 from lisp.plugins import get_plugin
 
-# pylint: disable=relative-beyond-top-level
 from ..modelview_abstract import DcaModelViewTemplate
+
 
 class DcaTrackingView(DcaModelViewTemplate):
 
@@ -47,8 +44,8 @@ class DcaTrackingView(DcaModelViewTemplate):
     def _post_init_set_model(self):
         self.setModel(get_plugin('DcaPlotter').tracker())
 
-    def _recalculate_cell_size(self):
-        super()._recalculate_cell_size()
+    def _recalculateCellSize(self):
+        super()._recalculateCellSize()
 
         if self.maximumHeight() != self._ideal_height:
             self.setMaximumHeight(self._ideal_height)

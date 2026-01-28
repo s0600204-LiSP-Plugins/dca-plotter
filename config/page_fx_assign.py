@@ -20,8 +20,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=missing-docstring, invalid-name
-
 # pylint: disable=import-error
 from lisp.ui.qdelegates import LineEditDelegate, SpinBoxDelegate
 from lisp.ui.ui_utils import translate
@@ -29,6 +27,7 @@ from lisp.ui.ui_utils import translate
 from plugins.midi_fixture_control.ui import LabelDelegate
 
 from .channel_assign_page import AssignUi
+
 
 class FxAssignUi(AssignUi):
     '''FX Unit Assign UI'''

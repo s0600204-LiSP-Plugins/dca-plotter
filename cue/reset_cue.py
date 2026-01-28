@@ -20,9 +20,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=missing-docstring, invalid-name, too-few-public-methods
+# pylint: disable=too-few-public-methods
 
-# pylint: disable=no-name-in-module
 from PyQt5.QtCore import QT_TRANSLATE_NOOP
 from PyQt5.QtWidgets import QCheckBox, QFormLayout, QLabel, QLineEdit
 
@@ -31,13 +30,14 @@ from lisp.core.has_properties import Property
 from lisp.ui.settings.cue_settings import CueSettingsRegistry
 from lisp.ui.settings.pages import SettingsPage
 
-# pylint: disable=relative-beyond-top-level
 from .dca_cue import DcaCue
+
 
 class DcaResetCue(DcaCue):
     Name = QT_TRANSLATE_NOOP('CueName', 'DCA/VCA Reset Cue')
 
     force_clear = Property(False)
+
 
 class DcaResetCueSettings(SettingsPage):
     Name = QT_TRANSLATE_NOOP('SettingsPageName', 'DCA/VCA Reset Settings')
@@ -62,5 +62,6 @@ class DcaResetCueSettings(SettingsPage):
 
     def loadSettings(self, settings):
         self.forceCheckbox.setChecked(settings.get('force_clear', False))
+
 
 CueSettingsRegistry().add(DcaResetCueSettings, DcaResetCue)

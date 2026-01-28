@@ -20,8 +20,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=no-name-in-module
-from PyQt5.QtCore import Qt, QEvent, QModelIndex
+from PyQt5.QtCore import QEvent, QModelIndex, Qt
 from PyQt5.QtGui import QBrush, QMouseEvent, QPalette, QPen
 from PyQt5.QtWidgets import (
     QApplication,
@@ -38,6 +37,7 @@ LINE_PEN = QPen(LINE_COLOR, 0.5)
 BASE_TEXT_COLOR = QApplication.palette().light().color()
 BASE_TEXT_BRUSH = QBrush(BASE_TEXT_COLOR)
 
+
 class ToggleButtonDelegate(QStyledItemDelegate):
     '''Toggle Button Delegate
 
@@ -48,12 +48,11 @@ class ToggleButtonDelegate(QStyledItemDelegate):
         self.last_clicked_index = QModelIndex()
 
     def createEditor(self, parent, option, index):
-        # pylint: disable=invalid-name, no-self-use, unused-argument,
+        # pylint: disable=unused-argument,
         '''Do not create an Editor (on double-click)'''
         return None
 
     def editorEvent(self, event, model, option, index):
-        # pylint: disable=invalid-name
         '''Toggle checked/unchecked on mouse click'''
         if event.type() == QEvent.MouseButtonPress:
             self.last_clicked_index = index
@@ -79,7 +78,6 @@ class ToggleButtonDelegate(QStyledItemDelegate):
         return super().editorEvent(event, model, option, index)
 
     def paint(self, painter, option, index):
-        # pylint: disable=no-self-use
         '''Draws the button'''
 
         button_option = QStyleOptionToolButton()

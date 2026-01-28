@@ -20,7 +20,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 
 # pylint: disable=import-error
@@ -31,6 +30,7 @@ from lisp.ui.ui_utils import translate
 from ..config.concept_assign_model import GroupRow
 from ..config.concept_assign_view import ConceptTreeView
 from .choir_tree_model import ChoirAssignRow, ChoirTreeModel
+
 
 class ChoirAssignUi(SettingsPage):
     '''Choir Groups Assign UI'''
@@ -66,14 +66,12 @@ class ChoirAssignUi(SettingsPage):
         self.buttons_group.layout().addWidget(self.button_rem)
 
     def getSettings(self):
-        # pylint: disable=invalid-name
         '''Gets serialised data from model, ready for saving'''
         return {
             "choir": self.tree_model.serialise()
         }
 
     def loadSettings(self, settings):
-        # pylint: disable=invalid-name
         '''Passes loaded data to model to deserialise'''
         if "choir" in settings:
             self.tree_model.deserialise(settings["choir"])
