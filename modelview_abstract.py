@@ -2,10 +2,10 @@
 # licence as - Linux Show Player
 #
 # Linux Show Player:
-#   Copyright 2012-2021 Francesco Ceruti <ceppofrancy@gmail.com>
+#   Copyright 2012-2026 Francesco Ceruti <ceppofrancy@gmail.com>
 #
 # This file:
-#   Copyright 2021 s0600204
+#   Copyright 2026 s0600204
 #
 # Linux Show Player is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,11 +20,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=missing-docstring, invalid-name
-
 from math import trunc
 
-# pylint: disable=no-name-in-module
 from PyQt5.QtCore import QItemSelection, QModelIndex, QRect
 from PyQt5.QtGui import QFontMetrics, QPainter, QRegion
 from PyQt5.QtWidgets import QAbstractItemView, QApplication, QStyle
@@ -33,6 +30,7 @@ from PyQt5.QtWidgets import QAbstractItemView, QApplication, QStyle
 from lisp.plugins import get_plugin
 
 from .ui import LINE_PEN
+
 
 class DcaModelViewTemplate(QAbstractItemView):
 
@@ -56,7 +54,7 @@ class DcaModelViewTemplate(QAbstractItemView):
         self.verticalScrollBar().setRange(0, 0)
         self.setSelectionMode(QAbstractItemView.SingleSelection)
 
-    def dataChanged(self, topLeft, bottomRight):
+    def dataChanged(self, topLeft, bottomRight): # pylint: disable=invalid-name
         '''This slot is called when the items with model indexes in the rectangle
            from topLeft to bottomRight change
         @arg topLeft QModelIndex
@@ -68,7 +66,6 @@ class DcaModelViewTemplate(QAbstractItemView):
         self.viewport().update()
 
     def horizontalOffset(self): # REQUIRED REQUESTED
-        # pylint: disable=no-self-use
         '''Returns the view's horizontal offset.
         @return int
         '''
@@ -81,7 +78,7 @@ class DcaModelViewTemplate(QAbstractItemView):
         '''
         point.setX(point.x() + self.horizontalScrollBar().value())
         point.setY(point.y() + self.verticalScrollBar().value())
-        self._recalculate_cell_size()
+        self._recalculateCellSize()
 
         for row_num, row_dimensions in enumerate(self._cell_sizes):
 
@@ -105,7 +102,7 @@ class DcaModelViewTemplate(QAbstractItemView):
         return QModelIndex()
 
     def isIndexHidden(self, index): # REQUIRED
-        # pylint: disable=no-self-use, unused-argument
+        # pylint: disable=unused-argument
         '''Returns true if the item at index is a hidden item (and therefore should not be shown)
         @arg index QModelIndex
         @return bool
@@ -114,7 +111,7 @@ class DcaModelViewTemplate(QAbstractItemView):
         return False
 
     def moveCursor(self, how, modifiers): # REQUIRED REQUESTED
-        # pylint: disable=no-self-use, unused-argument
+        # pylint: disable=unused-argument
         '''Returns the model index of the item after navigating how (e.g. up, down, left, or right),
            and accounting for the keyboard modifiers
         @arg how QAbstractItemView::CursorAction
@@ -138,7 +135,7 @@ class DcaModelViewTemplate(QAbstractItemView):
             return state
 
         # Update/Recalculate dimensions
-        self._recalculate_cell_size()
+        self._recalculateCellSize()
 
         for row_num, row_dimensions in enumerate(self._cell_sizes):
             row_index = self.model().index(row_num, 0, self.rootIndex())
@@ -146,7 +143,7 @@ class DcaModelViewTemplate(QAbstractItemView):
             if self.DRAW_CUEHEADER:
                 # Draw the Cue Number & Name
                 row_viewoptions = self.viewOptions()
-                row_viewoptions.rect = self._viewport_rect_for_item(row_index)
+                row_viewoptions.rect = self._viewportRectForItem(row_index)
                 row_viewoptions.state |= _get_selection_state(row_index)
                 self.itemDelegate().paint(painter, row_viewoptions, row_index)
 
@@ -156,13 +153,13 @@ class DcaModelViewTemplate(QAbstractItemView):
 
                 # Draw the DCA name
                 dcaname_viewoptions = self.viewOptions()
-                dcaname_viewoptions.rect = self._viewport_rect_for_item(block_index)
+                dcaname_viewoptions.rect = self._viewportRectForItem(block_index)
                 dcaname_viewoptions.state |= _get_selection_state(block_index)
                 self.itemDelegate().paint(painter, dcaname_viewoptions, block_index)
 
                 # And a line under it
                 # pylint: disable=line-too-long
-                self._paint_line(painter,
+                self._paintLine(painter,
                                  block_dimensions['line_rect'].adjusted(-self.horizontalScrollBar().value(),
                                                                         -self.verticalScrollBar().value(),
                                                                         -self.horizontalScrollBar().value(),
@@ -172,7 +169,7 @@ class DcaModelViewTemplate(QAbstractItemView):
                 for assign_num in range(len(block_dimensions['entries'])):
                     assign_index = self.model().index(assign_num, 0, block_index)
                     assign_viewoptions = self.viewOptions()
-                    assign_viewoptions.rect = self._viewport_rect_for_item(assign_index)
+                    assign_viewoptions.rect = self._viewportRectForItem(assign_index)
                     assign_viewoptions.state |= _get_selection_state(assign_index)
                     self.itemDelegate().paint(painter, assign_viewoptions, assign_index)
 
@@ -183,7 +180,7 @@ class DcaModelViewTemplate(QAbstractItemView):
         if not self.model():
             return
         self._cell_sizes_dirty = True
-        self._recalculate_cell_size()
+        self._recalculateCellSize()
 
     def rowsAboutToBeRemoved(self, parent, start, end):
         '''This slot is called when rows from start to end under parent are about to be removed
@@ -254,7 +251,7 @@ class DcaModelViewTemplate(QAbstractItemView):
         '''
         rectangle = rect.translated(self.horizontalScrollBar().value(),
                                     self.verticalScrollBar().value()).normalized()
-        self._recalculate_cell_size()
+        self._recalculateCellSize()
         something_selected = False
 
         for row_num, row_dimensions in enumerate(self._cell_sizes):
@@ -276,26 +273,25 @@ class DcaModelViewTemplate(QAbstractItemView):
                             self.selectionModel().select(QItemSelection(block_index,
                                                                         block_index), flags)
 
-                        selectStart = len(block_dimensions['entries'])
-                        selectEnd = -1
+                        select_start = len(block_dimensions['entries'])
+                        select_end = -1
 
                         for assign_num, assign_dimensions in enumerate(block_dimensions['entries']):
                             if assign_dimensions.intersects(rectangle):
                                 something_selected = True
-                                selectStart = selectStart if selectStart < assign_num else assign_num # pylint: disable=line-too-long
-                                selectEnd = selectEnd if selectEnd > assign_num else assign_num
+                                select_start = select_start if select_start < assign_num else assign_num # pylint: disable=line-too-long
+                                select_end = select_end if select_end > assign_num else assign_num
 
-                        if selectStart != len(block_dimensions['entries']) and selectEnd != -1:
+                        if select_start != len(block_dimensions['entries']) and select_end != -1:
                             # pylint: disable=line-too-long
-                            selection = QItemSelection(self.model().index(selectStart, 0, block_index),
-                                                       self.model().index(selectEnd, 0, block_index))
+                            selection = QItemSelection(self.model().index(select_start, 0, block_index),
+                                                       self.model().index(select_end, 0, block_index))
                             self.selectionModel().select(selection, flags)
 
         if not something_selected:
             self.selectionModel().select(QItemSelection(QModelIndex(), QModelIndex()), flags)
 
     def verticalOffset(self): # REQUESTED
-        # pylint: disable=no-self-use
         '''Returns the view's vertical offset
         @return int
         '''
@@ -307,7 +303,7 @@ class DcaModelViewTemplate(QAbstractItemView):
         @return QRect
         '''
         if index.isValid():
-            return self._viewport_rect_for_item(index)
+            return self._viewportRectForItem(index)
         return QRect()
 
     def visualRegionForSelection(self, selection): # REQUIRED
@@ -321,7 +317,7 @@ class DcaModelViewTemplate(QAbstractItemView):
                 region += self.visualRect(index)
         return region
 
-    def _recalculate_cell_size(self):
+    def _recalculateCellSize(self):
         if not self._cell_sizes_dirty:
             return
         self._cell_sizes = []
@@ -415,30 +411,30 @@ class DcaModelViewTemplate(QAbstractItemView):
         self.viewport().update()
         self.updateGeometries()
 
-    def _paint_outline(self, painter, rect):
+    def _paintOutline(self, painter, rect):
         rect = rect.adjusted(0, 0, -1, -1)
         painter.save()
         painter.setPen(LINE_PEN)
         painter.drawRect(rect)
         painter.restore()
 
-    def _paint_line(self, painter, rect):
+    def _paintLine(self, painter, rect):
         painter.save()
         painter.setPen(LINE_PEN)
         painter.drawLine(rect.topLeft(), rect.bottomRight())
         painter.restore()
 
-    def _viewport_rect_for_item(self, index):
-        self._recalculate_cell_size()
-        rect = self._widget_rect_for_item(index)
+    def _viewportRectForItem(self, index):
+        self._recalculateCellSize()
+        rect = self._widgetRectForItem(index)
         if not rect.isValid():
             return rect
         return QRect(rect.x() - self.horizontalScrollBar().value(),
                      rect.y() - self.verticalScrollBar().value(),
                      rect.width(), rect.height())
 
-    def _widget_rect_for_item(self, index):
-        self._recalculate_cell_size()
+    def _widgetRectForItem(self, index):
+        self._recalculateCellSize()
         walk = []
         while index.isValid():
             walk.append(index.row())

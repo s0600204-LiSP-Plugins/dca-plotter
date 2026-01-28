@@ -2,10 +2,10 @@
 # licence as - Linux Show Player
 #
 # Linux Show Player:
-#   Copyright 2012-2021 Francesco Ceruti <ceppofrancy@gmail.com>
+#   Copyright 2012-2026 Francesco Ceruti <ceppofrancy@gmail.com>
 #
 # This file:
-#   Copyright 2021 s0600204
+#   Copyright 2026 s0600204
 #
 # Linux Show Player is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 
 # pylint: disable=import-error
@@ -33,6 +32,7 @@ from plugins.midi_fixture_control.ui import RadioButtonHidableDelegate
 from ..config.concept_assign_model import GroupRow
 from ..config.concept_assign_view import ConceptTreeView
 from .roles_tree_model import RoleAssignRow, RolesTreeModel
+
 
 class RolesAssignUi(SettingsPage):
     '''Parts Assign UI'''
@@ -71,14 +71,12 @@ class RolesAssignUi(SettingsPage):
         self.buttons_group.layout().addWidget(self.button_rem)
 
     def getSettings(self):
-        # pylint: disable=invalid-name
         '''Gets serialised data from model, ready for saving'''
         return {
             "role": self.tree_model.serialise()
         }
 
     def loadSettings(self, settings):
-        # pylint: disable=invalid-name
         '''Passes loaded data to model to deserialise'''
         if "role" in settings:
             self.tree_model.deserialise(settings["role"])

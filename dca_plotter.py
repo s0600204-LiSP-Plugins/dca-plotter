@@ -2,10 +2,10 @@
 # licence as - Linux Show Player
 #
 # Linux Show Player:
-#   Copyright 2012-2021 Francesco Ceruti <ceppofrancy@gmail.com>
+#   Copyright 2012-2026 Francesco Ceruti <ceppofrancy@gmail.com>
 #
 # This file:
-#   Copyright 2021 s0600204
+#   Copyright 2026 s0600204
 #
 # Linux Show Player is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +20,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=missing-docstring
-
-# pylint: disable=no-name-in-module
 from PyQt5.QtCore import QT_TRANSLATE_NOOP
 from PyQt5.QtWidgets import QAction
 
@@ -44,6 +41,7 @@ from .roles.roles_switcher import RolesSwitcher
 from .roles.roles_switcher_model import RolesSwitcherModel
 from .tracker.model import DcaTrackingModel
 from .tracker.view import DcaTrackingView
+
 
 class DcaPlotter(Plugin):
     """Provides the ability to plot DCA/VCA assignments"""
@@ -73,7 +71,7 @@ class DcaPlotter(Plugin):
         # Register the settings widget
         AppConfigurationDialog.registerSettingsPage(
             'plugins.dca_plotter', DcaPlotterSettings, DcaPlotter.Config)
-        DcaPlotter.Config.updated.connect(self._on_config_update)
+        DcaPlotter.Config.updated.connect(self._onConfigUpdate)
 
         # Register the session-level configuration of inputs
         SessionConfigurationDialog.registerSettingsPage(
@@ -87,17 +85,17 @@ class DcaPlotter(Plugin):
         self._roles_switcher_model = RolesSwitcherModel()
         self._roles_menu_action = QAction(translate('dca_plotter', 'Roles Switcher'),
                                           self.app.window)
-        self._roles_menu_action.triggered.connect(self._open_switcher_dialog)
+        self._roles_menu_action.triggered.connect(self._openSwitcherDialog)
         self.app.window.menuTools.addAction(self._roles_menu_action)
 
-    def _open_mapper_dialog(self):
-        if not self.mapper_enabled():
+    def _openMapperDialog(self):
+        if not self.mapper_enabled:
             return
         if not self._mapping_dialog:
             self._mapping_dialog = DcaMappingDialog(self._mapping_model)
         self._mapping_dialog.open()
 
-    def _open_switcher_dialog(self):
+    def _openSwitcherDialog(self):
         if not self._roles_switcher_dialog:
             self._roles_switcher_dialog = RolesSwitcher(self._roles_switcher_model)
         self._roles_switcher_dialog.open()
@@ -107,10 +105,10 @@ class DcaPlotter(Plugin):
         layout = self.app.layout
         self._roles_switcher_model.roleUpdated.disconnect(self._tracking_model.role_assign_swap)
         if isinstance(layout, ListLayout):
-            layout.model.item_added.disconnect(self._on_cue_added)
-            layout.model.item_moved.disconnect(self._on_cue_moved)
-            layout.model.item_removed.disconnect(self._on_cue_removed)
-            layout.view.listView.currentItemChanged.disconnect(self._on_cue_selected)
+            layout.model.item_added.disconnect(self._onCueAdded)
+            layout.model.item_moved.disconnect(self._onCueMoved)
+            layout.model.item_removed.disconnect(self._onCueRemoved)
+            layout.view.listView.currentItemChanged.disconnect(self._onCueSelected)
         if self._tracker_view:
             self._tracker_view.deinitialise()
             self._tracker_view = None
@@ -131,14 +129,14 @@ class DcaPlotter(Plugin):
         # Create the session's dca-tracking model
         # This model does not contain cues.
         # Instead it tracks which mics are muted and are currently assigned where
-        self._tracking_model = DcaTrackingModel(self.mapper_enabled())
+        self._tracking_model = DcaTrackingModel(self.mapper_enabled)
 
         # Renew the options in the Role Switcher
         self._roles_switcher_model.renew(self.SessionConfig)
         self._roles_switcher_model.roleUpdated.connect(self._tracking_model.role_assign_swap)
 
         # If the mapper is not to be used we don't need to have it or its menu option in existence
-        if not self.mapper_enabled():
+        if not self.mapper_enabled:
             if self._mapping_menu_action:
                 self.app.window.menuTools.removeAction(self._mapping_menu_action)
             self._mapping_menu_action = None
@@ -162,27 +160,27 @@ class DcaPlotter(Plugin):
         # Create an entry in the "Tools" menu
         if not self._mapping_menu_action:
             self._mapping_menu_action = QAction('DCA Mapper', self.app.window)
-            self._mapping_menu_action.triggered.connect(self._open_mapper_dialog)
+            self._mapping_menu_action.triggered.connect(self._openMapperDialog)
             self.app.window.menuTools.addAction(self._mapping_menu_action)
 
         # Listeners for cue actions
-        layout.model.item_added.connect(self._on_cue_added)
-        layout.model.item_moved.connect(self._on_cue_moved)
-        layout.model.item_removed.connect(self._on_cue_removed)
-        layout.view.listView.currentItemChanged.connect(self._on_cue_selected)
+        layout.model.item_added.connect(self._onCueAdded)
+        layout.model.item_moved.connect(self._onCueMoved)
+        layout.model.item_removed.connect(self._onCueRemoved)
+        layout.view.listView.currentItemChanged.connect(self._onCueSelected)
 
         self.initialised.emit()
 
-    def _on_config_update(self, args):
+    def _onConfigUpdate(self, args):
         if 'blanking_text' in args:
             self._tracking_model.regenerate_current()
 
-    def _on_session_config_altered(self, _):
+    def _onSessionConfigAltered(self, _):
         # Renew the options in the Role Switcher
         self._roles_switcher_model.renew(self.SessionConfig)
         self._tracking_model.regenerate_current()
 
-    def _on_cue_selected(self, current, _):
+    def _onCueSelected(self, current, _):
         """Action to take when a cue is selected.
 
         This function only gets called if the session is in the "List" layout.
@@ -190,26 +188,26 @@ class DcaPlotter(Plugin):
         (And there are no other layouts currently.)
         """
         if current and self._mapping_model:
-            if self._is_supported_cuetype(current.cue.type):
+            if self._isSupportedCueType(current.cue.type):
                 self._tracking_model.select_cue(current.cue)
             else:
                 self._tracking_model.clear_current_diff()
 
-    def _on_cue_added(self, cue):
+    def _onCueAdded(self, cue):
         """Action to take when a cue is added to the List Layout."""
-        if self._is_supported_cuetype(cue.type):
+        if self._isSupportedCueType(cue.type):
             self._mapping_model.append_cuerow(cue)
             cue.property_changed.connect(self._tracking_model.on_cue_update)
 
-    def _on_cue_moved(self, _, new_index):
+    def _onCueMoved(self, _, new_index):
         """Action to take when a cue is moved in the List Layout."""
         cue = self.app.layout.model.item(new_index)
-        if self._is_supported_cuetype(cue.type):
+        if self._isSupportedCueType(cue.type):
             self._mapping_model.move_cuerow(cue, new_index)
 
-    def _on_cue_removed(self, cue):
+    def _onCueRemoved(self, cue):
         """Action to take when a cue is removed from the List Layout."""
-        if self._is_supported_cuetype(cue.type):
+        if self._isSupportedCueType(cue.type):
             self._mapping_model.remove_cuerow(cue)
             cue.property_changed.disconnect(self._tracking_model.on_cue_update)
 
@@ -234,13 +232,15 @@ class DcaPlotter(Plugin):
 
         return assignables
 
+    @property
     def mapper_enabled(self):
         return isinstance(self.app.layout, ListLayout)
 
+    @property
     def mapper(self):
         return self._mapping_model
 
-    def resolve_role(self, role_id):
+    def resolveRole(self, role_id):
         current = self._roles_switcher_model.current(role_id)
         if current:
             return current
@@ -250,12 +250,12 @@ class DcaPlotter(Plugin):
 
         return None
 
-    def resolve_choir(self, choir_id):
+    def resolveChoir(self, choir_id):
         choir_assigns = self.SessionConfig['assigns']['choir'][choir_id]['assigns']
         return [tuple(assign) for assign in choir_assigns]
 
     def tracker(self):
         return self._tracking_model
 
-    def _is_supported_cuetype(self, cue_type):
+    def _isSupportedCueType(self, cue_type):
         return cue_type in [ct.__name__ for ct in self._cue_types]

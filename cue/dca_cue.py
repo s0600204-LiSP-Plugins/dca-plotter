@@ -2,10 +2,10 @@
 # licence as - Linux Show Player
 #
 # Linux Show Player:
-#   Copyright 2012-2021 Francesco Ceruti <ceppofrancy@gmail.com>
+#   Copyright 2012-2026 Francesco Ceruti <ceppofrancy@gmail.com>
 #
 # This file:
-#   Copyright 2021 s0600204
+#   Copyright 2026 s0600204
 #
 # Linux Show Player is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,12 +20,13 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=missing-docstring, invalid-name, too-few-public-methods
+# pylint: disable=too-few-public-methods
 
 # pylint: disable=import-error
 from lisp.cues.cue import Cue
 from lisp.plugins import get_plugin
 from lisp.ui.ui_utils import translate
+
 
 class DcaCue(Cue):
 

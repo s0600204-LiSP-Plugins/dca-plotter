@@ -2,10 +2,10 @@
 # licence as - Linux Show Player
 #
 # Linux Show Player:
-#   Copyright 2012-2021 Francesco Ceruti <ceppofrancy@gmail.com>
+#   Copyright 2012-2026 Francesco Ceruti <ceppofrancy@gmail.com>
 #
 # This file:
-#   Copyright 2021 s0600204
+#   Copyright 2026 s0600204
 #
 # Linux Show Player is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,11 +22,11 @@
 
 from math import trunc
 
-# pylint: disable=no-name-in-module
 from PyQt5.QtCore import QModelIndex, QRect, QSize, Qt
 from PyQt5.QtGui import QFontMetrics, QPainter, QRegion
 from PyQt5.QtWidgets import QAbstractItemView
 
+# pylint: disable=import-error
 from plugins.midi_fixture_control.ui import LabelDelegate
 
 from ..ui import LINE_PEN, ToggleButtonDelegate
@@ -50,23 +50,20 @@ class RolesSwitcherView(QAbstractItemView):
         self.setItemDelegateForColumn(0, self._label_delegate)
 
     def modelDataRenewed(self):
-        #pylint: disable=invalid-name
-        self._recalculate_cell_size()
+        self._recalculateCellSize()
 
     def horizontalOffset(self): # REQUIRED REQUESTED
-        # pylint: disable=invalid-name, no-self-use
         '''Returns the view's horizontal offset.
         @return int
         '''
         return 0
 
     def indexAt(self, point): # REQUIRED REQUESTED
-        # pylint: disable=invalid-name
         '''Returns the model index of the item at position point in the view's viewport
         @arg point QPoint
         @return QModelIndex
         '''
-        self._recalculate_cell_size()
+        self._recalculateCellSize()
 
         for row, row_dimensions in enumerate(self._cell_sizes):
             if not row_dimensions:
@@ -80,7 +77,6 @@ class RolesSwitcherView(QAbstractItemView):
         return QModelIndex()
 
     def isIndexHidden(self, _): # REQUIRED
-        # pylint: disable=invalid-name, no-self-use
         '''Returns true if the item at index is a hidden item (and therefore should not be shown)
         @arg index QModelIndex
         @return bool
@@ -88,7 +84,6 @@ class RolesSwitcherView(QAbstractItemView):
         return False
 
     def moveCursor(self, *_): # REQUIRED REQUESTED
-        # pylint: disable=invalid-name, no-self-use, unused-argument
         '''Returns the model index of the item after navigating how (e.g. up, down, left, or right),
            and accounting for the keyboard modifiers
         @arg how QAbstractItemView::CursorAction
@@ -98,7 +93,6 @@ class RolesSwitcherView(QAbstractItemView):
         return QModelIndex()
 
     def paintEvent(self, _):
-        # pylint: disable=invalid-name
         '''Paints the view's contents on the viewport
         @arg event QPaintEvent
         '''
@@ -106,7 +100,7 @@ class RolesSwitcherView(QAbstractItemView):
         model = self.model()
 
         # Update/Recalculate dimensions
-        self._recalculate_cell_size()
+        self._recalculateCellSize()
 
         for role_num in range(model.rowCount(model.index(0, 0))):
             if not self._cell_sizes[role_num]:
@@ -121,7 +115,7 @@ class RolesSwitcherView(QAbstractItemView):
 
             # Line
             for line in self._cell_sizes[role_num]['line_rects']:
-                self._paint_line(painter, line)
+                self._paintLine(painter, line)
 
             # Assigns
             for assign_num in range(model.columnCount(model.index(role_num, 0))):
@@ -130,16 +124,14 @@ class RolesSwitcherView(QAbstractItemView):
                 self.itemDelegate().paint(painter, ass_viewoptions, model.index(role_num, assign_num + 1))
 
     def resizeEvent(self, _):
-        # pylint: disable=invalid-name
         '''Typically used to update the scrollbars
         @arg event QResizeEvent
         '''
         if not self.model():
             return
-        self._recalculate_cell_size()
+        self._recalculateCellSize()
 
     def scrollTo(self, *_): # REQUIRED, REQUESTED
-        # pylint: disable=invalid-name
         '''Scrolls the view to ensure that the item at the given model index is visible,
            respecting the scroll hint as it scrolls
         @arg index QModelIndex
@@ -147,30 +139,26 @@ class RolesSwitcherView(QAbstractItemView):
         '''
 
     def setModel(self, model):
-        # pylint: disable=invalid-name
         '''Makes the view use the given model
         @arg model QAbstractItemModel
         '''
         super().setModel(model)
         self.model().dataRenewed.connect(self.modelDataRenewed)
-        self._recalculate_cell_size()
+        self._recalculateCellSize()
 
     def setSelection(self, *_): # REQUIRED, REQUESTED
-        # pylint: disable=invalid-name, no-self-use
         '''Applies the selection flags to all of the items in or touching the rectangle rect
         @arg rect QRect
         @arg flags QItemSelectionModel::SelectionFlags
         '''
 
     def verticalOffset(self): # REQUESTED
-        # pylint: disable=invalid-name, no-self-use
         '''Returns the view's vertical offset
         @return int
         '''
         return 0
 
     def visualRect(self, index): # REQUIRED REQUESTED
-        # pylint: disable=invalid-name
         '''Returns the rectangle occupied by the item at the given model index
         @arg index QModelIndex
         @return QRect
@@ -193,7 +181,6 @@ class RolesSwitcherView(QAbstractItemView):
         return self._cell_sizes[row]['assigns'][col]
 
     def visualRegionForSelection(self, selection): # REQUIRED
-        # pylint: disable=invalid-name
         '''Returns the viewport region for the items in the selection
         @arg selection QItemSelection
         @return QRegion
@@ -204,7 +191,7 @@ class RolesSwitcherView(QAbstractItemView):
                 region += self.visualRect(index)
         return region
 
-    def _recalculate_cell_size(self):
+    def _recalculateCellSize(self):
         self._cell_sizes = []
 
         font_height = self._fontmetrics.height()
@@ -266,7 +253,7 @@ class RolesSwitcherView(QAbstractItemView):
     def minimumSizeHint(self):
         return QSize(200, self._ideal_height)
 
-    def _paint_line(self, painter, rect):
+    def _paintLine(self, painter, rect):
         painter.save()
         painter.setPen(LINE_PEN)
         painter.drawLine(rect.topLeft(), rect.bottomRight())

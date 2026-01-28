@@ -2,10 +2,10 @@
 # licence as - Linux Show Player
 #
 # Linux Show Player:
-#   Copyright 2012-2021 Francesco Ceruti <ceppofrancy@gmail.com>
+#   Copyright 2012-2026 Francesco Ceruti <ceppofrancy@gmail.com>
 #
 # This file:
-#   Copyright 2021 s0600204
+#   Copyright 2026 s0600204
 #
 # Linux Show Player is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=missing-docstring, invalid-name
-
 # pylint: disable=import-error
 from lisp.ui.qdelegates import LineEditDelegate, SpinBoxDelegate
 from lisp.ui.ui_utils import translate
@@ -29,6 +27,7 @@ from lisp.ui.ui_utils import translate
 from plugins.midi_fixture_control.ui import LabelDelegate
 
 from .channel_assign_page import AssignUi
+
 
 class FxAssignUi(AssignUi):
     '''FX Unit Assign UI'''

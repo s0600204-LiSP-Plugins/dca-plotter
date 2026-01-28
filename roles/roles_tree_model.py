@@ -2,10 +2,10 @@
 # licence as - Linux Show Player
 #
 # Linux Show Player:
-#   Copyright 2012-2021 Francesco Ceruti <ceppofrancy@gmail.com>
+#   Copyright 2012-2026 Francesco Ceruti <ceppofrancy@gmail.com>
 #
 # This file:
-#   Copyright 2021 s0600204
+#   Copyright 2026 s0600204
 #
 # Linux Show Player is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=no-name-in-module
 from PyQt5.QtCore import Qt
 
 # pylint: disable=import-error
@@ -45,7 +44,6 @@ class RoleAssignRow(BaseRow):
         self._is_default = self._parent.childCount() == 0
 
     def data(self, col, role=Qt.DisplayRole):
-        # pylint: disable=missing-docstring
         if col == -1 and role == ConceptTreeModel.AccessRole:
             return self._channel
 
@@ -58,7 +56,6 @@ class RoleAssignRow(BaseRow):
         return super().data(col, role)
 
     def flags(self, col):
-        # pylint: disable=missing-docstring
         flags = Qt.ItemNeverHasChildren | Qt.ItemIsEnabled | Qt.ItemIsSelectable
         if col == 0:
             return flags
@@ -67,7 +64,6 @@ class RoleAssignRow(BaseRow):
         return super().flags(col)
 
     def setData(self, col, data, role):
-        # pylint: disable=invalid-name, missing-docstring
         if col == 1 and role == Qt.CheckStateRole:
             self._is_default = data == Qt.Checked
             if data == Qt.Unchecked:

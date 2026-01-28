@@ -2,10 +2,10 @@
 # licence as - Linux Show Player
 #
 # Linux Show Player:
-#   Copyright 2012-2021 Francesco Ceruti <ceppofrancy@gmail.com>
+#   Copyright 2012-2026 Francesco Ceruti <ceppofrancy@gmail.com>
 #
 # This file:
-#   Copyright 2021 s0600204
+#   Copyright 2026 s0600204
 #
 # Linux Show Player is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,11 +20,11 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QAction, QMenu
 
 from ..input_select_dialog import InputSelectDialog
 from ..ui import SimpleTreeView
+
 
 class ConceptTreeView(SimpleTreeView):
     def __init__(self, *args, **kwargs):
@@ -36,10 +36,10 @@ class ConceptTreeView(SimpleTreeView):
         index = self.selectedIndexes()[0]
 
         selection_choices = self.model().get_assignable_selection_choice(index)
-        self._assign_select_dialog.set_entries(selection_choices)
+        self._assign_select_dialog.setEntries(selection_choices)
 
         if self._assign_select_dialog.exec_() == self._assign_select_dialog.Accepted:
-            for channel_tuple in self._assign_select_dialog.selected_entries():
+            for channel_tuple in self._assign_select_dialog.selectedEntries():
                 self.model().addAssign(index, channel_tuple)
 
     def _create_menu_action(self, caption, slot):

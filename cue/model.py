@@ -2,10 +2,10 @@
 # licence as - Linux Show Player
 #
 # Linux Show Player:
-#   Copyright 2012-2021 Francesco Ceruti <ceppofrancy@gmail.com>
+#   Copyright 2012-2026 Francesco Ceruti <ceppofrancy@gmail.com>
 #
 # This file:
-#   Copyright 2021 s0600204
+#   Copyright 2026 s0600204
 #
 # Linux Show Player is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,19 +20,24 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=missing-docstring, invalid-name, line-too-long
+# pylint: disable=line-too-long
 
 import logging
 
 # pylint: disable=import-error
 from lisp.plugins import get_plugin
 
-# pylint: disable=relative-beyond-top-level
-from ..model_primitives import AssignStateEnum, DcaModelTemplate, \
-    ModelsAssignRow, ModelsEntry
+from ..model_primitives import (
+    AssignStateEnum,
+    DcaModelTemplate,
+    ModelsAssignRow,
+    ModelsEntry,
+)
 from ..utilities import get_name_for_empty_dca
 
-logger = logging.getLogger(__name__) # pylint: disable=invalid-name
+
+logger = logging.getLogger(__name__)
+
 
 class DcaCueModel(DcaModelTemplate):
 
@@ -41,12 +46,12 @@ class DcaCueModel(DcaModelTemplate):
     def __init__(self):
         super().__init__()
 
-        self._add_node(self.createIndex(0, 0, self.root), ModelsAssignRow(parent=self.root))
-        self._inherits_enabled = get_plugin('DcaPlotter').mapper_enabled()
+        self._addNode(self.createIndex(0, 0, self.root), ModelsAssignRow(parent=self.root))
+        self._inherits_enabled = get_plugin('DcaPlotter').mapper_enabled
 
     def deserialise(self, assign_changes, cue_id):
         if self._inherits_enabled:
-            cuerow = get_plugin('DcaPlotter').mapper().find_cuerow(cue_id)
+            cuerow = get_plugin('DcaPlotter').mapper.find_cuerow(cue_id)
 
         for dca_num, dca_assign_actions in enumerate(assign_changes):
             dca_node = self.root.child(0).child(dca_num)
@@ -59,12 +64,12 @@ class DcaCueModel(DcaModelTemplate):
 
                 assign_action = AssignStateEnum.UNASSIGN if action == 'rem' else AssignStateEnum.ASSIGN
                 for channel_tuple in channels:
-                    self._add_node(dca_node.index(), ModelsEntry(channel_tuple, assign_action, parent=dca_node))
+                    self._addNode(dca_node.index(), ModelsEntry(channel_tuple, assign_action, parent=dca_node))
 
         # Set the inheritance flags
         for dca_num, dca_node in enumerate(self.root.child(0).children):
             if self._inherits_enabled:
-                previous_cuerow = cuerow.prev_sibling()
+                previous_cuerow = cuerow.prevSibling()
                 if previous_cuerow:
                     if previous_cuerow.cue.type == "DcaChangeCue":
                         dca_node.setInherited(previous_cuerow.child(dca_num).data())
@@ -79,7 +84,7 @@ class DcaCueModel(DcaModelTemplate):
                         else:
                             new_entry = ModelsEntry(entry.value(), parent=dca_node)
                             new_entry.setInherited(True)
-                            self._add_node(dca_node.index(), new_entry)
+                            self._addNode(dca_node.index(), new_entry)
 
     def serialise(self):
         assigns = []
@@ -100,20 +105,19 @@ class DcaCueModel(DcaModelTemplate):
 
     def add_new_entry(self, dca_num, channel_tuple, assign_state):
         dca_node = self.root.child(0).child(dca_num)
-        self._add_node(dca_node.index(), ModelsEntry(channel_tuple, assign_state, parent=dca_node))
+        self._addNode(dca_node.index(), ModelsEntry(channel_tuple, assign_state, parent=dca_node))
 
     def inherits_enabled(self):
         return self._inherits_enabled
 
     def pin_entry(self, entry_index):
-        # pylint: disable=no-self-use
         entry_node = entry_index.internalPointer()
         entry_node.setAssignState(AssignStateEnum.ASSIGN)
 
     def remove_entry(self, entry_index):
         entry_node = entry_index.internalPointer()
         if not entry_node.inherited():
-            self._remove_node(entry_index)
+            self._removeNode(entry_index)
         elif entry_node.assignState() == AssignStateEnum.NONE:
             entry_node.setAssignState(AssignStateEnum.UNASSIGN)
         else:

@@ -2,10 +2,10 @@
 # licence as - Linux Show Player
 #
 # Linux Show Player:
-#   Copyright 2012-2021 Francesco Ceruti <ceppofrancy@gmail.com>
+#   Copyright 2012-2026 Francesco Ceruti <ceppofrancy@gmail.com>
 #
 # This file:
-#   Copyright 2021 s0600204
+#   Copyright 2026 s0600204
 #
 # Linux Show Player is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,17 +20,14 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=missing-docstring, invalid-name
-
-# pylint: disable=no-name-in-module
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAction, QMenu
 
-# pylint: disable=relative-beyond-top-level
 from ..input_select_dialog import InputSelectDialog
 from ..modelview_abstract import DcaModelViewTemplate
 from ..model_primitives import AssignStateEnum, ModelsBlock, ModelsEntry
 from ..utilities import get_channel_name
+
 
 class DcaCueView(DcaModelViewTemplate):
 
@@ -113,10 +110,10 @@ class DcaCueView(DcaModelViewTemplate):
 
         selection_choices = self.model().get_assignable_selection_choice(selected_node.rownum(),
                                                                          AssignStateEnum.ASSIGN)
-        self._input_select_dialog.set_entries(selection_choices)
+        self._input_select_dialog.setEntries(selection_choices)
 
         if self._input_select_dialog.exec_() == self._input_select_dialog.Accepted:
-            for channel_tuple in self._input_select_dialog.selected_entries():
+            for channel_tuple in self._input_select_dialog.selectedEntries():
                 self.model().add_new_entry(selected_node.rownum(),
                                            channel_tuple,
                                            AssignStateEnum.ASSIGN)
@@ -129,10 +126,10 @@ class DcaCueView(DcaModelViewTemplate):
 
         selection_choices = self.model().get_assignable_selection_choice(selected_node.rownum(),
                                                                          AssignStateEnum.UNASSIGN)
-        self._input_select_dialog.set_entries(selection_choices)
+        self._input_select_dialog.setEntries(selection_choices)
 
         if self._input_select_dialog.exec_() == self._input_select_dialog.Accepted:
-            for channel_tuple in self._input_select_dialog.selected_entries():
+            for channel_tuple in self._input_select_dialog.selectedEntries():
                 self.model().add_new_entry(selected_node.rownum(),
                                            channel_tuple,
                                            AssignStateEnum.UNASSIGN)

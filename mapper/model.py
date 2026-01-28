@@ -2,10 +2,10 @@
 # licence as - Linux Show Player
 #
 # Linux Show Player:
-#   Copyright 2012-2021 Francesco Ceruti <ceppofrancy@gmail.com>
+#   Copyright 2012-2026 Francesco Ceruti <ceppofrancy@gmail.com>
 #
 # This file:
-#   Copyright 2021 s0600204
+#   Copyright 2026 s0600204
 #
 # Linux Show Player is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,19 +20,20 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=missing-docstring
-
 import copy
 
-# pylint: disable=no-name-in-module
 from PyQt5.QtCore import QModelIndex, Qt
 
 # pylint: disable=import-error
 from lisp.plugins import get_plugin
 
-# pylint: disable=relative-beyond-top-level
-from ..model_primitives import AssignStateEnum, DcaModelTemplate, ModelsAssignRow, \
-    ModelsEntry, ModelsResetRow
+from ..model_primitives import (
+    AssignStateEnum,
+    DcaModelTemplate,
+    ModelsAssignRow,
+    ModelsEntry,
+    ModelsResetRow,
+)
 
 
 class DcaMappingModel(DcaModelTemplate):
@@ -79,13 +80,13 @@ class DcaMappingModel(DcaModelTemplate):
 
         if cue.type == "DcaChangeCue":
             new_cuerow = ModelsAssignRow(cue, parent=self.root)
-            self._add_node(self.createIndex(self.root.childCount(), 0, self.root), new_cuerow)
+            self._addNode(self.createIndex(self.root.childCount(), 0, self.root), new_cuerow)
             self._set_initial_assigns(new_cuerow, cue.dca_changes, False)
             new_cuerow.cue.validate_assigns(_change_tuples_derive(new_cuerow))
 
         elif cue.type == "DcaResetCue":
             new_cuerow = ModelsResetRow(cue, parent=self.root)
-            self._add_node(self.createIndex(self.root.childCount(), 0, self.root), new_cuerow)
+            self._addNode(self.createIndex(self.root.childCount(), 0, self.root), new_cuerow)
 
         # Attach listener so we get cue property changes
         cue.property_changed.connect(self.amend_cuerow)
@@ -104,8 +105,8 @@ class DcaMappingModel(DcaModelTemplate):
         # Update assign entries at the leave point
         if cue.type == "DcaChangeCue":
             changes = _change_tuples_invert(_change_tuples_derive(cuerow))
-        elif cuerow.prev_sibling():
-            changes = _change_tuples_derive(cuerow.prev_sibling())
+        elif cuerow.prevSibling():
+            changes = _change_tuples_derive(cuerow.prevSibling())
         else: # DCA Reset Cue
             changes = []
             for dca_num in range(get_plugin('DcaPlotter').SessionConfig['dca_count']):
@@ -126,17 +127,17 @@ class DcaMappingModel(DcaModelTemplate):
             for entry in copy.copy(dca_node.children):
                 entry.setInherited(False)
                 if entry.assignState() == AssignStateEnum.NONE:
-                    self._remove_node(entry.index())
+                    self._removeNode(entry.index())
 
         # Then, update from the new previous cue row
-        prev_sibling = cuerow.prev_sibling()
-        if prev_sibling and prev_sibling.cue.type == "DcaChangeCue":
+        prev_sibling = cuerow.prevSibling()
+        if prev_sibling and prevSibling.cue.type == "DcaChangeCue":
             changes = _change_tuples_derive(prev_sibling)
             self._change_tuples_apply(cuerow, changes)
 
         # Finally, cascade changes.
         if cuerow.cue.type == "DcaResetCue":
-            changes = _change_tuples_clear(_change_tuples_derive(cuerow.prev_sibling()))
+            changes = _change_tuples_clear(_change_tuples_derive(cuerow.prevSibling()))
             for dca_num in range(get_plugin('DcaPlotter').SessionConfig['dca_count']):
                 changes.append((dca_num, None, 'Name'))
         else:
@@ -152,11 +153,11 @@ class DcaMappingModel(DcaModelTemplate):
         if cue.type == "DcaChangeCue":
             changes = _change_tuples_invert(_change_tuples_derive(cuerow))
         else:
-            changes = _change_tuples_derive(cuerow.prev_sibling())
+            changes = _change_tuples_derive(cuerow.prevSibling())
         self._change_tuples_cascade_apply(cuerow, changes)
 
         # And remove the cuerow from the model
-        self._remove_node(cuerow.index())
+        self._removeNode(cuerow.index())
 
     def _change_tuples_apply(self, cuerow, changes):
 
@@ -177,14 +178,14 @@ class DcaMappingModel(DcaModelTemplate):
                 if change[2] != AssignStateEnum.UNASSIGN:
                     new_entry = ModelsEntry(change[1], parent=block_node)
                     new_entry.setInherited(True)
-                    self._add_node(block_index, new_entry)
+                    self._addNode(block_index, new_entry)
             else:
                 entry_node = block_node.child(block_entry_values.index(change[1]))
                 if entry_node.assignState() != AssignStateEnum.NONE:
                     changes.remove(change)
                     entry_node.setInherited(change[2] != AssignStateEnum.UNASSIGN)
                 elif not change[2] or change[2] == AssignStateEnum.UNASSIGN:
-                    self._remove_node(entry_node.index())
+                    self._removeNode(entry_node.index())
 
     def _change_tuples_cascade_apply(self, cuerow, changes):
         next_rownum = cuerow.rownum() + 1
@@ -210,22 +211,22 @@ class DcaMappingModel(DcaModelTemplate):
             block_index = block_node.index()
 
             if clear_first:
-                self._clear_node(block_index)
+                self._clearNode(block_index)
                 block_node.setData("", Qt.EditRole)
 
             if assign_actions['name']:
                 block_node.setData(assign_actions['name'], Qt.EditRole)
 
             for entry in assign_actions['add']:
-                self._add_node(block_index,
-                               ModelsEntry(entry, AssignStateEnum.ASSIGN, parent=block_node))
+                self._addNode(block_index,
+                              ModelsEntry(entry, AssignStateEnum.ASSIGN, parent=block_node))
 
             for entry in assign_actions['rem']:
-                self._add_node(block_index,
-                               ModelsEntry(entry, AssignStateEnum.UNASSIGN, parent=block_node))
+                self._addNode(block_index,
+                              ModelsEntry(entry, AssignStateEnum.UNASSIGN, parent=block_node))
 
         # Get inherits from previous cue row
-        prev_sibling = cuerow.prev_sibling()
+        prev_sibling = cuerow.prevSibling()
         if prev_sibling:
             changes = _change_tuples_derive(prev_sibling)
             self._change_tuples_apply(cuerow, changes)

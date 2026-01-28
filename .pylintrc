@@ -1,0 +1,15 @@
+[MAIN]
+extension-pkg-allow-list=
+    PyQt5.QtCore,
+    PyQt5.QtGui,
+    PyQt5.QtWidgets,
+
+# As we're aping [Py]Qt5/6
+method-naming-style=camelCase
+
+
+[MESSAGES CONTROL]
+disable=
+    missing-class-docstring,
+    missing-module-docstring,
+    missing-function-docstring,
