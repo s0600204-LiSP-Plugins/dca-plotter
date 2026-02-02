@@ -27,7 +27,10 @@ from lisp.ui.qdelegates import LineEditDelegate
 from lisp.ui.settings.pages import SettingsPage
 from lisp.ui.ui_utils import translate
 
-from plugins.midi_fixture_control.ui import RadioButtonHidableDelegate
+try:
+    from plugins.midi_fixture_control.ui import RadioButtonHidableDelegate
+except ImportError:
+    from lisp.plugins.midi_fixture_control.ui import RadioButtonHidableDelegate
 
 from ..config.concept_assign_model import GroupRow
 from ..config.concept_assign_view import ConceptTreeView
