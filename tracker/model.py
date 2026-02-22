@@ -478,6 +478,9 @@ def _update_assign_changes(assign_changes, action, channel_tuple):
     #   1 = UnMute
     #   -1 = No Action (Keep On - Assign moved from one DCA to another)
 
+    if channel_tuple[0] == 'role':
+        channel_tuple = get_plugin('DcaPlotter').resolveRole(channel_tuple[1])
+
     if action == "assign":
         if channel_tuple not in assign_changes:
             assign_changes[channel_tuple] = 1
