@@ -1,3 +1,11 @@
+dca-plotter (0.5.0) UNRELEASED; urgency=medium
+
+  * Fix incorrect variable name
+  * Fix import errors when plugins are installed at system level
+  * Resolve roles when calculating assign {un}mute
+
+ -- s0600204 <dev@s0600204>  Sun, 22 Feb 2026 23:09:00 +0000
+
 dca-plotter (0.4.0) UNRELEASED; urgency=medium
 
   * Consider Roles when determining Choirs comprising of mics/fx
