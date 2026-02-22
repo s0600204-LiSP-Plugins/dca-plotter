@@ -131,7 +131,7 @@ class DcaMappingModel(DcaModelTemplate):
 
         # Then, update from the new previous cue row
         prev_sibling = cuerow.prevSibling()
-        if prev_sibling and prevSibling.cue.type == "DcaChangeCue":
+        if prev_sibling and prev_sibling.cue.type == "DcaChangeCue":
             changes = _change_tuples_derive(prev_sibling)
             self._change_tuples_apply(cuerow, changes)
 

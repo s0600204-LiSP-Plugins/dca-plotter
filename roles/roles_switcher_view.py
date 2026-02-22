@@ -26,8 +26,10 @@ from PyQt5.QtCore import QModelIndex, QRect, QSize, Qt
 from PyQt5.QtGui import QFontMetrics, QPainter, QRegion
 from PyQt5.QtWidgets import QAbstractItemView
 
-# pylint: disable=import-error
-from plugins.midi_fixture_control.ui import LabelDelegate
+try:
+    from plugins.midi_fixture_control.ui import LabelDelegate
+except ImportError:
+    from lisp.plugins.midi_fixture_control.ui import LabelDelegate
 
 from ..ui import LINE_PEN, ToggleButtonDelegate
 

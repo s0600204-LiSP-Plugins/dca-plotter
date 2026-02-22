@@ -24,7 +24,10 @@
 from lisp.ui.qdelegates import LineEditDelegate, SpinBoxDelegate
 from lisp.ui.ui_utils import translate
 
-from plugins.midi_fixture_control.ui import LabelDelegate
+try:
+    from plugins.midi_fixture_control.ui import LabelDelegate
+except ImportError:
+    from lisp.plugins.midi_fixture_control.ui import LabelDelegate
 
 from .channel_assign_page import AssignUi
 
